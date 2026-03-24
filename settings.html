@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>EcoMate — Settings</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+<style>
+:root{--p:#1E3A8A;--s:#2563EB;--g:#10B981;--dm:#07101f;--dms:#0a1628;
+  --border:rgba(255,255,255,.08);--text:#fff;--sub:rgba(255,255,255,.5);
+  --muted:rgba(255,255,255,.28);--card:rgba(255,255,255,.03)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--dm);color:var(--text);min-height:100vh}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+.topbar{position:sticky;top:0;z-index:100;height:60px;padding:0 5%;display:flex;align-items:center;
+  justify-content:space-between;background:rgba(7,16,31,.8);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border)}
+.logo{font-family:'Poppins',sans-serif;font-weight:800;font-size:20px;color:#fff}
+.logo span{background:linear-gradient(135deg,var(--s),var(--g));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.back{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;
+  color:var(--sub);transition:color .2s;cursor:pointer;text-decoration:none}
+.back:hover{color:#fff}
+
+.page-wrap{max-width:680px;margin:0 auto;padding:40px 5% 80px;animation:fadeUp .4s ease both}
+.page-title{font-family:'Poppins',sans-serif;font-size:28px;font-weight:800;color:#fff;margin-bottom:4px}
+.page-sub{font-size:14px;color:var(--sub);margin-bottom:36px}
+
+.settings-nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:32px;
+  background:var(--card);border:1px solid var(--border);border-radius:12px;padding:6px}
+.sn-item{padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;
+  color:var(--sub);cursor:pointer;transition:all .2s}
+.sn-item:hover{color:#fff}
+.sn-item.active{background:rgba(37,99,235,.15);color:#fff}
+
+.settings-section{display:none;animation:fadeUp .3s ease both}
+.settings-section.active{display:block}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:18px}
+.card-title{font-family:'Poppins',sans-serif;font-size:16px;font-weight:700;color:#fff;margin-bottom:4px}
+.card-sub{font-size:13px;color:var(--sub);margin-bottom:22px}
+.card-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.danger-card{border-color:rgba(239,68,68,.18)}
+.danger-card .card-title{color:#fca5a5}
+
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:16px}
+.field label{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.input-wrap{position:relative}
+.input-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:14px;pointer-events:none;opacity:.3}
+.input{width:100%;padding:12px 14px 12px 40px;background:rgba(255,255,255,.04);
+  border:1.5px solid rgba(255,255,255,.07);border-radius:10px;font-size:13.5px;
+  font-family:'Inter',sans-serif;color:#fff;outline:none;transition:all .2s}
+.input::placeholder{color:rgba(255,255,255,.2)}
+.input:focus{border-color:var(--s);background:rgba(37,99,235,.06);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.input.no-icon{padding-left:14px}
+textarea.input{resize:vertical;min-height:90px;padding:12px 14px;line-height:1.6}
+.input-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pw-toggle{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:14px;cursor:pointer;color:rgba(255,255,255,.25);background:none;border:none;padding:4px}
+.pw-toggle:hover{color:var(--s)}
+.pw-bars{display:flex;gap:4px;margin-top:5px}
+.pw-bar{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.07);transition:background .3s}
+.pw-bar.w{background:#ef4444}.pw-bar.m{background:#f59e0b}.pw-bar.s{background:#10b981}
+.pw-lbl{font-size:11px;font-weight:600;color:rgba(255,255,255,.3);margin-left:4px}
+
+.btn{padding:12px 22px;border-radius:10px;font-family:'Poppins',sans-serif;font-size:14px;
+  font-weight:700;cursor:pointer;transition:all .2s;border:none;display:inline-flex;align-items:center;gap:8px}
+.btn.primary{background:linear-gradient(135deg,var(--s),#1d4ed8);color:#fff;box-shadow:0 0 20px rgba(37,99,235,.3)}
+.btn.primary:hover{box-shadow:0 0 34px rgba(37,99,235,.5);transform:translateY(-1px)}
+.btn.primary:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.btn.danger{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:#fca5a5}
+.btn.danger:hover{background:rgba(239,68,68,.2)}
+.btn.ghost{background:transparent;border:1px solid var(--border);color:var(--sub)}
+.btn.ghost:hover{border-color:var(--s);color:#fff}
+.spinner{width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.3);
+  border-top-color:#fff;animation:spin .7s linear infinite;display:none}
+.loading .spinner{display:block}.loading .btn-text{display:none}
+
+/* Stars */
+.stars{display:flex;gap:6px;margin-bottom:12px}
+.star{font-size:28px;cursor:pointer;transition:transform .15s;filter:grayscale(1);opacity:.4}
+.star.active,.star:hover{filter:none;opacity:1;transform:scale(1.15)}
+
+/* Plan badge */
+.plan-badge{display:inline-flex;align-items:center;gap:7px;padding:7px 14px;
+  border-radius:100px;font-size:12px;font-weight:700;margin-bottom:16px}
+.plan-badge.starter{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:var(--sub)}
+.plan-badge.growth{background:rgba(37,99,235,.12);border:1px solid rgba(37,99,235,.25);color:var(--s)}
+.plan-badge.business{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.2);color:var(--g)}
+.plan-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+
+/* Divider */
+.divider{height:1px;background:var(--border);margin:20px 0}
+
+/* Status box */
+.status-box{padding:13px 16px;border-radius:10px;font-size:13px;margin-bottom:16px;display:flex;align-items:center;gap:9px}
+.status-box.ok{background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.18);color:#6ee7b7}
+.status-box.warn{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.18);color:#fcd34d}
+.status-box.err{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.18);color:#fca5a5}
+
+/* Avatar */
+.avatar{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--s),var(--g));
+  display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;
+  font-family:'Poppins',sans-serif;color:#fff;margin-bottom:18px;flex-shrink:0}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="dashboard.html" class="back">← Dashboard</a>
+  <div class="logo">Eco<span>Mate</span></div>
+  <button class="btn ghost" style="font-size:12px;padding:7px 14px" onclick="signOut()">Sign Out ↩</button>
+</div>
+
+<div class="page-wrap">
+  <div class="page-title">Settings</div>
+  <p class="page-sub">Manage your account, security, and subscription</p>
+
+  <div class="settings-nav">
+    <div class="sn-item active" onclick="switchTab('profile')">👤 Profile</div>
+    <div class="sn-item" onclick="switchTab('security')">🔐 Security</div>
+    <div class="sn-item" onclick="switchTab('subscription')">💳 Subscription</div>
+    <div class="sn-item" onclick="switchTab('review')">⭐ Leave Review</div>
+    <div class="sn-item" onclick="switchTab('danger')">⚠️ Account</div>
+  </div>
+
+  <!-- PROFILE TAB -->
+  <div class="settings-section active" id="tab-profile">
+    <div class="card">
+      <div class="card-title-row">
+        <div>
+          <div class="card-title">Personal Information</div>
+          <div class="card-sub">Update your name and business details</div>
+        </div>
+        <div class="avatar" id="av-letter">?</div>
+      </div>
+      <div id="profile-status"></div>
+      <div class="input-row">
+        <div class="field"><label>Full Name</label>
+          <div class="input-wrap"><span class="input-icon">👤</span><input class="input" id="pf-name" placeholder="Your full name"/></div></div>
+        <div class="field"><label>Business Name</label>
+          <div class="input-wrap"><span class="input-icon">🏪</span><input class="input" id="pf-biz" placeholder="Your store name"/></div></div>
+      </div>
+      <div class="input-row">
+        <div class="field"><label>Phone</label>
+          <div class="input-wrap"><span class="input-icon">📱</span><input class="input" id="pf-phone" placeholder="+213 555 00 00 00"/></div></div>
+        <div class="field"><label>Wilaya</label>
+          <div class="input-wrap"><span class="input-icon">📍</span><input class="input" id="pf-wilaya" placeholder="e.g. Alger"/></div></div>
+      </div>
+      <button class="btn primary" id="save-profile-btn" onclick="saveProfile()">
+        <span class="btn-text">Save Changes</span><div class="spinner"></div>
+      </button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Email Address</div>
+      <div class="card-sub">Your login email (cannot be changed here)</div>
+      <div class="field">
+        <div class="input-wrap"><span class="input-icon">✉️</span><input class="input" id="pf-email" readonly style="opacity:.6;cursor:not-allowed"/></div>
+      </div>
+      <p style="font-size:12px;color:var(--muted)">To change your email, contact our support team.</p>
+    </div>
+  </div>
+
+  <!-- SECURITY TAB -->
+  <div class="settings-section" id="tab-security">
+    <div class="card">
+      <div class="card-title">Change Password</div>
+      <div class="card-sub">Use a strong password with at least 8 characters</div>
+      <div id="pw-status"></div>
+      <div class="field"><label>New Password</label>
+        <div class="input-wrap">
+          <span class="input-icon">🔒</span>
+          <input class="input" type="password" id="new-pw" placeholder="New password" oninput="pwStrength(this)"/>
+          <button class="pw-toggle" onclick="togglePw('new-pw',this)">👁</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;margin-top:5px">
+          <div class="pw-bars"><div class="pw-bar" id="pwb1"></div><div class="pw-bar" id="pwb2"></div><div class="pw-bar" id="pwb3"></div></div>
+          <span class="pw-lbl" id="pw-lbl-txt">—</span>
+        </div>
+      </div>
+      <div class="field"><label>Confirm New Password</label>
+        <div class="input-wrap">
+          <span class="input-icon">🔒</span>
+          <input class="input" type="password" id="conf-pw" placeholder="Re-enter new password"/>
+          <button class="pw-toggle" onclick="togglePw('conf-pw',this)">👁</button>
+        </div>
+      </div>
+      <button class="btn primary" id="save-pw-btn" onclick="savePassword()">
+        <span class="btn-text">Update Password</span><div class="spinner"></div>
+      </button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Active Sessions</div>
+      <div class="card-sub">You are currently signed in to this session</div>
+      <div class="status-box ok">✅ Session active — you're logged in securely</div>
+      <button class="btn ghost" onclick="signOut()">Sign Out of All Devices</button>
+    </div>
+  </div>
+
+  <!-- SUBSCRIPTION TAB -->
+  <div class="settings-section" id="tab-subscription">
+    <div class="card">
+      <div class="card-title">Current Plan</div>
+      <div id="sub-badge"></div>
+      <div id="sub-details"></div>
+      <div class="divider"></div>
+      <button class="btn primary" onclick="window.location.href='dashboard.html'">
+        Manage Plans in Dashboard →
+      </button>
+    </div>
+  </div>
+
+  <!-- REVIEW TAB -->
+  <div class="settings-section" id="tab-review">
+    <div class="card" id="review-gate">
+      <div class="card-title">Leave a Review ⭐</div>
+      <div class="card-sub">Share your experience with EcoMate — helps other Algerian merchants discover us</div>
+      <div id="review-access-msg"></div>
+      <div id="review-form" style="display:none">
+        <div style="margin-bottom:16px">
+          <div style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Your Rating</div>
+          <div class="stars" id="star-row">
+            <span class="star" data-v="1" onclick="setRating(1)">⭐</span>
+            <span class="star" data-v="2" onclick="setRating(2)">⭐</span>
+            <span class="star" data-v="3" onclick="setRating(3)">⭐</span>
+            <span class="star" data-v="4" onclick="setRating(4)">⭐</span>
+            <span class="star" data-v="5" onclick="setRating(5)">⭐</span>
+          </div>
+        </div>
+        <div class="field"><label>Your Review</label>
+          <textarea class="input no-icon" id="rv-content" placeholder="Share your experience — what do you love about EcoMate? How has it helped your business?" style="resize:vertical;min-height:110px;padding:12px 14px"></textarea>
+        </div>
+        <div class="input-row">
+          <div class="field"><label>Display Name</label><input class="input no-icon" id="rv-name" placeholder="Your name"/></div>
+          <div class="field"><label>Business (optional)</label><input class="input no-icon" id="rv-biz" placeholder="Your store name"/></div>
+        </div>
+        <div id="rv-status" style="margin-bottom:12px"></div>
+        <button class="btn primary" id="submit-rv-btn" onclick="submitReview()">
+          <span class="btn-text">Submit Review →</span><div class="spinner"></div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DANGER ZONE -->
+  <div class="settings-section" id="tab-danger">
+    <div class="card danger-card">
+      <div class="card-title">⚠️ Danger Zone</div>
+      <div class="card-sub">These actions are irreversible. Please proceed with caution.</div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="padding:16px;background:rgba(239,68,68,.04);border-radius:10px;border:1px solid rgba(239,68,68,.1)">
+          <div style="font-size:14px;font-weight:600;color:#fff;margin-bottom:4px">Delete All Orders</div>
+          <div style="font-size:12px;color:var(--sub);margin-bottom:12px">Permanently removes all your order data from EcoMate.</div>
+          <button class="btn danger" onclick="deleteAllOrders()">Delete All Orders</button>
+        </div>
+        <div style="padding:16px;background:rgba(239,68,68,.04);border-radius:10px;border:1px solid rgba(239,68,68,.1)">
+          <div style="font-size:14px;font-weight:600;color:#fff;margin-bottom:4px">Delete Account</div>
+          <div style="font-size:12px;color:var(--sub);margin-bottom:12px">This will permanently delete your EcoMate account and all your data.</div>
+          <button class="btn danger" onclick="deleteAccount()">Delete My Account</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let currentUser = null;
+let currentProfile = null;
+let currentSub = null;
+let selectedRating = 0;
+
+(async () => {
+  const u = await requireAuth('auth.html');
+  if (!u) return;
+  currentUser = u;
+  currentProfile = await getProfile(u.id);
+  currentSub = await getSubscription(u.id);
+  populateProfile();
+  populateSubscription();
+  checkReviewAccess();
+})();
+
+function switchTab(id) {
+  document.querySelectorAll('.settings-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.sn-item').forEach(s => s.classList.remove('active'));
+  document.getElementById('tab-'+id)?.classList.add('active');
+  const items = document.querySelectorAll('.sn-item');
+  const map = {profile:0,security:1,subscription:2,review:3,danger:4};
+  items[map[id]]?.classList.add('active');
+}
+
+function populateProfile() {
+  const p = currentProfile;
+  if (!p) return;
+  document.getElementById('pf-name').value = p.full_name||'';
+  document.getElementById('pf-biz').value = p.business_name||'';
+  document.getElementById('pf-phone').value = p.phone||'';
+  document.getElementById('pf-wilaya').value = p.wilaya||'';
+  document.getElementById('pf-email').value = currentUser?.email||'';
+  document.getElementById('av-letter').textContent = (p.full_name||currentUser?.email||'?')[0].toUpperCase();
+}
+
+async function saveProfile() {
+  const btn = document.getElementById('save-profile-btn');
+  setLoading(btn, true);
+  const upd = {
+    full_name: document.getElementById('pf-name').value,
+    business_name: document.getElementById('pf-biz').value,
+    phone: document.getElementById('pf-phone').value,
+    wilaya: document.getElementById('pf-wilaya').value,
+  };
+  const { error } = await getSB().from('profiles').update(upd).eq('id', currentUser.id);
+  setLoading(btn, false);
+  if (error) {
+    document.getElementById('profile-status').innerHTML = `<div class="status-box err">⚠️ ${error.message}</div>`;
+    return;
+  }
+  document.getElementById('profile-status').innerHTML = `<div class="status-box ok">✅ Profile updated successfully!</div>`;
+  document.getElementById('av-letter').textContent = (upd.full_name||'?')[0].toUpperCase();
+  showToast('Profile saved!', 'success');
+  setTimeout(() => document.getElementById('profile-status').innerHTML='', 3000);
+}
+
+function togglePw(id, btn) {
+  const i = document.getElementById(id);
+  i.type = i.type==='password' ? 'text' : 'password';
+  btn.textContent = i.type==='text' ? '🙈' : '👁';
+}
+function pwStrength(inp) {
+  const v = inp.value;
+  const bars = [document.getElementById('pwb1'),document.getElementById('pwb2'),document.getElementById('pwb3')];
+  const lbl = document.getElementById('pw-lbl-txt');
+  bars.forEach(b=>b.className='pw-bar');
+  if (!v){lbl.textContent='—';return;}
+  let sc=0;
+  if(v.length>=8)sc++;
+  if(/[A-Z]/.test(v)&&/[0-9]/.test(v))sc++;
+  if(/[^A-Za-z0-9]/.test(v)&&v.length>=10)sc++;
+  if(sc===1){bars[0].classList.add('w');lbl.textContent='Weak';lbl.style.color='#ef4444';}
+  else if(sc===2){bars[0].classList.add('m');bars[1].classList.add('m');lbl.textContent='Good';lbl.style.color='#f59e0b';}
+  else{bars.forEach(b=>b.classList.add('s'));lbl.textContent='Strong';lbl.style.color='#10b981';}
+}
+async function savePassword() {
+  const btn = document.getElementById('save-pw-btn');
+  const pw = document.getElementById('new-pw').value;
+  const cpw = document.getElementById('conf-pw').value;
+  const statusEl = document.getElementById('pw-status');
+  statusEl.innerHTML='';
+  if(pw.length<8){statusEl.innerHTML='<div class="status-box err">⚠️ Password must be at least 8 characters.</div>';return;}
+  if(pw!==cpw){statusEl.innerHTML='<div class="status-box err">⚠️ Passwords do not match.</div>';return;}
+  setLoading(btn, true);
+  const { error } = await getSB().auth.updateUser({ password: pw });
+  setLoading(btn, false);
+  if(error){statusEl.innerHTML=`<div class="status-box err">⚠️ ${error.message}</div>`;return;}
+  statusEl.innerHTML='<div class="status-box ok">✅ Password updated successfully!</div>';
+  document.getElementById('new-pw').value='';
+  document.getElementById('conf-pw').value='';
+  showToast('Password updated!','success');
+  setTimeout(()=>statusEl.innerHTML='',4000);
+}
+
+function populateSubscription() {
+  const sub = currentSub;
+  const slugMap = {starter:'Starter',growth:'Growth',business:'Business'};
+  const planSlug = sub?.plans?.slug||'starter';
+  const badge = document.getElementById('sub-badge');
+  badge.innerHTML = `<div class="plan-badge ${planSlug}">Current: ${slugMap[planSlug]||'No Plan'}</div>`;
+  const details = document.getElementById('sub-details');
+  if (sub) {
+    details.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+        <div><div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.07em">Status</div>
+          <div style="font-size:14px;font-weight:600;color:${sub.status==='active'?'#10b981':'#f59e0b'};margin-top:4px">${sub.status?.toUpperCase()}</div></div>
+        <div><div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.07em">Expires</div>
+          <div style="font-size:14px;font-weight:600;color:#fff;margin-top:4px">${formatDate(sub.expires_at)||'—'}</div></div>
+        <div><div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.07em">Plan</div>
+          <div style="font-size:14px;font-weight:600;color:#fff;margin-top:4px">${sub.plans?.name||'—'}</div></div>
+        <div><div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.07em">Price</div>
+          <div style="font-size:14px;font-weight:600;color:#fff;margin-top:4px">${sub.plans?.price_da?formatDA(sub.plans.price_da)+'/mo':'Free'}</div></div>
+      </div>`;
+  } else {
+    details.innerHTML='<div class="status-box warn">⚠️ No active subscription. You are on the free Starter plan.</div>';
+  }
+}
+
+async function checkReviewAccess() {
+  const msgEl = document.getElementById('review-access-msg');
+  const formEl = document.getElementById('review-form');
+  if (!currentSub) {
+    msgEl.innerHTML = `<div class="status-box warn">⚠️ Reviews are only available for users who have tested EcoMate with a paid plan. <a href="dashboard.html" style="color:var(--s)">Upgrade your plan →</a></div>`;
+    return;
+  }
+  // Check if already reviewed
+  const { data } = await getSB().from('reviews').select('id').eq('user_id', currentUser.id).limit(1);
+  if (data?.length) {
+    msgEl.innerHTML = `<div class="status-box ok">✅ You have already submitted a review. Thank you for your feedback!</div>`;
+    return;
+  }
+  formEl.style.display = 'block';
+  document.getElementById('rv-name').value = currentProfile?.full_name||'';
+  document.getElementById('rv-biz').value = currentProfile?.business_name||'';
+}
+
+function setRating(v) {
+  selectedRating = v;
+  document.querySelectorAll('.star').forEach((s,i) => s.classList.toggle('active', i<v));
+}
+
+async function submitReview() {
+  const btn = document.getElementById('submit-rv-btn');
+  const statusEl = document.getElementById('rv-status');
+  statusEl.innerHTML='';
+  if (!selectedRating) { statusEl.innerHTML='<div class="status-box err">⚠️ Please select a star rating.</div>'; return; }
+  const content = document.getElementById('rv-content').value.trim();
+  if (!content || content.length < 20) { statusEl.innerHTML='<div class="status-box err">⚠️ Please write at least 20 characters.</div>'; return; }
+  setLoading(btn, true);
+  const { error } = await getSB().from('reviews').insert({
+    user_id: currentUser.id,
+    reviewer_name: document.getElementById('rv-name').value||currentProfile?.full_name||'Anonymous',
+    business_name: document.getElementById('rv-biz').value||'',
+    rating: selectedRating,
+    content,
+    is_approved: false,
+  });
+  setLoading(btn, false);
+  if (error) { statusEl.innerHTML=`<div class="status-box err">⚠️ ${error.message}</div>`; return; }
+  document.getElementById('review-form').innerHTML = `
+    <div style="text-align:center;padding:24px 0">
+      <div style="font-size:42px;margin-bottom:12px">🎉</div>
+      <div style="font-family:'Poppins',sans-serif;font-size:18px;font-weight:800;color:#fff;margin-bottom:8px">Thank you!</div>
+      <p style="font-size:13px;color:var(--sub)">Your review is pending approval from our team. It will appear on the landing page once approved.</p>
+    </div>`;
+  showToast('Review submitted! Awaiting approval.','success');
+}
+
+async function deleteAllOrders() {
+  if (!confirm('Are you sure? This will permanently delete ALL your orders. This cannot be undone.')) return;
+  const { error } = await getSB().from('orders').delete().eq('user_id', currentUser.id);
+  if (error) { showToast('Error: '+error.message,'error'); return; }
+  showToast('All orders deleted.','info');
+}
+async function deleteAccount() {
+  const confirmed = prompt('Type DELETE to confirm account deletion:');
+  if (confirmed !== 'DELETE') { showToast('Account deletion cancelled.','info'); return; }
+  showToast('Account deletion requested. Contact support to complete.','info');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>EcoMate Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+<style>
+:root{--p:#1E3A8A;--s:#2563EB;--g:#10B981;--dm:#07101f;--dms:#0a1628;
+  --border:rgba(255,255,255,.08);--text:#fff;--sub:rgba(255,255,255,.5);
+  --muted:rgba(255,255,255,.25);--card:rgba(255,255,255,.03);--hover:rgba(255,255,255,.05);
+  --admin-accent:#7c3aed}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Inter',sans-serif;background:var(--dm);color:var(--text)}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+
+/* ── LOGIN SCREEN ── */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;
+  background:var(--dm);position:relative;overflow:hidden}
+.login-glow{position:absolute;width:500px;height:500px;border-radius:50%;
+  background:radial-gradient(circle,rgba(124,58,237,.12),transparent 70%);
+  top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none}
+.login-box{
+  width:100%;max-width:420px;background:var(--dms);border:1px solid rgba(124,58,237,.2);
+  border-radius:20px;padding:44px 40px;box-shadow:0 40px 100px rgba(0,0,0,.4),0 0 0 1px rgba(124,58,237,.1);
+  animation:fadeUp .5s ease both;position:relative;z-index:1
+}
+.login-lock{font-size:38px;margin-bottom:16px;text-align:center}
+.login-title{font-family:'Poppins',sans-serif;font-size:22px;font-weight:800;color:#fff;
+  text-align:center;margin-bottom:4px}
+.login-sub{font-size:13px;color:var(--sub);text-align:center;margin-bottom:28px}
+.admin-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(124,58,237,.1);
+  border:1px solid rgba(124,58,237,.2);border-radius:100px;padding:4px 12px;
+  font-size:11px;font-weight:700;color:#a78bfa;margin:0 auto 20px;display:flex;
+  justify-content:center;width:fit-content}
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.field label{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.07em;text-transform:uppercase}
+.input-wrap{position:relative}
+.iicon{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:14px;pointer-events:none;opacity:.3}
+.input{width:100%;padding:12px 14px 12px 40px;background:rgba(255,255,255,.04);
+  border:1.5px solid rgba(255,255,255,.07);border-radius:10px;font-size:13.5px;
+  font-family:'Inter',sans-serif;color:#fff;outline:none;transition:all .2s}
+.input::placeholder{color:rgba(255,255,255,.2)}
+.input:focus{border-color:var(--admin-accent);background:rgba(124,58,237,.06);box-shadow:0 0 0 3px rgba(124,58,237,.12)}
+.pw-toggle{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:14px;
+  cursor:pointer;color:rgba(255,255,255,.25);background:none;border:none;padding:4px}
+.btn-login{width:100%;padding:14px;border-radius:11px;font-family:'Poppins',sans-serif;
+  font-size:15px;font-weight:700;color:#fff;background:linear-gradient(135deg,var(--admin-accent),#5b21b6);
+  border:none;box-shadow:0 0 28px rgba(124,58,237,.4);cursor:pointer;transition:all .25s;
+  display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px}
+.btn-login:hover{transform:translateY(-2px);box-shadow:0 0 44px rgba(124,58,237,.55)}
+.btn-login:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.spinner{width:15px;height:15px;border-radius:50%;border:2px solid rgba(255,255,255,.3);
+  border-top-color:#fff;animation:spin .7s linear infinite;display:none}
+.loading .spinner{display:block}.loading .btn-text{display:none}
+.login-err{display:none;align-items:center;gap:8px;background:rgba(239,68,68,.08);
+  border:1px solid rgba(239,68,68,.2);border-radius:9px;padding:10px 14px;
+  font-size:12.5px;color:#fca5a5;margin-bottom:12px}
+.login-err.show{display:flex}
+.forgot-link{text-align:center;font-size:12.5px;color:var(--sub);margin-top:12px;cursor:pointer}
+.forgot-link span{color:var(--admin-accent);font-weight:600}
+
+/* ── APP LAYOUT ── */
+.admin-app{display:none;grid-template-columns:230px 1fr;height:100vh;overflow:hidden}
+.admin-app.visible{display:grid}
+
+/* ── SIDEBAR ── */
+.aside{background:var(--dms);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden}
+.aside-logo{padding:22px 18px 16px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:9px}
+.aside-logo-txt{font-family:'Poppins',sans-serif;font-weight:800;font-size:18px;color:#fff}
+.aside-logo-txt span{background:linear-gradient(135deg,var(--s),var(--g));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.aside-badge{background:rgba(124,58,237,.12);border:1px solid rgba(124,58,237,.2);
+  border-radius:5px;padding:2px 8px;font-size:10px;font-weight:800;color:#a78bfa}
+.aside-nav{flex:1;padding:10px 10px;overflow-y:auto;scrollbar-width:none}
+.aside-nav::-webkit-scrollbar{display:none}
+.nav-group{margin-bottom:18px}
+.nav-group-lbl{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:rgba(255,255,255,.2);padding:0 8px;margin-bottom:5px}
+.nav-item{
+  display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:8px;
+  font-size:13px;font-weight:500;color:var(--sub);cursor:pointer;transition:all .2s;
+  position:relative;margin-bottom:2px
+}
+.nav-item:hover{background:var(--hover);color:#fff}
+.nav-item.active{background:rgba(124,58,237,.12);color:#fff;font-weight:600}
+.nav-item.active::before{content:'';position:absolute;left:0;top:25%;bottom:25%;
+  width:2.5px;border-radius:0 2px 2px 0;background:var(--admin-accent)}
+.nav-item .ico{font-size:15px;width:18px;text-align:center;flex-shrink:0}
+.nav-item .cnt{margin-left:auto;background:var(--admin-accent);color:#fff;
+  font-size:10px;font-weight:800;padding:1px 6px;border-radius:100px}
+.aside-user{padding:12px 14px;border-top:1px solid var(--border);display:flex;align-items:center;gap:9px}
+.aside-av{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--admin-accent),#5b21b6);
+  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0}
+.aside-uname{font-size:12px;font-weight:600;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.aside-signout{background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:4px;transition:color .2s}
+.aside-signout:hover{color:#fff}
+
+/* ── MAIN ── */
+.main{display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:56px;border-bottom:1px solid var(--border);padding:0 24px;
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+  background:rgba(10,22,40,.7);backdrop-filter:blur(20px)}
+.topbar-title{font-family:'Poppins',sans-serif;font-size:16px;font-weight:700;color:#fff}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.topbar-live{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--g);font-weight:600}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--g);animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.content{flex:1;overflow-y:auto;padding:24px;scrollbar-width:thin;scrollbar-color:rgba(124,58,237,.2) transparent}
+.page{display:none;animation:fadeUp .3s ease both}
+.page.active{display:block}
+
+/* ── STATS ── */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px}
+@media(max-width:1200px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 18px}
+.stat-label{font-size:10px;color:var(--muted);font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin-bottom:7px}
+.stat-val{font-family:'Poppins',sans-serif;font-size:26px;font-weight:800;letter-spacing:-.03em;color:#fff}
+.stat-val.g{color:var(--g)}.stat-val.p{color:#a78bfa}.stat-val.b{color:var(--s)}
+
+/* ── TABLE ── */
+.tbl-wrap{background:var(--card);border:1px solid var(--border);border-radius:13px;overflow:hidden}
+.tbl-hdr{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.tbl-hdr-title{font-family:'Poppins',sans-serif;font-size:14px;font-weight:700;color:#fff}
+.search-inp{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);
+  border-radius:8px;padding:8px 13px;font-size:12.5px;font-family:'Inter',sans-serif;
+  color:#fff;outline:none;transition:border-color .2s;min-width:220px}
+.search-inp:focus{border-color:var(--admin-accent)}
+.search-inp::placeholder{color:rgba(255,255,255,.2)}
+table{width:100%;border-collapse:collapse}
+thead tr{border-bottom:1px solid var(--border)}
+th{padding:10px 14px;text-align:left;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+td{padding:12px 14px;font-size:12.5px;color:var(--sub);border-bottom:1px solid rgba(255,255,255,.03)}
+tr:last-child td{border-bottom:none}
+tbody tr:hover{background:rgba(255,255,255,.02)}
+.td-main{color:#fff;font-weight:600}
+.btn{padding:5px 12px;border-radius:6px;font-size:11.5px;font-weight:600;cursor:pointer;
+  transition:all .2s;border:1px solid var(--border);color:var(--sub);background:transparent;font-family:'Inter',sans-serif}
+.btn:hover{border-color:var(--s);color:var(--s)}
+.btn.approve{border-color:rgba(16,185,129,.3);color:var(--g)}
+.btn.approve:hover{background:rgba(16,185,129,.1)}
+.btn.reject{border-color:rgba(239,68,68,.3);color:#fca5a5}
+.btn.reject:hover{background:rgba(239,68,68,.08)}
+.btn.primary{background:linear-gradient(135deg,var(--admin-accent),#5b21b6);border:none;color:#fff;padding:8px 16px;border-radius:8px}
+.btn.primary:hover{box-shadow:0 0 20px rgba(124,58,237,.4)}
+.btn.green{background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.2);color:var(--g)}
+.btn.green:hover{background:rgba(16,185,129,.18)}
+.btn-row{display:flex;gap:6px;flex-wrap:wrap}
+
+/* ── STATUS BADGE ── */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:100px;font-size:11px;font-weight:700}
+.badge.pending{background:rgba(245,158,11,.1);color:#f59e0b}
+.badge.approved{background:rgba(16,185,129,.1);color:var(--g)}
+.badge.rejected{background:rgba(239,68,68,.08);color:#fca5a5}
+.badge.active{background:rgba(37,99,235,.1);color:var(--s)}
+.badge.admin{background:rgba(124,58,237,.1);color:#a78bfa}
+.badge.trial{background:rgba(245,158,11,.08);color:#fcd34d}
+.stars-small{color:#f59e0b;font-size:13px;letter-spacing:1px}
+
+/* ── REVIEW CARD ── */
+.rv-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:12px}
+.rv-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}
+.rv-name{font-family:'Poppins',sans-serif;font-size:14px;font-weight:700;color:#fff}
+.rv-biz{font-size:12px;color:var(--sub);margin-top:2px}
+.rv-content{font-size:13px;color:var(--sub);line-height:1.65}
+.rv-actions{display:flex;gap:7px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+
+/* ── PARTNER EDITOR ── */
+.partner-card{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:16px;
+  display:flex;align-items:center;gap:12px;margin-bottom:8px;transition:border-color .2s}
+.partner-card:hover{border-color:rgba(37,99,235,.2)}
+.p-logo{width:38px;height:38px;border-radius:9px;background:rgba(255,255,255,.06);
+  display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.p-name{font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;color:#fff}
+.p-cat{font-size:11px;color:var(--sub);margin-top:2px}
+.p-toggle{margin-left:auto}
+.toggle-sw{position:relative;width:42px;height:22px;cursor:pointer}
+.toggle-sw input{opacity:0;width:0;height:0;position:absolute}
+.toggle-track{width:100%;height:100%;border-radius:11px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.08);transition:all .3s}
+.toggle-sw input:checked ~ .toggle-track{background:rgba(16,185,129,.3);border-color:rgba(16,185,129,.4)}
+.toggle-thumb{position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .3s}
+.toggle-sw input:checked ~ .toggle-track ~ .toggle-thumb{transform:translateX(20px)}
+/* Inline edit */
+.inline-inp{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:7px;
+  padding:5px 10px;font-size:12px;font-family:'Inter',sans-serif;color:#fff;outline:none;width:120px}
+.inline-inp:focus{border-color:var(--s)}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;z-index:900;background:rgba(7,16,31,.8);backdrop-filter:blur(12px);
+  display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--dms);border:1px solid var(--border);border-radius:16px;padding:28px;
+  width:100%;max-width:500px;max-height:90vh;overflow-y:auto;
+  box-shadow:0 40px 100px rgba(0,0,0,.5);
+  transform:scale(.94) translateY(12px);transition:transform .35s cubic-bezier(.34,1.4,.64,1)}
+.modal-overlay.open .modal{transform:scale(1) translateY(0)}
+.modal-title{font-family:'Poppins',sans-serif;font-size:17px;font-weight:800;color:#fff;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.modal-close{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer}
+.modal-close:hover{color:#fff}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:48px 20px;color:var(--muted)}
+.empty span{font-size:36px;display:block;margin-bottom:12px}
+
+/* ── LOG ── */
+.log-item{padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04);display:flex;align-items:flex-start;gap:10px}
+.log-icon{font-size:14px;width:22px;flex-shrink:0;margin-top:1px}
+.log-action{font-size:12.5px;color:var(--sub)}.log-time{font-size:11px;color:var(--muted);margin-top:2px}
+</style>
+</head>
+<body>
+
+<!-- ════════════ LOGIN SCREEN ════════════ -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-glow"></div>
+  <div class="login-box">
+    <div class="login-lock">🛡️</div>
+    <div class="admin-badge">🔐 Admin Access Only</div>
+    <div class="login-title">EcoMate Admin</div>
+    <p class="login-sub">Restricted area. Authorized personnel only.</p>
+
+    <div class="login-err" id="login-err">⚠️ <span id="login-err-msg">Access denied.</span></div>
+
+    <div class="field"><label>Admin Email</label>
+      <div class="input-wrap"><span class="iicon">✉️</span>
+        <input class="input" type="email" id="adm-email" placeholder="admin@ecomate.dz" autocomplete="email"/>
+      </div>
+    </div>
+    <div class="field"><label>Password</label>
+      <div class="input-wrap"><span class="iicon">🔒</span>
+        <input class="input" type="password" id="adm-pw" placeholder="Admin password"/>
+        <button class="pw-toggle" onclick="togglePw2('adm-pw',this)">👁</button>
+      </div>
+    </div>
+    <button class="btn-login" id="login-btn" onclick="adminLogin()">
+      <span class="btn-text">Sign In to Admin →</span><div class="spinner"></div>
+    </button>
+    <div class="forgot-link" onclick="adminForgot()">Forgot password? <span>Send reset link</span></div>
+  </div>
+</div>
+
+<!-- ════════════ ADMIN APP ════════════ -->
+<div class="admin-app" id="adminApp">
+  <aside class="aside">
+    <div class="aside-logo">
+      <div class="aside-logo-txt">Eco<span>Mate</span></div>
+      <div class="aside-badge">ADMIN</div>
+    </div>
+    <nav class="aside-nav">
+      <div class="nav-group">
+        <div class="nav-group-lbl">Overview</div>
+        <div class="nav-item active" onclick="goPage('dashboard')" id="anav-dashboard"><span class="ico">📊</span>Dashboard</div>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-lbl">Content</div>
+        <div class="nav-item" onclick="goPage('reviews')" id="anav-reviews"><span class="ico">⭐</span>Reviews<span class="cnt" id="reviews-cnt">—</span></div>
+        <div class="nav-item" onclick="goPage('partners')" id="anav-partners"><span class="ico">🤝</span>Partners</div>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-lbl">Users</div>
+        <div class="nav-item" onclick="goPage('clients')" id="anav-clients"><span class="ico">👥</span>Clients</div>
+        <div class="nav-item" onclick="goPage('subscriptions')" id="anav-subscriptions"><span class="ico">💳</span>Subscriptions</div>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-lbl">System</div>
+        <div class="nav-item" onclick="goPage('logs')" id="anav-logs"><span class="ico">📋</span>Activity Log</div>
+        <div class="nav-item" onclick="window.open('index.html','_blank')"><span class="ico">🌐</span>View Site</div>
+      </div>
+    </nav>
+    <div class="aside-user">
+      <div class="aside-av" id="adm-av">A</div>
+      <div class="aside-uname" id="adm-uname">Admin</div>
+      <button class="aside-signout" title="Sign Out" onclick="adminSignOut()">↩</button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="adm-topbar-title">Dashboard</div>
+      <div class="topbar-right">
+        <div class="topbar-live"><div class="live-dot"></div>Live Admin</div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ── DASHBOARD ── -->
+      <div class="page active" id="page-dashboard">
+        <div class="stats-grid" id="adm-stats"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div>
+            <div style="font-family:'Poppins',sans-serif;font-size:14px;font-weight:700;color:#fff;margin-bottom:12px">Pending Reviews</div>
+            <div id="pending-reviews-preview"></div>
+          </div>
+          <div>
+            <div style="font-family:'Poppins',sans-serif;font-size:14px;font-weight:700;color:#fff;margin-bottom:12px">Recent Clients</div>
+            <div class="tbl-wrap">
+              <table><thead><tr><th>Name</th><th>Plan</th><th>Joined</th></tr></thead>
+              <tbody id="recent-clients-body"></tbody></table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── REVIEWS ── -->
+      <div class="page" id="page-reviews">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+          <div style="font-family:'Poppins',sans-serif;font-size:15px;font-weight:700;color:#fff">Reviews Management</div>
+          <div style="display:flex;gap:8px">
+            <select class="search-inp" style="min-width:130px" id="rv-filter" onchange="loadReviews()">
+              <option value="">All Reviews</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+            </select>
+          </div>
+        </div>
+        <div id="reviews-list"></div>
+      </div>
+
+      <!-- ── PARTNERS ── -->
+      <div class="page" id="page-partners">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+          <div style="font-family:'Poppins',sans-serif;font-size:15px;font-weight:700;color:#fff">Partners Management</div>
+          <button class="btn primary" onclick="openAddPartner()">+ Add Partner</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Row 1 — Scrolls Left</div>
+            <div id="partners-row1"></div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Row 2 — Scrolls Right</div>
+            <div id="partners-row2"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── CLIENTS ── -->
+      <div class="page" id="page-clients">
+        <div class="tbl-wrap">
+          <div class="tbl-hdr">
+            <div class="tbl-hdr-title">All Clients</div>
+            <input class="search-inp" placeholder="🔍 Search clients..." id="client-search" oninput="filterClients(this.value)"/>
+          </div>
+          <table>
+            <thead><tr><th>Name</th><th>Email</th><th>Business</th><th>Role</th><th>Joined</th><th>Actions</th></tr></thead>
+            <tbody id="clients-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── SUBSCRIPTIONS ── -->
+      <div class="page" id="page-subscriptions">
+        <div class="tbl-wrap">
+          <div class="tbl-hdr"><div class="tbl-hdr-title">All Subscriptions</div></div>
+          <table>
+            <thead><tr><th>Client</th><th>Plan</th><th>Status</th><th>Started</th><th>Expires</th><th>Actions</th></tr></thead>
+            <tbody id="subs-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── LOGS ── -->
+      <div class="page" id="page-logs">
+        <div class="tbl-wrap">
+          <div class="tbl-hdr"><div class="tbl-hdr-title">Activity Log</div></div>
+          <div style="padding:8px 0" id="logs-list"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ADD PARTNER MODAL -->
+<div class="modal-overlay" id="partnerModal">
+  <div class="modal">
+    <div class="modal-title">Add / Edit Partner <button class="modal-close" onclick="closeModal()">✕</button></div>
+    <input type="hidden" id="pm-id"/>
+    <div class="field"><label>Partner Key (unique)</label><input class="input" id="pm-key" placeholder="p17"/></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="field"><label>Name</label><input class="input" id="pm-name" placeholder="Partner Name"/></div>
+      <div class="field"><label>Category</label><input class="input" id="pm-cat" placeholder="Logistics"/></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="field"><label>Logo (emoji or URL)</label><input class="input" id="pm-logo" placeholder="🚚 or https://..."/></div>
+      <div class="field"><label>Row</label>
+        <select class="input" id="pm-row"><option value="1">Row 1 (left)</option><option value="2">Row 2 (right)</option></select>
+      </div>
+    </div>
+    <div class="field"><label>Website URL (optional)</label><input class="input" id="pm-url" placeholder="https://partner.com"/></div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn primary" onclick="savePartner()" style="flex:1">Save Partner</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────
+let adminUser = null;
+let allClients = [];
+
+function togglePw2(id, btn) {
+  const i = document.getElementById(id);
+  i.type = i.type==='password'?'text':'password';
+  btn.textContent = i.type==='text'?'🙈':'👁';
+}
+
+// ── LOGIN ──────────────────────────────────────────────────────
+(async () => {
+  const u = await getUser();
+  if (u) {
+    const p = await getProfile(u.id);
+    if (p?.is_admin) { adminUser=u; showAdminApp(u,p); return; }
+  }
+})();
+
+async function adminLogin() {
+  const email = document.getElementById('adm-email').value.trim();
+  const pw    = document.getElementById('adm-pw').value;
+  const btn   = document.getElementById('login-btn');
+  const errEl = document.getElementById('login-err');
+  errEl.classList.remove('show');
+
+  if (!email||!pw) { showLoginErr('Please enter email and password.'); return; }
+
+  setLoading(btn, true);
+  const { data, error } = await getSB().auth.signInWithPassword({ email, password: pw });
+  if (error) { setLoading(btn,false); showLoginErr(error.message); return; }
+
+  const profile = await getProfile(data.user.id);
+  setLoading(btn, false);
+
+  if (!profile?.is_admin) {
+    await getSB().auth.signOut();
+    showLoginErr('Access denied. This account does not have admin privileges.');
+    return;
+  }
+  adminUser = data.user;
+  showAdminApp(data.user, profile);
+}
+
+function showLoginErr(msg) {
+  document.getElementById('login-err').classList.add('show');
+  document.getElementById('login-err-msg').textContent = msg;
+}
+
+async function adminForgot() {
+  const email = document.getElementById('adm-email').value.trim();
+  if (!email) { showLoginErr('Enter your admin email first.'); return; }
+  await getSB().auth.resetPasswordForEmail(email, { redirectTo: window.location.href });
+  showToast('Reset link sent to '+email,'info');
+}
+
+async function showAdminApp(user, profile) {
+  document.getElementById('loginWrap').style.display = 'none';
+  document.getElementById('adminApp').classList.add('visible');
+  document.getElementById('adm-av').textContent = (profile?.full_name||user.email)[0].toUpperCase();
+  document.getElementById('adm-uname').textContent = profile?.full_name||'Admin';
+
+  await Promise.all([loadDashboard(), loadReviews(), loadPartners(), loadClients(), loadSubs(), loadLogs()]);
+}
+
+async function adminSignOut() {
+  await getSB().auth.signOut();
+  window.location.reload();
+}
+
+// ── NAVIGATION ─────────────────────────────────────────────────
+const pageTitles = {dashboard:'Dashboard',reviews:'Reviews',partners:'Partners',clients:'Clients',subscriptions:'Subscriptions',logs:'Activity Log'};
+function goPage(id) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id)?.classList.add('active');
+  document.getElementById('anav-'+id)?.classList.add('active');
+  document.getElementById('adm-topbar-title').textContent = pageTitles[id]||id;
+}
+
+// ── DASHBOARD ──────────────────────────────────────────────────
+async function loadDashboard() {
+  const [
+    { count: totalClients },
+    { count: totalReviews },
+    { count: pendingReviews },
+    { count: activeSubs },
+  ] = await Promise.all([
+    getSB().from('profiles').select('*',{count:'exact',head:true}).eq('is_admin',false),
+    getSB().from('reviews').select('*',{count:'exact',head:true}),
+    getSB().from('reviews').select('*',{count:'exact',head:true}).eq('is_approved',false),
+    getSB().from('subscriptions').select('*',{count:'exact',head:true}).eq('status','active'),
+  ]);
+
+  document.getElementById('reviews-cnt').textContent = pendingReviews||'0';
+
+  document.getElementById('adm-stats').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total Clients</div><div class="stat-val b">${totalClients||0}</div></div>
+    <div class="stat-card"><div class="stat-label">Active Subs</div><div class="stat-val g">${activeSubs||0}</div></div>
+    <div class="stat-card"><div class="stat-label">Total Reviews</div><div class="stat-val">${totalReviews||0}</div></div>
+    <div class="stat-card"><div class="stat-label">Pending Reviews</div><div class="stat-val p">${pendingReviews||0}</div></div>
+  `;
+
+  // Pending reviews preview
+  const { data: pvr } = await getSB().from('reviews').select('*').eq('is_approved',false).limit(3).order('created_at',{ascending:false});
+  document.getElementById('pending-reviews-preview').innerHTML = pvr?.length
+    ? pvr.map(r=>`<div class="rv-card">
+        <div class="rv-header"><div><div class="rv-name">${r.reviewer_name}</div><div class="stars-small">${'⭐'.repeat(r.rating)}</div></div><span class="badge pending">Pending</span></div>
+        <div class="rv-content">${r.content.slice(0,120)}${r.content.length>120?'...':''}</div>
+        <div class="rv-actions">
+          <button class="btn approve" onclick="approveReview('${r.id}',true)">✅ Approve</button>
+          <button class="btn reject" onclick="approveReview('${r.id}',false)">❌ Reject</button>
+        </div>
+      </div>`).join('')
+    : `<div class="empty"><span>✅</span><p>No pending reviews</p></div>`;
+
+  // Recent clients
+  const { data: rc } = await getSB().from('profiles').select('*, subscriptions(plans(name))').eq('is_admin',false).order('created_at',{ascending:false}).limit(6);
+  document.getElementById('recent-clients-body').innerHTML = rc?.length
+    ? rc.map(c=>`<tr><td class="td-main">${c.full_name||'—'}</td><td>${c.subscriptions?.[0]?.plans?.name||'Starter'}</td><td>${formatDate(c.created_at)}</td></tr>`).join('')
+    : `<tr><td colspan="3"><div class="empty"><span>👥</span><p>No clients yet</p></div></td></tr>`;
+}
+
+// ── REVIEWS ────────────────────────────────────────────────────
+async function loadReviews() {
+  const filter = document.getElementById('rv-filter')?.value||'';
+  let q = getSB().from('reviews').select('*').order('created_at',{ascending:false});
+  if (filter==='pending') q=q.eq('is_approved',false);
+  else if (filter==='approved') q=q.eq('is_approved',true);
+  const { data } = await q;
+  const list = document.getElementById('reviews-list');
+  if (!list) return;
+  if (!data?.length) { list.innerHTML=`<div class="empty"><span>⭐</span><p>No reviews found</p></div>`; return; }
+  list.innerHTML = data.map(r=>`
+    <div class="rv-card" id="rv-${r.id}">
+      <div class="rv-header">
+        <div>
+          <div class="rv-name">${r.reviewer_name} ${r.business_name?`<span style="font-size:12px;color:var(--sub);font-weight:400">· ${r.business_name}</span>`:''}
+          </div>
+          <div class="stars-small">${'⭐'.repeat(r.rating)}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">${formatDate(r.created_at)}</div>
+        </div>
+        <span class="badge ${r.is_approved?'approved':'pending'}">${r.is_approved?'Approved':'Pending'}</span>
+      </div>
+      <div class="rv-content">${r.content}</div>
+      ${r.admin_note?`<div style="font-size:11px;color:var(--muted);margin-top:8px;font-style:italic">Admin note: ${r.admin_note}</div>`:''}
+      <div class="rv-actions">
+        ${!r.is_approved?`<button class="btn approve" onclick="approveReview('${r.id}',true)">✅ Approve</button>`:''}
+        ${r.is_approved?`<button class="btn" onclick="toggleFeatured('${r.id}',${!r.is_featured})">${r.is_featured?'★ Featured':'☆ Feature'}</button>`:''}
+        <button class="btn reject" onclick="approveReview('${r.id}',false)">❌ Reject</button>
+        <button class="btn" style="margin-left:auto" onclick="deleteReview('${r.id}')">🗑️ Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function approveReview(id, approve) {
+  const { error } = await getSB().from('reviews').update({ is_approved: approve }).eq('id',id);
+  if (error) { showToast('Error: '+error.message,'error'); return; }
+  showToast(approve?'Review approved and published!':'Review rejected','success');
+  await logAction(approve?'approve_review':'reject_review','review',id);
+  await loadReviews();
+  await loadDashboard();
+}
+async function toggleFeatured(id, featured) {
+  await getSB().from('reviews').update({ is_featured: featured }).eq('id',id);
+  showToast(featured?'Review featured!':'Review unfeatured','info');
+  await loadReviews();
+}
+async function deleteReview(id) {
+  if (!confirm('Delete this review permanently?')) return;
+  await getSB().from('reviews').delete().eq('id',id);
+  showToast('Review deleted','info');
+  await loadReviews();
+  await loadDashboard();
+}
+
+// ── PARTNERS ───────────────────────────────────────────────────
+async function loadPartners() {
+  const { data } = await getSB().from('partners').select('*').order('sort_order');
+  const row1El = document.getElementById('partners-row1');
+  const row2El = document.getElementById('partners-row2');
+  if (!row1El||!row2El||!data) return;
+  const r1 = data.filter(p=>p.row_num===1);
+  const r2 = data.filter(p=>p.row_num===2);
+  const renderRow = (partners) => partners.map(p=>`
+    <div class="partner-card">
+      <div class="p-logo">${p.logo}</div>
+      <div style="flex:1">
+        <div class="p-name">${p.name}</div>
+        <div class="p-cat">${p.category}</div>
+      </div>
+      <label class="toggle-sw p-toggle">
+        <input type="checkbox" ${p.is_active?'checked':''} onchange="togglePartner('${p.id}',this.checked)"/>
+        <div class="toggle-track"></div>
+        <div class="toggle-thumb"></div>
+      </label>
+      <button class="btn" style="margin-left:6px;font-size:11px" onclick="openEditPartner('${p.id}')">✏️</button>
+    </div>
+  `).join('');
+  row1El.innerHTML = renderRow(r1)||`<div class="empty"><span>🤝</span><p>No partners in row 1</p></div>`;
+  row2El.innerHTML = renderRow(r2)||`<div class="empty"><span>🤝</span><p>No partners in row 2</p></div>`;
+}
+
+async function togglePartner(id, active) {
+  await getSB().from('partners').update({ is_active: active }).eq('id',id);
+  showToast(active?'Partner activated!':'Partner deactivated','info');
+  await logAction(active?'activate_partner':'deactivate_partner','partner',id);
+}
+
+let allPartnersCache = [];
+function openAddPartner() {
+  ['pm-id','pm-key','pm-name','pm-cat','pm-logo','pm-url'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('pm-row').value='1';
+  document.getElementById('partnerModal').classList.add('open');
+}
+async function openEditPartner(id) {
+  const { data } = await getSB().from('partners').select('*').eq('id',id).single();
+  if (!data) return;
+  document.getElementById('pm-id').value=data.id;
+  document.getElementById('pm-key').value=data.partner_key;
+  document.getElementById('pm-name').value=data.name;
+  document.getElementById('pm-cat').value=data.category;
+  document.getElementById('pm-logo').value=data.logo;
+  document.getElementById('pm-row').value=data.row_num;
+  document.getElementById('pm-url').value=data.website_url||'';
+  document.getElementById('partnerModal').classList.add('open');
+}
+async function savePartner() {
+  const editId = document.getElementById('pm-id').value;
+  const data = {
+    partner_key: document.getElementById('pm-key').value,
+    name: document.getElementById('pm-name').value,
+    category: document.getElementById('pm-cat').value,
+    logo: document.getElementById('pm-logo').value||'🤝',
+    row_num: +document.getElementById('pm-row').value,
+    website_url: document.getElementById('pm-url').value||null,
+    is_active: true,
+  };
+  let err;
+  if (editId) ({ error:err } = await getSB().from('partners').update(data).eq('id',editId));
+  else ({ error:err } = await getSB().from('partners').insert(data));
+  if (err) { showToast('Error: '+err.message,'error'); return; }
+  showToast('Partner saved!','success');
+  closeModal();
+  await loadPartners();
+}
+function closeModal() { document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('open')); }
+
+// ── CLIENTS ────────────────────────────────────────────────────
+async function loadClients() {
+  const { data } = await getSB().from('profiles').select('*, subscriptions(plans(name,slug))').eq('is_admin',false).order('created_at',{ascending:false});
+  allClients = data||[];
+  renderClients(allClients);
+}
+function renderClients(clients) {
+  const body = document.getElementById('clients-body');
+  if (!body) return;
+  body.innerHTML = clients.length
+    ? clients.map(c=>`<tr>
+        <td class="td-main">${c.full_name||'—'}</td>
+        <td>${c.id.slice(0,8)}...</td>
+        <td>${c.business_name||'—'}</td>
+        <td><span class="badge ${c.is_admin?'admin':'active'}">${c.is_admin?'Admin':'Client'}</span></td>
+        <td>${formatDate(c.created_at)}</td>
+        <td><div class="btn-row">
+          <button class="btn" onclick="viewClient('${c.id}')">View</button>
+          <button class="btn green" onclick="grantAdmin('${c.id}',${!c.is_admin})">${c.is_admin?'Revoke Admin':'Make Admin'}</button>
+        </div></td>
+      </tr>`).join('')
+    : `<tr><td colspan="6"><div class="empty"><span>👥</span><p>No clients yet</p></div></td></tr>`;
+}
+function filterClients(q) {
+  const filtered = allClients.filter(c=>[c.full_name,c.business_name].some(v=>v?.toLowerCase().includes(q.toLowerCase())));
+  renderClients(filtered);
+}
+async function grantAdmin(userId, makeAdmin) {
+  if (!confirm(`${makeAdmin?'Grant':'Revoke'} admin access for this user?`)) return;
+  const { error } = await getSB().from('profiles').update({ is_admin: makeAdmin }).eq('id',userId);
+  if (error) { showToast('Error: '+error.message,'error'); return; }
+  showToast(makeAdmin?'Admin access granted!':'Admin access revoked','info');
+  await logAction(makeAdmin?'grant_admin':'revoke_admin','profile',userId);
+  await loadClients();
+}
+async function viewClient(id) {
+  const c = allClients.find(x=>x.id===id);
+  if (!c) return;
+  alert(`Client: ${c.full_name||'—'}\nBusiness: ${c.business_name||'—'}\nJoined: ${formatDate(c.created_at)}`);
+}
+
+// ── SUBSCRIPTIONS ──────────────────────────────────────────────
+async function loadSubs() {
+  const { data } = await getSB().from('subscriptions').select('*, profiles(full_name,business_name), plans(name,price_da)').order('created_at',{ascending:false});
+  const body = document.getElementById('subs-body');
+  if (!body||!data) return;
+  body.innerHTML = data.length
+    ? data.map(s=>`<tr>
+        <td class="td-main">${s.profiles?.full_name||'—'}</td>
+        <td>${s.plans?.name||'—'}</td>
+        <td><span class="badge ${s.status}">${s.status}</span></td>
+        <td>${formatDate(s.started_at)}</td>
+        <td>${formatDate(s.expires_at)||'—'}</td>
+        <td><div class="btn-row">
+          <select style="font-size:11px;background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--sub);border-radius:6px;padding:4px 8px;cursor:pointer" onchange="updateSubStatus('${s.id}',this.value)">
+            <option value="">Change...</option>
+            <option value="active">Active</option><option value="trial">Trial</option>
+            <option value="cancelled">Cancelled</option><option value="expired">Expired</option>
+          </select>
+        </div></td>
+      </tr>`).join('')
+    : `<tr><td colspan="6"><div class="empty"><span>💳</span><p>No subscriptions</p></div></td></tr>`;
+}
+async function updateSubStatus(id, status) {
+  if (!status) return;
+  await getSB().from('subscriptions').update({ status }).eq('id',id);
+  showToast('Subscription updated!','success');
+  await loadSubs();
+}
+
+// ── LOGS ───────────────────────────────────────────────────────
+async function loadLogs() {
+  const { data } = await getSB().from('admin_logs').select('*, profiles(full_name)').order('created_at',{ascending:false}).limit(50);
+  const el = document.getElementById('logs-list');
+  if (!el||!data) return;
+  const icons = {approve_review:'✅',reject_review:'❌',activate_partner:'🤝',deactivate_partner:'⏸️',grant_admin:'🔑',revoke_admin:'🚫'};
+  el.innerHTML = data.length
+    ? data.map(l=>`<div class="log-item">
+        <span class="log-icon">${icons[l.action]||'📋'}</span>
+        <div><div class="log-action">${l.profiles?.full_name||'Admin'} · ${l.action.replace(/_/g,' ')} ${l.target_type?'('+l.target_type+')':''}</div>
+        <div class="log-time">${formatDate(l.created_at)}</div></div>
+      </div>`).join('')
+    : `<div class="empty" style="padding:24px"><span>📋</span><p>No logs yet</p></div>`;
+}
+
+async function logAction(action, type, id) {
+  if (!adminUser) return;
+  await getSB().from('admin_logs').insert({
+    admin_id: adminUser.id, action, target_type: type, target_id: id
+  }).catch(()=>{});
+}
+
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
+document.addEventListener('keydown', e => { if(e.key==='Enter' && document.getElementById('loginWrap').style.display!=='none') adminLogin(); });
+</script>
+</body>
+</html>

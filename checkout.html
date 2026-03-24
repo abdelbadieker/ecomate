@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>EcoMate — Choose Your Plan</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--p:#1E3A8A;--s:#2563EB;--g:#10B981;--bg:#07101f;--bgs:#0a1628;
+  --card:rgba(255,255,255,.04);--border:rgba(255,255,255,.09);
+  --text:#fff;--sub:rgba(255,255,255,.5);--muted:rgba(255,255,255,.25)}
+[data-theme="light"]{--bg:#F8FAFC;--bgs:#F1F5F9;--card:rgba(255,255,255,.9);
+  --border:rgba(15,23,42,.1);--text:#0F172A;--sub:#475569;--muted:#94A3B8}
+html,body{min-height:100vh;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
+nav{display:flex;align-items:center;justify-content:space-between;padding:20px 6%;
+  border-bottom:1px solid var(--border);background:var(--bgs)}
+.logo{font-family:'Poppins',sans-serif;font-weight:800;font-size:22px;
+  background:linear-gradient(135deg,var(--s),#1d4ed8);-webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;background-clip:text}
+.logo span{background:linear-gradient(135deg,var(--s),var(--g));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.nav-r{display:flex;gap:12px;align-items:center}
+.nav-user{font-size:13px;color:var(--sub)}
+.btn-out{font-size:12px;padding:7px 16px;border-radius:8px;background:var(--card);
+  border:1px solid var(--border);color:var(--sub);cursor:pointer;transition:all .2s}
+.btn-out:hover{color:var(--text)}
+
+.main{max-width:1100px;margin:0 auto;padding:60px 24px}
+.hero-t{text-align:center;margin-bottom:56px}
+.tag{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--s);margin-bottom:16px}
+.tag::before{content:'';width:14px;height:1.5px;background:var(--s)}
+.hero-t h1{font-family:'Poppins',sans-serif;font-size:clamp(28px,4vw,46px);font-weight:900;
+  letter-spacing:-.03em;color:var(--text);margin-bottom:12px}
+.hero-t h1 span{background:linear-gradient(135deg,var(--s),#93c5fd);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-t p{font-size:16px;color:var(--sub);max-width:420px;margin:0 auto}
+
+/* Plans */
+.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:56px}
+.plan{background:var(--card);border:2px solid var(--border);border-radius:22px;
+  padding:34px 28px;position:relative;transition:all .25s;cursor:pointer}
+.plan:hover{border-color:rgba(37,99,235,.4);transform:translateY(-4px);
+  box-shadow:0 24px 60px rgba(37,99,235,.1)}
+.plan.selected{border-color:var(--s);box-shadow:0 0 0 3px rgba(37,99,235,.15),0 24px 60px rgba(37,99,235,.12)}
+.plan.popular{background:linear-gradient(145deg,rgba(30,58,138,.85),rgba(10,20,38,.95));
+  border-color:rgba(37,99,235,.35)}
+.plan.popular.selected{border-color:var(--g)}
+.pop-badge{position:absolute;top:-13px;left:50%;transform:translateX(-50%);
+  background:linear-gradient(135deg,var(--g),#0d9488);color:#fff;
+  font-family:'Poppins',sans-serif;font-size:10px;font-weight:800;
+  padding:4px 16px;border-radius:100px;letter-spacing:.06em;text-transform:uppercase;
+  box-shadow:0 4px 14px rgba(16,185,129,.35)}
+.plan-name{font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;
+  color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px}
+.plan-price{font-family:'Poppins',sans-serif;font-size:44px;font-weight:900;
+  letter-spacing:-.04em;color:var(--text);line-height:1;margin-bottom:4px}
+.plan.popular .plan-price,.plan.popular .plan-name{color:#fff}
+.plan-price sup{font-size:18px;font-weight:700;vertical-align:top;margin-top:8px;display:inline-block}
+.plan-period{font-size:12px;color:var(--muted);margin-bottom:26px;display:block}
+.plan.popular .plan-period{color:rgba(255,255,255,.4)}
+.plan-features{display:flex;flex-direction:column;gap:10px;margin-bottom:26px}
+.plan-features li{font-size:13px;color:var(--sub);display:flex;align-items:flex-start;gap:8px;list-style:none}
+.plan-features li::before{content:'✓';color:var(--g);font-weight:700;flex-shrink:0}
+.plan.popular .plan-features li{color:rgba(255,255,255,.8)}
+.plan-select{width:100%;padding:11px;border-radius:11px;font-family:'Poppins',sans-serif;
+  font-size:14px;font-weight:700;border:1.5px solid var(--border);color:var(--sub);
+  background:transparent;cursor:pointer;transition:all .2s}
+.plan-select:hover{border-color:var(--s);color:var(--text)}
+.plan.popular .plan-select{background:linear-gradient(135deg,var(--g),#0d9488);
+  border-color:transparent;color:#fff}
+.plan.selected .plan-select{background:linear-gradient(135deg,var(--s),#1d4ed8);
+  border-color:transparent;color:#fff}
+
+/* Checkout form */
+.checkout-box{background:var(--card);border:1px solid var(--border);border-radius:22px;
+  overflow:hidden;display:none}
+.checkout-box.show{display:block}
+.co-hdr{padding:24px 32px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between}
+.co-hdr h3{font-family:'Poppins',sans-serif;font-size:18px;font-weight:800;color:var(--text)}
+.co-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(16,185,129,.1);
+  border:1px solid rgba(16,185,129,.2);border-radius:100px;padding:5px 14px;
+  font-size:12px;font-weight:700;color:var(--g)}
+.co-body{display:grid;grid-template-columns:1fr 1fr;gap:0}
+.co-left{padding:32px;border-right:1px solid var(--border)}
+.co-right{padding:32px;background:rgba(37,99,235,.03)}
+.co-section{margin-bottom:24px}
+.co-section h4{font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;
+  color:var(--sub);letter-spacing:.08em;text-transform:uppercase;margin-bottom:16px}
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+label{font-size:11.5px;font-weight:600;color:var(--muted);letter-spacing:.07em;text-transform:uppercase}
+.iw{position:relative}
+.ic{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none;opacity:.35}
+input[type=text],input[type=email],select{
+  width:100%;padding:12px 14px 12px 42px;background:rgba(255,255,255,.05);
+  border:1.5px solid var(--border);border-radius:11px;font-size:14px;
+  font-family:'Inter',sans-serif;color:var(--text);outline:none;transition:all .2s}
+[data-theme="light"] input[type=text],[data-theme="light"] input[type=email],[data-theme="light"] select{background:#F8FAFC;border-color:#E2E8F0;}
+input::placeholder{color:var(--muted)}
+input:focus,select:focus{border-color:var(--s);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+select option{background:#0a1628;color:#fff}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pay-methods{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+.pay-opt{display:flex;align-items:center;gap:12px;padding:14px 16px;
+  background:rgba(255,255,255,.03);border:1.5px solid var(--border);
+  border-radius:12px;cursor:pointer;transition:all .2s}
+.pay-opt.sel{border-color:var(--s);background:rgba(37,99,235,.07)}
+.pay-opt input[type=radio]{accent-color:var(--s);width:16px;height:16px}
+.pay-opt label{font-size:14px;font-weight:600;color:var(--sub);cursor:pointer;margin:0;
+  letter-spacing:0;text-transform:none;font-size:14px}
+.pay-opt.sel label{color:var(--text)}
+.pay-icon{font-size:20px}
+.summary{background:rgba(37,99,235,.06);border:1px solid rgba(37,99,235,.15);
+  border-radius:14px;padding:20px}
+.sum-row{display:flex;justify-content:space-between;align-items:center;
+  font-size:13px;color:var(--sub);margin-bottom:10px}
+.sum-row:last-child{margin-bottom:0;padding-top:10px;border-top:1px solid var(--border);
+  font-size:15px;font-weight:700;color:var(--text)}
+.sum-plan{font-family:'Poppins',sans-serif;font-size:16px;font-weight:800;
+  color:var(--text);margin-bottom:16px}
+.trial-note{font-size:12px;color:var(--g);margin-top:10px;text-align:center}
+.btn-pay{width:100%;padding:15px;border-radius:13px;font-family:'Poppins',sans-serif;
+  font-size:16px;font-weight:700;color:#fff;background:linear-gradient(135deg,var(--g),#0d9488);
+  border:none;cursor:pointer;transition:all .25s;margin-top:20px;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  box-shadow:0 4px 20px rgba(16,185,129,.3)}
+.btn-pay:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(16,185,129,.45)}
+.btn-pay:disabled{opacity:.6;transform:none;cursor:not-allowed}
+.spin{width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.3);
+  border-top-color:#fff;animation:spin .7s linear infinite;display:none}
+.btn-pay.loading .spin{display:block}.btn-pay.loading .bt{display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+.secure{display:flex;align-items:center;justify-content:center;gap:6px;
+  font-size:12px;color:var(--muted);margin-top:10px}
+.err{display:none;align-items:center;gap:8px;background:rgba(239,68,68,.08);
+  border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:11px 14px;
+  font-size:13px;color:#fca5a5;margin-top:12px}
+.err.show{display:flex}
+
+/* Success overlay */
+.success-overlay{display:none;position:fixed;inset:0;background:rgba(7,16,31,.85);
+  backdrop-filter:blur(20px);z-index:1000;align-items:center;justify-content:center}
+.success-overlay.show{display:flex}
+.suc-box{background:#0a1628;border:1px solid rgba(255,255,255,.08);border-radius:24px;
+  padding:52px 48px;text-align:center;max-width:480px;width:90%}
+.suc-icon{width:90px;height:90px;border-radius:50%;background:rgba(16,185,129,.1);
+  border:2px solid rgba(16,185,129,.3);display:flex;align-items:center;
+  justify-content:center;font-size:40px;margin:0 auto 24px;
+  animation:pop .6s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes pop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+.suc-box h2{font-family:'Poppins',sans-serif;font-size:26px;font-weight:800;color:#fff;margin-bottom:10px}
+.suc-box p{font-size:14px;color:rgba(255,255,255,.5);line-height:1.7;margin-bottom:28px}
+.btn-dash{display:inline-flex;align-items:center;gap:8px;padding:14px 32px;
+  border-radius:12px;font-family:'Poppins',sans-serif;font-size:15px;font-weight:700;
+  color:#fff;background:linear-gradient(135deg,var(--s),#1d4ed8);
+  box-shadow:0 0 28px rgba(37,99,235,.4);cursor:pointer;border:none;transition:all .25s}
+.btn-dash:hover{transform:translateY(-2px);box-shadow:0 0 44px rgba(37,99,235,.55)}
+
+@media(max-width:900px){.plans{grid-template-columns:1fr}.co-body{grid-template-columns:1fr}.co-left{border-right:none;border-bottom:1px solid var(--border)}.frow{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<nav>
+  <div class="logo">Eco<span>Mate</span></div>
+  <div class="nav-r">
+    <span class="nav-user" id="nav-user">Loading...</span>
+    <button class="btn-out" onclick="sb.auth.signOut().then(()=>location.href='index.html')">Sign Out</button>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="hero-t">
+    <div class="tag">Pricing</div>
+    <h1>Choose your <span>growth plan.</span></h1>
+    <p>No hidden fees. No contracts. Cancel anytime.</p>
+  </div>
+
+  <div class="plans">
+    <!-- Starter -->
+    <div class="plan" id="pl-starter" onclick="selectPlan('starter')">
+      <p class="plan-name">Starter</p>
+      <div class="plan-price">Free</div>
+      <span class="plan-period">14-day trial · no card needed</span>
+      <ul class="plan-features">
+        <li>AI Chatbot (basic)</li>
+        <li>Up to 50 orders/month</li>
+        <li>1 social channel</li>
+        <li>Product catalog (20 items)</li>
+        <li>Google Sheets export</li>
+      </ul>
+      <button class="plan-select">Get Started Free</button>
+    </div>
+    <!-- Growth -->
+    <div class="plan popular" id="pl-growth" onclick="selectPlan('growth')">
+      <span class="pop-badge">Most Popular</span>
+      <p class="plan-name">Growth</p>
+      <div class="plan-price"><sup>DA</sup>4,900</div>
+      <span class="plan-period">per month · billed monthly</span>
+      <ul class="plan-features">
+        <li>Full AI Sales System</li>
+        <li>Unlimited orders & products</li>
+        <li>All social platforms</li>
+        <li>Delivery auto-tracking</li>
+        <li>CRM & customer database</li>
+        <li>AI Growth Agent (lead outreach)</li>
+        <li>Analytics dashboard</li>
+      </ul>
+      <button class="plan-select">Start Growing →</button>
+    </div>
+    <!-- Business -->
+    <div class="plan" id="pl-business" onclick="selectPlan('business')">
+      <p class="plan-name">Business</p>
+      <div class="plan-price" style="font-size:32px">Custom</div>
+      <span class="plan-period">tailored to your scale</span>
+      <ul class="plan-features">
+        <li>Everything in Growth</li>
+        <li>Advanced AI Growth Agent</li>
+        <li>Custom lead targeting</li>
+        <li>Priority deliverability</li>
+        <li>Dedicated account manager</li>
+        <li>Custom integrations</li>
+      </ul>
+      <button class="plan-select">Contact Sales</button>
+    </div>
+  </div>
+
+  <!-- Checkout Form -->
+  <div class="checkout-box" id="checkout-box">
+    <div class="co-hdr">
+      <h3>Complete Your Order</h3>
+      <span class="co-badge" id="co-badge">Growth Plan — 4,900 DA/mo</span>
+    </div>
+    <div class="co-body">
+      <div class="co-left">
+        <div class="co-section">
+          <h4>Account Info</h4>
+          <div class="field">
+            <label>Full Name</label>
+            <div class="iw"><span class="ic">👤</span><input type="text" id="co-name" placeholder="Your full name"/></div>
+          </div>
+          <div class="field">
+            <label>Email</label>
+            <div class="iw"><span class="ic">✉️</span><input type="email" id="co-email" placeholder="you@example.com" readonly/></div>
+          </div>
+          <div class="field">
+            <label>Business Name</label>
+            <div class="iw"><span class="ic">🏪</span><input type="text" id="co-biz" placeholder="My Store DZ"/></div>
+          </div>
+          <div class="frow">
+            <div class="field">
+              <label>Phone</label>
+              <div class="iw"><span class="ic">📱</span><input type="text" id="co-phone" placeholder="+213 5XX..."/></div>
+            </div>
+            <div class="field">
+              <label>Wilaya</label>
+              <div class="iw"><span class="ic">📍</span>
+                <select id="co-wilaya">
+                  <option value="">Select Wilaya</option>
+                  <option>Alger</option><option>Oran</option><option>Constantine</option>
+                  <option>Annaba</option><option>Blida</option><option>Batna</option>
+                  <option>Sétif</option><option>Tébessa</option><option>Bouira</option>
+                  <option>Tlemcen</option><option>Béjaïa</option><option>Médéa</option>
+                  <option>Mostaganem</option><option>M'Sila</option><option>Mascara</option>
+                  <option>Biskra</option><option>Chlef</option><option>Laghouat</option>
+                  <option>Tiaret</option><option>Jijel</option><option>Skikda</option>
+                  <option>Guelma</option><option>Souk Ahras</option><option>Khenchela</option>
+                  <option>Oum el Bouaghi</option><option>Relizane</option>
+                  <option>Saïda</option><option>Sidi Bel Abbès</option><option>Aïn Témouchent</option>
+                  <option>Naâma</option><option>El Bayadh</option><option>Tindouf</option>
+                  <option>Béchar</option><option>Adrar</option><option>Ghardaïa</option>
+                  <option>Ouargla</option><option>Illizi</option><option>Tamanrasset</option>
+                  <option>Bordj Bou Arréridj</option><option>Boumerdès</option>
+                  <option>Tipaza</option><option>Aïn Defla</option><option>Tissemsilt</option>
+                  <option>Djelfa</option><option>El Oued</option><option>Mila</option>
+                  <option>Tizi Ouzou</option><option>Ain Témouchent</option>
+                  <option>El Tarf</option><option>Khenchela</option><option>Souk Ahras</option>
+                  <option>Tipaza</option><option>Mila</option><option>Aïn Defla</option>
+                  <option>Naâma</option><option>Aïn Témouchent</option><option>Ghardaïa</option>
+                  <option>Relizane</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="co-section" id="pay-section">
+          <h4>Payment Method</h4>
+          <div class="pay-methods">
+            <div class="pay-opt sel" onclick="selPay(this,'cib')">
+              <input type="radio" name="pm" checked/>
+              <span class="pay-icon">💳</span>
+              <label>CIB Card (Algerian Bank Card)</label>
+            </div>
+            <div class="pay-opt" onclick="selPay(this,'virement')">
+              <input type="radio" name="pm"/>
+              <span class="pay-icon">🏦</span>
+              <label>Bank Transfer (Virement Bancaire)</label>
+            </div>
+            <div class="pay-opt" onclick="selPay(this,'cash')">
+              <input type="radio" name="pm"/>
+              <span class="pay-icon">💵</span>
+              <label>Cash on Meeting</label>
+            </div>
+          </div>
+          <div class="err" id="co-err"><span></span></div>
+        </div>
+      </div>
+      <div class="co-right">
+        <div class="summary">
+          <div class="sum-plan" id="sum-plan">Growth Plan</div>
+          <div class="sum-row"><span>Plan</span><span id="sum-plan-name">Growth</span></div>
+          <div class="sum-row"><span>Billing</span><span>Monthly</span></div>
+          <div class="sum-row"><span>Trial</span><span style="color:var(--g)">14 days free</span></div>
+          <div class="sum-row"><span>Total Today</span><span id="sum-total" style="color:var(--g)">4,900 DA</span></div>
+        </div>
+        <p class="trial-note" id="trial-note">🎉 14-day free trial included. Cancel anytime.</p>
+        <button class="btn-pay" id="btn-pay" onclick="doPay()">
+          <span class="bt">🔐 Activate Plan →</span><div class="spin"></div>
+        </button>
+        <div class="secure">🔒 Secure & encrypted · No hidden fees</div>
+        <div style="margin-top:20px;padding:16px;background:rgba(16,185,129,.05);border:1px solid rgba(16,185,129,.15);border-radius:12px">
+          <p style="font-size:12px;color:rgba(255,255,255,.4);line-height:1.7">
+            <strong style="color:var(--g)">What happens next:</strong><br>
+            After activation, your dashboard unlocks immediately. Our team will contact you within 24h to configure your AI chatbot and connect your social channels.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Success Overlay -->
+<div class="success-overlay" id="suc-ov">
+  <div class="suc-box">
+    <div class="suc-icon">🎉</div>
+    <h2>Plan Activated!</h2>
+    <p id="suc-msg">Your <strong>Growth plan</strong> is now active. Your dashboard is unlocked and our team will contact you within 24h to set everything up.</p>
+    <button class="btn-dash" onclick="window.location.href='dashboard.html'">Go to Dashboard →</button>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script>
+let selectedPlan = null;
+let selectedPayMethod = 'cib';
+let currentUser = null;
+
+const PLANS = {
+  starter:  { name:'Starter',  price:0,    label:'Starter Plan — Free' },
+  growth:   { name:'Growth',   price:4900, label:'Growth Plan — 4,900 DA/mo' },
+  business: { name:'Business', price:null, label:'Business Plan — Custom' }
+};
+
+window.addEventListener('load', async () => {
+  if (!sb) return;
+  const user = await getUser();
+  if (!user) { window.location.href='auth.html'; return; }
+  currentUser = user;
+  document.getElementById('nav-user').textContent = user.email;
+  const profile = await getProfile(user.id);
+  if (profile) {
+    document.getElementById('co-name').value = profile.full_name || '';
+    document.getElementById('co-biz').value  = profile.business_name || '';
+    document.getElementById('co-phone').value = profile.phone || '';
+  }
+  document.getElementById('co-email').value = user.email;
+  // Check URL param
+  const p = new URLSearchParams(window.location.search).get('plan');
+  if (p && PLANS[p]) selectPlan(p);
+  else selectPlan('growth');
+});
+
+function selectPlan(plan) {
+  selectedPlan = plan;
+  document.querySelectorAll('.plan').forEach(p => p.classList.remove('selected'));
+  document.getElementById('pl-'+plan).classList.add('selected');
+  const info = PLANS[plan];
+  document.getElementById('co-badge').textContent = info.label;
+  document.getElementById('sum-plan').textContent = info.name + ' Plan';
+  document.getElementById('sum-plan-name').textContent = info.name;
+  if (plan === 'starter') {
+    document.getElementById('sum-total').textContent = 'FREE';
+    document.getElementById('sum-total').style.color = 'var(--g)';
+    document.getElementById('trial-note').textContent = '🎉 Completely free for 14 days.';
+    document.getElementById('pay-section').style.display = 'none';
+  } else if (plan === 'business') {
+    document.getElementById('sum-total').textContent = 'Custom';
+    document.getElementById('trial-note').textContent = '📞 Our team will contact you to discuss pricing.';
+    document.getElementById('pay-section').style.display = 'block';
+  } else {
+    document.getElementById('sum-total').textContent = '4,900 DA';
+    document.getElementById('sum-total').style.color = 'var(--g)';
+    document.getElementById('trial-note').textContent = '🎉 14-day free trial included. Cancel anytime.';
+    document.getElementById('pay-section').style.display = 'block';
+  }
+  document.getElementById('checkout-box').classList.add('show');
+  setTimeout(() => document.getElementById('checkout-box').scrollIntoView({behavior:'smooth',block:'start'}), 100);
+}
+
+function selPay(el, method) {
+  document.querySelectorAll('.pay-opt').forEach(p => {p.classList.remove('sel'); p.querySelector('input').checked=false;});
+  el.classList.add('sel');
+  el.querySelector('input').checked = true;
+  selectedPayMethod = method;
+}
+
+async function doPay() {
+  const errEl = document.getElementById('co-err');
+  errEl.classList.remove('show');
+  const name  = document.getElementById('co-name').value.trim();
+  const biz   = document.getElementById('co-biz').value.trim();
+  const phone = document.getElementById('co-phone').value.trim();
+  if (!name || !biz) { errEl.querySelector('span').textContent='Please fill in your name and business name.'; errEl.classList.add('show'); return; }
+  if (!selectedPlan) { errEl.querySelector('span').textContent='Please select a plan.'; errEl.classList.add('show'); return; }
+  const btn = document.getElementById('btn-pay');
+  btn.classList.add('loading'); btn.disabled = true;
+  try {
+    // Update profile
+    await sb.from('profiles').update({
+      full_name: name,
+      business_name: biz,
+      phone,
+      plan: selectedPlan,
+      plan_status: 'active',
+      plan_start: new Date().toISOString()
+    }).eq('id', currentUser.id);
+    // Record subscription
+    await sb.from('subscriptions').insert({
+      user_id: currentUser.id,
+      plan: selectedPlan,
+      amount: PLANS[selectedPlan].price || 0,
+      payment_method: selectedPayMethod,
+      status: 'active'
+    });
+    // Show success
+    document.getElementById('suc-msg').innerHTML =
+      'Your <strong>'+PLANS[selectedPlan].name+' plan</strong> is now active. Your dashboard is unlocked and our team will contact you within 24h to complete your setup.';
+    document.getElementById('suc-ov').classList.add('show');
+  } catch(e) {
+    errEl.querySelector('span').textContent = e.message || 'Something went wrong. Try again.';
+    errEl.classList.add('show');
+  }
+  btn.classList.remove('loading'); btn.disabled = false;
+}
+</script>
+</body>
+</html>

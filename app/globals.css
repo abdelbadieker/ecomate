@@ -1,0 +1,230 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── DESIGN SYSTEM ── */
+:root {
+  --p: #1E3A8A;
+  --s: #2563EB;
+  --g: #10B981;
+  --bg: #F8FAFC;
+  --dm: #07101f;
+  --dms: #0a1628;
+  --border: rgba(255,255,255,.08);
+  --bg-body: #07101f;
+  --bg-section: #0a1628;
+  --bg-card: rgba(255,255,255,.028);
+  --text-main: #FFFFFF;
+  --text-sub: rgba(255,255,255,.55);
+  --text-muted: rgba(255,255,255,.28);
+  --border-c: rgba(255,255,255,.08);
+  --card-hover: rgba(255,255,255,.05);
+  --nav-bg: rgba(7,16,31,.55);
+  --nav-scroll: rgba(7,16,31,.96);
+  --float-bg: rgba(8,18,38,.9);
+  --dash-bg: rgba(10,20,38,.92);
+  --chat-bg: rgba(10,20,38,.9);
+  --chat-msg-bot: rgba(255,255,255,.06);
+  --hsl: rgba(255,255,255,.3);
+  --track-pd: rgba(255,255,255,.12);
+  --footer-bg: rgba(5,10,20,1);
+  --theme-transition: background .35s ease, color .35s ease, border-color .35s ease;
+}
+
+[data-theme="light"] {
+  --bg-body: #F8FAFC;
+  --bg-section: #F1F5F9;
+  --bg-card: rgba(255,255,255,.9);
+  --text-main: #0F172A;
+  --text-sub: #475569;
+  --text-muted: #94A3B8;
+  --border-c: rgba(15,23,42,.1);
+  --card-hover: rgba(37,99,235,.04);
+  --nav-bg: rgba(248,250,252,.8);
+  --nav-scroll: rgba(248,250,252,.97);
+  --float-bg: rgba(255,255,255,.95);
+  --dash-bg: rgba(255,255,255,.98);
+  --chat-bg: rgba(255,255,255,.98);
+  --chat-msg-bot: rgba(15,23,42,.06);
+  --hsl: rgba(15,23,42,.4);
+  --track-pd: rgba(15,23,42,.12);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font-inter, 'Inter', sans-serif);
+  background: var(--bg-body);
+  color: var(--text-main);
+  overflow-x: hidden;
+  transition: var(--theme-transition);
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--dm); }
+::-webkit-scrollbar-thumb { background: rgba(37,99,235,.4); border-radius: 3px; }
+
+/* ── UTILS ── */
+.font-poppins { font-family: var(--font-poppins, 'Poppins', sans-serif); }
+.gradient-text {
+  background: linear-gradient(135deg, var(--s), #93c5fd);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.gradient-text-green {
+  background: linear-gradient(135deg, var(--g), #34d399);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.glass {
+  background: var(--bg-card);
+  border: 1px solid var(--border-c);
+  backdrop-filter: blur(20px);
+}
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-poppins);
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, var(--s), #1d4ed8);
+  border-radius: 12px;
+  padding: 12px 28px;
+  box-shadow: 0 0 24px rgba(37,99,235,.4);
+  transition: all .25s;
+  cursor: pointer;
+  border: none;
+  font-size: 15px;
+}
+.btn-primary:hover {
+  box-shadow: 0 0 40px rgba(37,99,235,.65);
+  transform: translateY(-2px);
+}
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-poppins);
+  font-weight: 600;
+  color: var(--text-sub);
+  background: var(--bg-card);
+  border: 1px solid var(--border-c);
+  border-radius: 12px;
+  padding: 12px 24px;
+  transition: all .25s;
+  cursor: pointer;
+  font-size: 14px;
+}
+.btn-secondary:hover {
+  background: var(--card-hover);
+  border-color: var(--s);
+  color: var(--text-main);
+}
+
+/* ── AUTH FORMS ── */
+.auth-input {
+  width: 100%;
+  padding: 12px 16px 12px 44px;
+  background: rgba(255,255,255,.05);
+  border: 1.5px solid rgba(255,255,255,.08);
+  border-radius: 11px;
+  font-size: 14px;
+  font-family: var(--font-inter);
+  color: #fff;
+  outline: none;
+  transition: all .2s;
+}
+.auth-input:focus {
+  border-color: #2563eb;
+  background: rgba(37,99,235,.07);
+  box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+}
+.auth-input::placeholder { color: rgba(255,255,255,.18); }
+
+/* ── DASHBOARD SIDEBAR ── */
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-muted);
+  transition: all .2s;
+  cursor: pointer;
+  text-decoration: none;
+}
+.sidebar-item:hover, .sidebar-item.active {
+  background: rgba(37,99,235,.1);
+  color: var(--text-main);
+}
+.sidebar-item.active { color: var(--s); }
+
+/* ── BLINK ANIMATION ── */
+@keyframes blink {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(16,185,129,.5); }
+  50% { opacity: .5; box-shadow: 0 0 0 5px rgba(16,185,129,0); }
+}
+.blink { animation: blink 2s infinite; }
+
+/* ── ARROW HOVER ── */
+.arri { transition: transform .2s; }
+a:hover .arri, button:hover .arri { transform: translateX(4px); }
+
+/* ── FLOAT ANIMATIONS (used by hero cards) ── */
+@keyframes float1 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
+@keyframes float2 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(12px)} }
+@keyframes float3 { 0%,100%{transform:translateY(0) rotate(-.3deg)} 50%{transform:translateY(-10px) rotate(.3deg)} }
+
+/* ── PARTNERS SCROLL ── */
+@keyframes pscroll-l { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+@keyframes pscroll-r { 0% { transform: translateX(-50%); } 100% { transform: translateX(0); } }
+.ptn-row-1 { animation: pscroll-l 36s linear infinite; }
+.ptn-row-2 { animation: pscroll-r 42s linear infinite; }
+.ptn-row:hover { animation-play-state: paused; }
+
+/* ── GLOW PULSE ── */
+@keyframes glow-pulse {
+  0%, 100% { transform: scale(1); opacity: .7; }
+  50% { transform: scale(1.2); opacity: 1; }
+}
+.glow-pulse { animation: glow-pulse 4s ease-in-out infinite; }
+
+/* ── LOCKED FEATURE OVERLAY ── */
+.feature-locked {
+  position: relative;
+  overflow: hidden;
+}
+.feature-locked::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(7,16,31,.7);
+  backdrop-filter: blur(4px);
+  border-radius: inherit;
+  z-index: 10;
+}
+
+/* ── ADMIN TABLE ── */
+.admin-table th {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 12px 16px;
+  text-align: left;
+}
+.admin-table td {
+  padding: 14px 16px;
+  font-size: 13.5px;
+  color: var(--text-sub);
+  border-top: 1px solid var(--border-c);
+}
+.admin-table tr:hover td { background: var(--card-hover); }
