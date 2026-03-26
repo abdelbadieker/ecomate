@@ -20,7 +20,8 @@ const planOrder = { starter: 0, growth: 1, business: 2, none: -1 }
 export default function DashboardSidebar({ profile, userEmail }: { profile: any; userEmail?: string }) {
   const pathname = usePathname()
   const router = useRouter()
-  const userPlan = profile?.plan || (profile?.is_admin ? 'business' : 'starter')
+  const rawPlan = profile?.plan || (profile?.is_admin ? 'business' : 'starter')
+  const userPlan = rawPlan.toLowerCase()
 
   function canAccess(requiredPlan: string) {
     return (planOrder[userPlan as keyof typeof planOrder] ?? 0) >= (planOrder[requiredPlan as keyof typeof planOrder] ?? 0)
@@ -115,15 +116,21 @@ export default function DashboardSidebar({ profile, userEmail }: { profile: any;
       </nav>
 
       {/* Upgrade CTA */}
-      {userPlan === 'starter' && (
+      {(userPlan === 'starter' || userPlan === 'growth') && (
         <Link href="/checkout" style={{
           background: 'linear-gradient(135deg,rgba(16,185,129,.12),rgba(37,99,235,.08))',
           border: '1px solid rgba(16,185,129,.2)',
           borderRadius: 12, padding: '14px', marginBottom: 12, display: 'block', textDecoration: 'none',
         }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#10B981', fontFamily: 'var(--font-poppins)', marginBottom: 4 }}>⚡ Upgrade to Growth</div>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,.4)', lineHeight: 1.5 }}>Unlock CRM, Analytics & AI Growth Agent</div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#fff', marginTop: 6 }}>4,900 DA/month →</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#10B981', fontFamily: 'var(--font-poppins)', marginBottom: 4 }}>
+            ⚡ {userPlan === 'starter' ? 'Upgrade to Growth' : 'Contact for Business'}
+          </div>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,.4)', lineHeight: 1.5 }}>
+            {userPlan === 'starter' ? 'Unlock CRM, Analytics & AI Growth Agent' : 'Scale with custom leads & priority support'}
+          </div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#fff', marginTop: 6 }}>
+             {userPlan === 'starter' ? '4,900 DA/month →' : 'Plan Details →'}
+          </div>
         </Link>
       )}
 

@@ -164,7 +164,7 @@ export default function SettingsPage() {
               <div>
                 <label style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '.06em', textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>Current Plan</label>
                 <div style={{ padding: '11px 16px', background: 'rgba(37,99,235,.08)', border: '1px solid rgba(37,99,235,.2)', borderRadius: 10, fontSize: 14, color: '#2563eb', fontWeight: 600 }}>
-                  {profile?.plan === 'starter' ? '⏱ Starter (Trial)' : profile?.plan === 'growth' ? '⚡ Growth' : '💎 Business'}
+                  {profile?.plan?.toLowerCase() === 'starter' ? '⏱ Starter (Trial)' : profile?.plan?.toLowerCase() === 'growth' ? '⚡ Growth' : '💎 Business'}
                 </div>
               </div>
               <button type="submit" disabled={loading} className="btn-primary" style={{ alignSelf: 'flex-start', padding: '12px 28px' }}>
