@@ -16,7 +16,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     supabase.from('admin_users').select('role').eq('user_id', user.id).single()
   ])
 
-  const isAdmin = !!admin || user.email === 'abdelbadie.kertimi1212@gmail.com'
+  const isAdmin = !!admin
 
   if (!isAdmin) {
     redirect('/dashboard')

@@ -33,7 +33,7 @@ function LoginContent() {
 
     if (user) {
       const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-      const isAdmin = profile?.role === 'admin' || user.email === 'abdelbadie.kertimi1212@gmail.com'
+      const isAdmin = profile?.role === 'admin'
       
       if (isAdmin) {
         toast.success('Welcome back, Admin!')

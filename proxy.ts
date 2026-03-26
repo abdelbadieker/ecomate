@@ -29,6 +29,11 @@ export async function proxy(request: NextRequest) {
   }
 
   const { data: { user } } = await supabase.auth.getUser()
+  const { data: profile } = user ? await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single() : { data: null }
 
   // Protected dashboard routes
   if (path.startsWith('/dashboard') && !user) {
@@ -41,14 +46,8 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(new URL('/auth/login', request.url))
     }
     
-    // Check admin role or specific founder email
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    const isAdmin = profile?.role === 'admin' || user.email === 'abdelbadie.kertimi1212@gmail.com'
+    // Check admin role
+    const isAdmin = profile?.role === 'admin'
 
     if (!isAdmin) {
       return NextResponse.redirect(new URL('/dashboard', request.url))
@@ -58,7 +57,7 @@ export async function proxy(request: NextRequest) {
   // Redirect auth pages if already logged in
   if (path.startsWith('/auth/') && user) {
     // Check if user is admin for correct redirection
-    if (user.email === 'abdelbadie.kertimi1212@gmail.com') {
+    if (profile?.role === 'admin') {
       return NextResponse.redirect(new URL('/admin', request.url))
     }
     return NextResponse.redirect(new URL('/dashboard', request.url))
