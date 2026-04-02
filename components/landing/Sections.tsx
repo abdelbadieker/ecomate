@@ -1,36 +1,45 @@
 import { Fragment } from 'react'
-import Link from 'next/link'
+import { Link } from '@/navigation'
+import { useTranslations } from 'next-intl'
+import { CheckCircle2 } from 'lucide-react'
 
 export function Integrations() {
+  const t = useTranslations('Landing.Integrations')
+  
   const cols = [
     { badge: 'All Social Platforms', title: 'Where your customers message you', pills: [['blue','Facebook'],['pink','Instagram'],['green','WhatsApp'],['tg','Telegram'],['snap','Snapchat']] },
     { badge: 'Algerian Delivery Network', title: 'Shipping partners across all wilayas', pills: [['dz','Home Delivery'],['dz','Office Pickup'],['dz','Express Delivery'],['dz','COD Ready'],['dz','58 Wilayas']] },
     { badge: 'Business Tools', title: 'Keep using the tools you love', pills: [['sheets','Google Sheets'],['sheets','Google Drive'],['gray','Excel Export'],['gray','PDF Reports']] },
   ]
+  
   const dotColors: Record<string,string> = { blue:'#1877f2', pink:'#e1306c', green:'#25d366', tg:'#229ED9', snap:'#FFBD00', dz:'#006233', sheets:'#34a853', gray:'#94a3b8' }
 
   return (
-    <div style={{ padding: '64px 5%', background: 'var(--bg-section)', transition: 'var(--theme-transition)' }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
-        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,.25)', marginBottom: 32, display: 'block' }}>
+    <div className="py-16 lg:py-24 px-6 lg:px-[8%] bg-[var(--bg-section)] transition-all">
+      <div className="max-w-7xl mx-auto text-center">
+        <span className="text-[10px] lg:text-xs font-black uppercase tracking-[0.2em] text-[var(--text-sub)] opacity-40 mb-12 block">
           Connects seamlessly with the platforms your customers already use
         </span>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1px 1fr 1px 1fr', alignItems: 'start' }}>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-0 lg:divide-x lg:divide-[var(--border-c)] rtl:lg:divide-x-reverse items-start">
           {cols.map((col, i) => (
-            <Fragment key={i}>
-              {i > 0 && <div style={{ background: 'var(--border-c)', height: '100%', minHeight: 80 }} />}
-              <div style={{ padding: '0 40px', textAlign: 'center' }}>
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(16,185,129,.08)', border: '1px solid rgba(16,185,129,.15)', borderRadius: 100, padding: '5px 14px', fontSize: 11, fontWeight: 700, color: '#10B981', marginBottom: 16 }}>✓ {col.badge}</div>
-                <div style={{ fontFamily: 'var(--font-poppins)', fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 20 }}>{col.title}</div>
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                  {col.pills.map(([color, label]) => (
-                    <span key={label} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'var(--bg-card)', border: '1px solid var(--border-c)', borderRadius: 100, padding: '7px 14px', fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: dotColors[color], flexShrink: 0 }} />{label}
-                    </span>
-                  ))}
-                </div>
+            <div key={i} className="px-4 lg:px-10 text-center">
+              <div className="inline-flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-4 py-1.5 text-[11px] font-black text-emerald-500 mb-5 uppercase tracking-wide">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                {col.badge}
               </div>
-            </Fragment>
+              <h3 className="font-poppins text-xs lg:text-sm font-black text-[var(--text-muted)] uppercase tracking-widest mb-6 px-4">
+                {col.title}
+              </h3>
+              <div className="flex justify-center items-center gap-2.5 flex-wrap">
+                {col.pills.map(([color, label]) => (
+                  <span key={label} className="inline-flex items-center gap-2 bg-[var(--bg-card)] border border-[var(--border-c)] rounded-full px-4 py-2 text-xs font-semibold text-[var(--text-muted)] shadow-sm hover:border-blue-500/30 transition-all cursor-default">
+                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: dotColors[color] }} />
+                    {label}
+                  </span>
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       </div>
@@ -39,56 +48,62 @@ export function Integrations() {
 }
 
 export function Features({ services }: { services?: any[] }) {
-  const bentosFallback = [
-    { id:'b1', cls:'1/6', icon:'🤖', iconBg:'rgba(37,99,235,.1)', title:'AI Sales Chatbot', desc:'Deployed across all your social platforms. Responds 24/7 in Arabic, French and English — handles questions, takes orders, confirms deliveries.', tag:'✓ Arabic · French · English' },
-    { id:'b2', cls:'6/9', icon:'📦', iconBg:'rgba(16,185,129,.1)', title:'Order & COD Management', desc:'All orders in one dashboard. Cash-on-delivery tracking and delivery sync — fully automatic.' },
-    { id:'b3', cls:'9/13', icon:'🛍️', iconBg:'rgba(96,165,250,.08)', title:'Product Catalog', desc:'Add products once — sync automatically across your chatbot and dashboard. Always up to date.' },
-    { id:'b5', cls:'1/7', icon:'👥', iconBg:'rgba(16,185,129,.1)', title:'CRM — Customer Relations', desc:'Every interaction, purchase history, and preference tracked automatically. Build loyalty without extra effort.' },
-    { id:'b6', cls:'7/13', icon:'🎯', iconBg:'rgba(245,158,11,.1)', title:'AI Growth Agent', desc:'Your 24/7 business development AI. Discovers potential clients, scores their fit, sends personalized outreach — all on autopilot.', tag:'✓ Runs while you sleep', tagColor:'#f59e0b' },
-    { id:'b7', cls:'1/7', icon:'📊', iconBg:'rgba(16,185,129,.1)', title:'Analytics & Sales Dashboard', desc:'Real-time revenue, top products, conversion rates — visualized clearly for better decisions every day.' },
-    { id:'b8', cls:'7/13', icon:'🚚', iconBg:'rgba(96,165,250,.08)', title:'Delivery Partner Integration', desc:'Integrated with all Algerian delivery companies. Tracking codes sync automatically, customers get live status updates across all 58 wilayas.' },
-  ]
-  const bentosClasses = ['1/6', '6/9', '9/13', '1/7', '7/13', '1/7', '7/13']
-  const bgColors = ['rgba(37,99,235,.1)', 'rgba(16,185,129,.1)', 'rgba(96,165,250,.08)', 'rgba(245,158,11,.1)']
+  const t = useTranslations('Landing.Features')
   
-  const bentos: any[] = services && services.length > 0 
+  const bentosFallback = [
+    { id:'b1', desktopCols:'col-span-12 lg:col-span-12', icon:'🤖', iconBg:'rgba(37,99,235,.15)', title: t('chatbot'), desc: t('chatbotDesc'), tag: '' },
+    { id:'b2', desktopCols:'col-span-12 lg:col-span-6', icon:'📦', iconBg:'rgba(16,185,129,.15)', title: t('order'), desc: t('orderDesc'), tag: '' },
+    { id:'b3', desktopCols:'col-span-12 lg:col-span-6', icon:'🛍️', iconBg:'rgba(96,165,250,.1)', title: t('catalog'), desc: t('catalogDesc'), tag: '' },
+    { id:'b5', desktopCols:'col-span-12 lg:col-span-6', icon:'👥', iconBg:'rgba(16,185,129,.15)', title: t('crm'), desc: t('crmDesc'), tag: '' },
+    { id:'b6', desktopCols:'col-span-12 lg:col-span-6', icon:'🎯', iconBg:'rgba(245,158,11,.15)', title: t('automation'), desc: t('automationDesc'), tag: '', tagColor:'#f59e0b' },
+  ]
+
+  const bentos = services && services.length > 0 
     ? services.map((s, i) => ({
-        id: s.id, cls: bentosClasses[i % bentosClasses.length],
+        id: s.id,
+        desktopCols: 'col-span-12 lg:col-span-6',
         icon: s.icon && (s.icon.startsWith('http') || s.icon.startsWith('/')) 
-          ? <img src={s.icon} alt="" style={{ width: 24, height: 24, objectFit: 'contain' }} /> 
+          ? <img src={s.icon} alt="" className="w-6 h-6 object-contain" /> 
           : (s.icon || '⚡'),
-        iconBg: bgColors[i % bgColors.length],
-        title: s.name, desc: s.description,
-        tag: s.tag, tagColor: s.tag_color
+        iconBg: 'rgba(37,99,235,.1)',
+        title: s.name, 
+        desc: s.description,
+        tag: s.tag, 
+        tagColor: s.tag_color
       }))
     : bentosFallback
 
   return (
-    <section id="features" style={{ padding: '100px 5%', background: 'var(--bg-section)' }}>
-      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 11, fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase', color: '#2563eb', marginBottom: 18 }}>
-        <span style={{ width: 16, height: 1.5, background: '#2563eb' }} />Everything You Need
+    <section id="features" className="py-20 lg:py-32 px-6 lg:px-[8%] bg-[var(--bg-section)]">
+      <div className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-blue-500 mb-6 px-1">
+        <span className="w-4 h-[1.5px] bg-blue-600" />
+        {t('subtitle')}
       </div>
-      <h2 style={{ fontFamily: 'var(--font-poppins)', fontSize: 'clamp(30px,3.8vw,52px)', fontWeight: 800, letterSpacing: '-.03em', color: 'var(--text-main)', marginBottom: 16, lineHeight: 1.1 }}>
-        Seven tools. <span style={{ background: 'linear-gradient(135deg,#2563eb,#93c5fd)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>One platform.</span><br />
-        <span style={{ background: 'linear-gradient(135deg,#10B981,#34d399)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Zero fragmentation.</span>
+      
+      <h2 className="font-poppins text-3xl lg:text-5xl font-black tracking-tight text-[var(--text-main)] mb-6 leading-[1.1]">
+        {t('title')}
       </h2>
-      <p style={{ fontSize: 16, color: 'var(--text-sub)', lineHeight: 1.75, maxWidth: 520, marginBottom: 60 }}>
-        Stop juggling a dozen different tools. EcoMate brings every capability into one seamless, affordable system — powered by real AI, built for real results.
+      
+      <p className="text-base lg:text-lg text-[var(--text-sub)] leading-relaxed max-w-xl mb-16 opacity-80">
+        {t('desc')}
       </p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12,1fr)', gap: 16 }}>
+      
+      <div className="grid grid-cols-12 gap-4 lg:gap-6">
         {bentos.map(b => (
-          <div key={b.id} style={{
-            gridColumn: b.cls,
-            background: 'var(--bg-card)', border: '1px solid var(--border-c)',
-            borderRadius: 20, padding: 30, position: 'relative', overflow: 'hidden',
-            transition: 'border-color .3s, transform .3s, box-shadow .3s',
-            cursor: 'default',
-          }}>
-            <div style={{ width: 46, height: 46, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, marginBottom: 18, background: b.iconBg, border: '1px solid rgba(255,255,255,.08)' }}>{b.icon}</div>
-            <h3 style={{ fontFamily: 'var(--font-poppins)', fontSize: 16, fontWeight: 700, color: 'var(--text-main)', marginBottom: 9 }}>{b.title}</h3>
-            <p style={{ fontSize: 13, color: 'var(--text-sub)', lineHeight: 1.65 }}>{b.desc}</p>
+          <div key={b.id} className={`${b.desktopCols} group bg-[var(--bg-card)] border border-[var(--border-c)] rounded-3xl p-8 lg:p-10 relative overflow-hidden transition-all hover:border-blue-500/40 hover:shadow-2xl hover:shadow-blue-500/5 hover:-translate-y-1`}>
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl mb-6 border border-white/5 shadow-inner" style={{ background: b.iconBg }}>
+              {b.icon}
+            </div>
+            <h3 className="font-poppins text-lg lg:text-xl font-bold text-[var(--text-main)] mb-3">{b.title}</h3>
+            <p className="text-sm lg:text-base text-[var(--text-sub)] leading-relaxed opacity-70">{b.desc}</p>
             {b.tag && (
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: `${b.tagColor ? `${b.tagColor}18` : 'rgba(16,185,129,.1)'}`, border: `1px solid ${b.tagColor ? `${b.tagColor}30` : 'rgba(16,185,129,.18)'}`, borderRadius: 100, padding: '3px 10px', fontSize: 11, fontWeight: 700, color: b.tagColor || '#10B981', marginTop: 14 }}>{b.tag}</div>
+              <div className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-[10px] font-black uppercase tracking-wider mt-6 border" style={{ 
+                background: b.tagColor ? `${b.tagColor}15` : 'rgba(16,185,129,.1)',
+                borderColor: b.tagColor ? `${b.tagColor}30` : 'rgba(16,185,129,.2)',
+                color: b.tagColor || '#10B981' 
+              }}>
+                {b.tag}
+              </div>
             )}
           </div>
         ))}
@@ -98,36 +113,44 @@ export function Features({ services }: { services?: any[] }) {
 }
 
 export function HowItWorks() {
+  const t = useTranslations('Landing.HowItWorks')
+  
   const steps = [
-    { n:1, icon:'📋', title:'Tell Us Your Business', desc:'Sign up and describe your activity, products, and goals. A quick onboarding call takes under 30 minutes.' },
-    { n:2, icon:'⚙️', title:'We Set Everything Up', desc:'Our team configures your AI chatbot, product catalog, and dashboard — fully customized. No tech skills needed.' },
-    { n:3, icon:'🔗', title:'Connect Your Channels', desc:'Link your social pages and delivery partner. Simple one-step connections — we guide you through every click.' },
-    { n:4, icon:'🚀', title:'Launch & Scale', desc:'Go live. Your AI handles orders 24/7, tracks every delivery, and the AI Growth Agent acquires new clients.' },
+    { n:1, icon:'📋', title: t('steps.one.title'), desc: t('steps.one.desc') },
+    { n:2, icon:'⚙️', title: t('steps.two.title'), desc: t('steps.two.desc') },
+    { n:3, icon:'🔗', title: t('steps.three.title'), desc: t('steps.three.desc') },
+    { n:4, icon:'🚀', title: t('steps.four.title'), desc: t('steps.four.desc') },
   ]
 
   return (
-    <section id="how" style={{ padding: '100px 5%' }}>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 11, fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase', color: '#2563eb', marginBottom: 18 }}>
-          <span style={{ width: 16, height: 1.5, background: '#2563eb' }} />Simple Process
+    <section id="how" className="py-20 lg:py-32 px-6 lg:px-[8%]">
+      <div className="text-center mb-16 lg:mb-24">
+        <div className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-blue-500 mb-6">
+          <span className="w-4 h-[1.5px] bg-blue-600" />
+          {t('subtitle')}
         </div>
-        <h2 style={{ fontFamily: 'var(--font-poppins)', fontSize: 'clamp(30px,3.8vw,52px)', fontWeight: 800, letterSpacing: '-.03em', color: 'var(--text-main)', marginBottom: 16, lineHeight: 1.1 }}>
-          From zero to selling <span style={{ background: 'linear-gradient(135deg,#2563eb,#93c5fd)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>in 4 steps.</span>
+        <h2 className="font-poppins text-3xl lg:text-5xl font-black tracking-tight text-[var(--text-main)] mb-6 leading-[1.1]">
+          {t('title')}
         </h2>
-        <p style={{ fontSize: 16, color: 'var(--text-sub)', lineHeight: 1.75, maxWidth: 480, margin: '0 auto 60px' }}>
-          We handle the complexity so you can focus on what matters — growing your business.
+        <p className="text-base text-[var(--text-sub)] leading-relaxed max-w-lg mx-auto opacity-70">
+          {t('registerDesc')}
         </p>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 0, position: 'relative' }}>
-        <div style={{ position: 'absolute', top: 52, left: '12%', right: '12%', height: 1, background: 'linear-gradient(90deg,transparent,var(--border-c),#2563eb,#10B981,var(--border-c),transparent)' }} />
-        {steps.map(s => (
-          <div key={s.n} style={{ padding: '0 22px', textAlign: 'center', position: 'relative', zIndex: 1 }}>
-            <div style={{ width: 104, height: 104, borderRadius: '50%', margin: '0 auto 26px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 34, position: 'relative', background: 'var(--bg-card)', border: '1.5px solid var(--border-c)' }}>
-              <div style={{ position: 'absolute', top: -4, right: -4, width: 24, height: 24, borderRadius: '50%', background: 'linear-gradient(135deg,#2563eb,#1E3A8A)', fontFamily: 'var(--font-poppins)', fontSize: 11, fontWeight: 800, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--bg-body)' }}>{s.n}</div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8 relative">
+        {/* Connection Line (Desktop) */}
+        <div className="hidden lg:block absolute top-[52px] left-[10%] right-[10%] h-[1px] bg-gradient-to-r from-transparent via-[var(--border-c)] to-transparent opacity-50 transition-all duration-1000" />
+        
+        {steps.map((s, idx) => (
+          <div key={s.n} className="text-center relative z-10 group">
+            <div className="w-24 h-24 lg:w-28 lg:h-28 rounded-full mx-auto mb-8 flex items-center justify-center text-3xl lg:text-4xl relative bg-[var(--bg-card)] border-2 border-[var(--border-c)] group-hover:border-blue-500/50 group-hover:shadow-xl group-hover:shadow-blue-500/10 transition-all duration-500">
+              <div className="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-gradient-to-br from-blue-600 to-blue-800 font-poppins text-[10px] font-black text-white flex items-center justify-center border-2 border-[var(--bg-body)]">
+                {s.n}
+              </div>
               {s.icon}
             </div>
-            <h3 style={{ fontFamily: 'var(--font-poppins)', fontSize: 15, fontWeight: 700, color: 'var(--text-main)', marginBottom: 9 }}>{s.title}</h3>
-            <p style={{ fontSize: 13, color: 'var(--text-sub)', lineHeight: 1.65 }}>{s.desc}</p>
+            <h3 className="font-poppins text-lg font-bold text-[var(--text-main)] mb-3">{s.title}</h3>
+            <p className="text-sm text-[var(--text-sub)] leading-relaxed opacity-60 px-4">{s.desc}</p>
           </div>
         ))}
       </div>
@@ -136,56 +159,92 @@ export function HowItWorks() {
 }
 
 export function DashboardPreview() {
+  const t = useTranslations('Landing.DashboardPreview')
+  
   const stats = [
-    { label:'Revenue Today', value:'127,400 DA', color:'#10B981', change:'↑ 23.4% vs yesterday' },
-    { label:'Orders Today', value:'84', color:'#2563eb', change:'↑ 12 new orders' },
-    { label:'AI Handled', value:'3,421', color:'var(--text-main)', change:'↑ 98.7% response rate' },
-    { label:'Pending COD', value:'32', color:'#f59e0b', change:'→ Awaiting delivery' },
+    { label: t('stats.revenue'), value:'127,400 DA', color:'text-emerald-500', change: t('stats.revenueChange') },
+    { label: t('stats.orders'), value:'84', color:'text-blue-500', change: t('stats.ordersChange') },
+    { label: t('stats.ai'), value:'3,421', color:'text-[var(--text-main)]', change: t('stats.aiChange') },
+    { label: t('stats.cod'), value:'32', color:'text-amber-500', change: t('stats.codChange') },
   ]
   const bars = [40,58,72,55,87,78,100]
 
   return (
-    <section id="dashboard" style={{ padding: '100px 5%', background: 'var(--bg-section)' }}>
-      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 11, fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase', color: '#2563eb', marginBottom: 18 }}>
-        <span style={{ width: 16, height: 1.5, background: '#2563eb' }} />Live Dashboard
+    <section id="dashboard" className="py-20 lg:py-32 px-6 lg:px-[8%] bg-[var(--bg-section)] overflow-hidden">
+      <div className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-blue-500 mb-6 px-1">
+        <span className="w-4 h-[1.5px] bg-blue-600" />
+        {t('subtitle')}
       </div>
-      <h2 style={{ fontFamily: 'var(--font-poppins)', fontSize: 'clamp(30px,3.8vw,52px)', fontWeight: 800, letterSpacing: '-.03em', color: 'var(--text-main)', marginBottom: 16, lineHeight: 1.1 }}>
-        Your entire business. <span style={{ background: 'linear-gradient(135deg,#2563eb,#93c5fd)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>One screen.</span>
+      <h2 className="font-poppins text-3xl lg:text-5xl font-black tracking-tight text-[var(--text-main)] mb-6 leading-[1.1]">
+        {t('title')}
       </h2>
-      <p style={{ fontSize: 16, color: 'var(--text-sub)', lineHeight: 1.75, maxWidth: 500, marginBottom: 40 }}>Real-time order tracking, revenue monitoring, and customer insights — clean and intuitive.</p>
+      <p className="text-base lg:text-lg text-[var(--text-sub)] leading-relaxed max-w-xl mb-12 opacity-70">
+        {t('desc')}
+      </p>
 
-      <div style={{ background: 'rgba(10,20,38,.92)', border: '1px solid var(--border-c)', borderRadius: 22, overflow: 'hidden', boxShadow: '0 40px 120px rgba(0,0,0,.15)' }}>
-        {/* Browser bar */}
-        <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border-c)', display: 'flex', alignItems: 'center', gap: 8 }}>
-          {['#ff5f57','#ffbd2e','#28c840'].map((c,i) => <div key={i} style={{ width: 12, height: 12, borderRadius: '50%', background: c }} />)}
-          <div style={{ marginLeft: 14, background: 'var(--bg-card)', borderRadius: 6, padding: '3px 14px', fontSize: 12, color: 'var(--text-muted)', fontFamily: 'monospace' }}>app.ecomate.dz/dashboard</div>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '190px 1fr', minHeight: 380 }}>
-          {/* Sidebar */}
-          <div style={{ borderRight: '1px solid var(--border-c)', padding: '16px 0' }}>
-            {[['📊','Dashboard',true],['📦','Orders',false],['🛍️','Products',false],['👥','Customers',false],['🤖','AI Chatbot',false],['📈','Analytics',false],['🚚','Delivery',false]].map(([icon,label,active],i) => (
-              <div key={i} style={{ padding: '9px 18px', display: 'flex', alignItems: 'center', gap: 9, fontSize: 12.5, fontWeight: 500, color: active ? 'var(--text-main)' : 'var(--text-muted)', background: active ? 'rgba(37,99,235,.08)' : 'transparent', borderRight: active ? '2px solid #2563eb' : 'none' }}>
-                <span style={{ fontSize: 15 }}>{icon as string}</span>{label as string}
-              </div>
-            ))}
+      {/* Browser Mockup */}
+      <div className="relative group mx-auto max-w-5xl">
+        <div className="absolute -inset-1 bg-gradient-to-r from-blue-600/20 to-emerald-500/20 rounded-[2.5rem] blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
+        <div className="relative bg-[#0a1426ec] border border-[var(--border-c)] rounded-[2rem] overflow-hidden shadow-2xl">
+          {/* Browser bar */}
+          <div className="px-6 py-4 border-b border-[var(--border-c)] flex items-center justify-between bg-black/20">
+            <div className="flex gap-2">
+              {['#ff5f57','#ffbd2e','#28c840'].map((c,i) => <div key={i} className="w-3 h-3 rounded-full" style={{ background: c }} />)}
+            </div>
+            <div className="bg-[var(--bg-card)] rounded-lg px-4 py-1 text-[10px] lg:text-[11px] text-[var(--text-muted)] font-mono opacity-60">
+              app.ecomate.dz/dashboard
+            </div>
+            <div className="w-12" /> {/* Spacer */}
           </div>
-          {/* Main */}
-          <div style={{ padding: 22 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 22 }}>
-              {stats.map((s,i) => (
-                <div key={i} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-c)', borderRadius: 12, padding: 16 }}>
-                  <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '.07em', textTransform: 'uppercase', marginBottom: 7 }}>{s.label}</div>
-                  <div style={{ fontFamily: 'var(--font-poppins)', fontSize: 20, fontWeight: 800, color: s.color, marginBottom: 4 }}>{s.value}</div>
-                  <div style={{ fontSize: 11, color: '#10B981' }}>{s.change}</div>
+          
+          <div className="flex flex-col lg:flex-row min-h-[400px]">
+            {/* Mock Sidebar - Hidden on mobile */}
+            <div className="hidden lg:block w-48 border-r border-[var(--border-c)] py-6">
+              {[['📊','Dashboard',true],['📦','Orders',false],['🛍️','Products',false],['👥','Customers',false],['🤖','AI Chatbot',false],['📈','Analytics',false],['🚚','Delivery',false]].map(([icon,label,active],i) => (
+                <div key={i} className={`px-5 py-2.5 flex items-center gap-3 text-[12px] font-semibold transition-all ${active ? 'text-[var(--text-main)] bg-blue-500/10 border-r-2 border-blue-500' : 'text-[var(--text-muted)] opacity-50'}`}>
+                  <span className="text-base">{icon as string}</span>{label as string}
                 </div>
               ))}
             </div>
-            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-c)', borderRadius: 12, padding: 18 }}>
-              <div style={{ fontFamily: 'var(--font-poppins)', fontSize: 13, fontWeight: 700, color: 'var(--text-main)', marginBottom: 14 }}>Weekly Revenue — دج</div>
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 7, height: 90 }}>
-                {bars.map((h,i) => (
-                  <div key={i} style={{ flex: 1, borderRadius: '4px 4px 0 0', height: `${h}%`, background: i === 4 || i === 6 ? 'linear-gradient(180deg,#10B981,rgba(16,185,129,.2))' : i === 2 || i === 5 ? 'linear-gradient(180deg,#2563eb,rgba(37,99,235,.2))' : 'rgba(37,99,235,.12)' }} />
+            
+            {/* Mock Main Content */}
+            <div className="flex-1 p-6 lg:p-8">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                {stats.map((s,i) => (
+                  <div key={i} className="bg-[var(--bg-card)] border border-[var(--border-c)] rounded-xl p-4 transition-all hover:border-blue-500/20">
+                    <div className="text-[9px] font-black uppercase tracking-wider text-[var(--text-muted)] opacity-50 mb-2 truncate">
+                      {s.label}
+                    </div>
+                    <div className={`font-poppins text-lg lg:text-xl font-black ${s.color} mb-1 truncate`}>
+                      {s.value}
+                    </div>
+                    <div className="text-[10px] text-emerald-500 font-bold">
+                      {s.change}
+                    </div>
+                  </div>
                 ))}
+              </div>
+              
+              <div className="bg-[var(--bg-card)] border border-[var(--border-c)] rounded-2xl p-6">
+                <div className="font-poppins text-xs font-black text-[var(--text-main)] mb-6 uppercase tracking-widest opacity-80">
+                  Weekly Revenue — دج
+                </div>
+                <div className="flex items-end gap-2 lg:gap-4 h-32 lg:h-40">
+                  {bars.map((h,i) => (
+                    <div 
+                      key={i} 
+                      className={`flex-1 rounded-t-lg transition-all duration-1000`} 
+                      style={{ 
+                        height: `${h}%`,
+                        background: i === 4 || i === 6 
+                          ? 'linear-gradient(180deg,#10B981,rgba(16,185,129,.1))' 
+                          : i === 2 || i === 5 
+                          ? 'linear-gradient(180deg,#2563eb,rgba(37,99,235,.1))' 
+                          : 'rgba(37,99,235,0.05)' 
+                      }} 
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -196,70 +255,98 @@ export function DashboardPreview() {
 }
 
 export function AISection() {
+  const t = useTranslations('Landing.AI')
+  
   return (
-    <section id="ai-section" style={{ padding: '100px 5%' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 80, alignItems: 'center' }}>
+    <section id="ai-section" className="py-20 lg:py-32 px-6 lg:px-[8%]">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center">
         {/* Chat mockup */}
-        <div style={{ background: 'rgba(10,20,38,.9)', border: '1px solid var(--border-c)', borderRadius: 26, overflow: 'hidden', boxShadow: '0 40px 100px rgba(0,0,0,.12)', transform: 'perspective(1000px) rotateY(-8deg) rotateX(3deg)', transition: 'transform .5s' }}>
-          <div style={{ padding: '15px 18px', background: 'var(--bg-card)', borderBottom: '1px solid var(--border-c)', display: 'flex', alignItems: 'center', gap: 11 }}>
-            <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg,#2563eb,#10B981)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17 }}>🤖</div>
-            <div>
-              <h4 style={{ fontFamily: 'var(--font-poppins)', fontSize: 13, fontWeight: 700, color: 'var(--text-main)' }}>EcoMate AI Assistant</h4>
-              <p style={{ fontSize: 11, color: '#10B981', display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 5, height: 5, borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />Online · Replies instantly</p>
-            </div>
-          </div>
-          <div style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div style={{ alignSelf: 'flex-end', background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', color: '#fff', borderRadius: '13px 13px 3px 13px', padding: '10px 13px', fontSize: 12.5, maxWidth: '83%' }}>أبغي أشوف السراويل الجديدة 👖</div>
-            <div style={{ alignSelf: 'flex-start', background: 'rgba(255,255,255,.06)', color: 'var(--text-main)', borderRadius: '13px 13px 13px 3px', padding: '10px 13px', fontSize: 12.5, border: '1px solid var(--border-c)', maxWidth: '83%' }}>
-              أهلاً! / Hello! / Bonjour! 🔥 Here are today&apos;s Baggy Jeans:
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 7, marginTop: 8 }}>
-                {[['👖','Black Baggy','3,500 DA'],['👖','Blue Wash','3,200 DA'],['👖','Cargo Grey','3,800 DA']].map(([e,n,p]) => (
-                  <div key={n} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-c)', borderRadius: 9, padding: 9, textAlign: 'center' }}>
-                    <span style={{ fontSize: 19, display: 'block', marginBottom: 3 }}>{e as string}</span>
-                    <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-sub)', display: 'block' }}>{n as string}</span>
-                    <span style={{ fontFamily: 'var(--font-poppins)', fontSize: 11, fontWeight: 800, color: '#10B981', display: 'block', marginTop: 2 }}>{p as string}</span>
-                  </div>
-                ))}
+        <div className="order-2 lg:order-1 relative group">
+          <div className="absolute -inset-4 bg-gradient-to-r from-blue-600/20 to-emerald-500/20 rounded-[3rem] blur-2xl opacity-0 group-hover:opacity-100 transition duration-1000"></div>
+          <div className="relative bg-[#0a1426e6] border border-[var(--border-c)] rounded-[2.5rem] overflow-hidden shadow-2xl lg:transform lg:perspective-[1000px] lg:-rotate-y-6 lg:rotate-x-2 hover:rotate-0 transition-transform duration-700">
+            <div className="px-5 py-4 bg-[var(--bg-card)] border-b border-[var(--border-c)] flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-emerald-500 flex items-center justify-center text-lg shadow-lg">🤖</div>
+              <div>
+                <h4 className="font-poppins text-xs lg:text-sm font-bold text-[var(--text-main)]">EcoMate AI Assistant</h4>
+                <p className="text-[10px] text-emerald-500 flex items-center gap-1.5 font-bold uppercase tracking-wider">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Online · Replies instantly
+                </p>
               </div>
             </div>
-            <div style={{ alignSelf: 'flex-end', background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', color: '#fff', borderRadius: '13px 13px 3px 13px', padding: '10px 13px', fontSize: 12.5, maxWidth: '83%' }}>Black Baggy — مقاس 32</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 9, background: 'rgba(16,185,129,.08)', border: '1px solid rgba(16,185,129,.2)', borderRadius: 9, padding: 10, fontSize: 12, fontWeight: 700, color: '#10B981' }}>
-              <span>✅</span>Order #2847 confirmed! Delivery in 2-3 days via your local carrier
+            
+            <div className="p-5 flex flex-col gap-4">
+              <div className="self-end bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-2xl rounded-tr-none px-4 py-2.5 text-xs lg:text-sm max-w-[85%] shadow-md">
+                {t('chat.userMsg1')}
+              </div>
+              
+              <div className="self-start bg-[var(--bg-card)] text-[var(--text-main)] rounded-2xl rounded-tl-none px-4 py-3 text-xs lg:text-sm border border-[var(--border-c)] max-w-[90%] shadow-sm">
+                {t('chat.aiMsg1')}
+                <div className="grid grid-cols-3 gap-2 mt-3">
+                  {[['👖','Black','3,500'],['👖','Blue','3,200'],['👖','Grey','3,800']].map(([e,n,p]) => (
+                    <div key={n} className="bg-black/20 border border-[var(--border-c)] rounded-xl p-2 text-center transition-all hover:bg-black/40">
+                      <span className="text-xl block mb-1">{e as string}</span>
+                      <span className="text-[9px] font-black uppercase text-[var(--text-sub)] block truncate">{n as string}</span>
+                      <span className="font-poppins text-[10px] font-black text-emerald-500 block mt-1">{p as string} <span className="text-[8px]">DA</span></span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="self-end bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-2xl rounded-tr-none px-4 py-2.5 text-xs lg:text-sm max-w-[85%] shadow-md">
+                {t('chat.userMsg2')}
+              </div>
+              
+              <div className="flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3.5 text-xs lg:text-sm font-bold text-emerald-500">
+                <span className="text-lg">✅</span>
+                {t('chat.orderConfirm')}
+              </div>
             </div>
-          </div>
-          <div style={{ padding: '12px 18px', borderTop: '1px solid var(--border-c)', display: 'flex', gap: 9 }}>
-            <div style={{ flex: 1, background: 'var(--bg-card)', border: '1px solid var(--border-c)', borderRadius: 9, padding: '9px 13px', fontSize: 12, color: 'var(--text-muted)' }}>Type in Arabic, French or English...</div>
-            <div style={{ width: 34, height: 34, borderRadius: 9, background: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, color: '#fff' }}>➤</div>
+            
+            <div className="p-4 border-t border-[var(--border-c)] flex gap-3 bg-black/10">
+              <div className="flex-1 bg-[var(--bg-card)] border border-[var(--border-c)] rounded-xl px-4 py-2.5 text-xs text-[var(--text-muted)] opacity-50">
+                Type in Arabic, French or English...
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg active:scale-95 transition-all">➤</div>
+            </div>
           </div>
         </div>
 
-        <div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 11, fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase', color: '#2563eb', marginBottom: 18 }}>
-            <span style={{ width: 16, height: 1.5, background: '#2563eb' }} />AI-Powered Core
+        {/* Content */}
+        <div className="order-1 lg:order-2">
+          <div className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-blue-500 mb-6 px-1">
+            <span className="w-4 h-[1.5px] bg-blue-600" />
+            {t('subtitle')}
           </div>
-          <h2 style={{ fontFamily: 'var(--font-poppins)', fontSize: 'clamp(30px,3.8vw,52px)', fontWeight: 800, letterSpacing: '-.03em', color: 'var(--text-main)', marginBottom: 16, lineHeight: 1.1 }}>
-            Your store sells <span style={{ background: 'linear-gradient(135deg,#2563eb,#93c5fd)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>while you sleep.</span>
+          <h2 className="font-poppins text-3xl lg:text-5xl font-black tracking-tight text-[var(--text-main)] mb-6 leading-[1.1]">
+            {t('title')}
           </h2>
-          <p style={{ fontSize: 16, color: 'var(--text-sub)', lineHeight: 1.75, marginBottom: 32 }}>Our AI handles the full customer journey — product discovery, order confirmation, and delivery tracking — automatically in Arabic, French, and English.</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 36 }}>
+          <p className="text-base lg:text-lg text-[var(--text-sub)] leading-relaxed mb-10 opacity-70">
+            {t('desc')}
+          </p>
+          
+          <div className="grid grid-cols-1 gap-4 mb-10">
             {[
-              { icon:'💬', iconBg:'rgba(37,99,235,.1)', title:'All Social Platforms', desc:'Deployed on Facebook Messenger, Instagram DM, WhatsApp, and more — wherever your customers are.' },
-              { icon:'🛒', iconBg:'rgba(37,99,235,.1)', title:'Interactive Shopping Inside the Chat', desc:'Customers browse products, pick size and color, add to cart, and order — all within the conversation.' },
-              { icon:'📋', iconBg:'rgba(16,185,129,.1)', title:'Auto Order Management', desc:'Every order logged instantly to your dashboard and Google Sheets with all customer details.' },
-              { icon:'🚚', iconBg:'rgba(16,185,129,.1)', title:'Delivery Auto-Tracking', desc:'Integrates with all Algerian delivery companies. Customers receive live status updates automatically.' },
+              { icon:'💬', iconBg:'rgba(37,99,235,0.15)', title: t('platformsTitle'), desc: t('platformsDesc') },
+              { icon:'🛒', iconBg:'rgba(37,99,235,0.15)', title: t('shoppingTitle'), desc: t('shoppingDesc') },
+              { icon:'📋', iconBg:'rgba(16,185,129,0.15)', title: t('orderTitle'), desc: t('orderDesc') },
+              { icon:'🚚', iconBg:'rgba(16,185,129,0.15)', title: t('trackingTitle'), desc: t('trackingDesc') },
             ].map(f => (
-              <div key={f.title} style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: 16, background: 'var(--bg-card)', border: '1px solid var(--border-c)', borderRadius: 13, transition: 'all .25s' }}>
-                <div style={{ width: 40, height: 40, borderRadius: 10, background: f.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, flexShrink: 0 }}>{f.icon}</div>
+              <div key={f.title} className="flex items-start gap-4 p-5 bg-[var(--bg-card)] border border-[var(--border-c)] rounded-2xl hover:border-blue-500/30 transition-all group">
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0 border border-white/5 group-hover:scale-110 transition-transform" style={{ background: f.iconBg }}>
+                  {f.icon}
+                </div>
                 <div>
-                  <h4 style={{ fontFamily: 'var(--font-poppins)', fontSize: 13, fontWeight: 700, color: 'var(--text-main)', marginBottom: 3 }}>{f.title}</h4>
-                  <p style={{ fontSize: 12, color: 'var(--text-sub)', lineHeight: 1.6 }}>{f.desc}</p>
+                  <h4 className="font-poppins text-sm lg:text-base font-bold text-[var(--text-main)] mb-1">{f.title}</h4>
+                  <p className="text-[13px] text-[var(--text-sub)] leading-relaxed opacity-60">{f.desc}</p>
                 </div>
               </div>
             ))}
           </div>
-          <Link href="/auth/register" className="btn-primary" style={{ fontSize: 15, padding: '15px 32px', textDecoration: 'none', display: 'inline-flex' }}>
-            See AI in Action
-            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" style={{ marginLeft: 8 }}><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          
+          <Link href="/auth/register" className="btn-primary inline-flex items-center gap-3 px-8 py-4 text-sm font-black uppercase tracking-widest shadow-xl shadow-blue-600/10 active:scale-95 transition-all">
+            {t('cta')}
+            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </Link>
         </div>
       </div>
@@ -268,10 +355,12 @@ export function AISection() {
 }
 
 export function Pricing({ plans }: { plans?: any[] }) {
+  const t = useTranslations('Landing.Pricing')
+  
   const fallbackPlans = [
-    { slug:'starter', name:'Starter', price:'Free', period:'14-day trial · no card needed', features:['AI Chatbot (basic)','Up to 50 orders/month','1 social channel','Product catalog (20 items)','Google Sheets export'], cta:'Get Started Free', href:'/auth/register' },
-    { slug:'growth', name:'Growth', price:'4,900', period:'per month · billed monthly', features:['Full AI Sales System','Unlimited orders & products','All social platforms','Delivery auto-tracking','CRM & customer database','AI Growth Agent (lead outreach)','Analytics dashboard'], cta:'Start Growing →', href:'/auth/register', popular:true },
-    { slug:'business', name:'Business', price:'Custom', period:'tailored to your scale', features:['Everything in Growth','Advanced AI Growth Agent','Custom lead targeting','Priority deliverability','Dedicated account manager','Custom integrations'], cta:'Contact Sales', href:'mailto:contact@ecomate.dz' },
+    { slug:'starter', name: t('starter'), price: t('priceFree'), period: t('periodStarter'), features:[t('featureChatbot'), t('featureOrders50'), t('feature1Channel'), t('feature20Items'), t('featureSheets')], cta: t('Nav.register'), href:'/auth/register' },
+    { slug:'growth', name: t('growth'), price:'4,900', period: t('periodMonthly'), features:[t('featureFullAI'), t('featureUnlimited'), t('featureAllPlatforms'), t('featureTracking'), t('featureCRM'), t('featureGrowthAgent'), t('featureAnalytics')], cta: t('Nav.register'), href:'/auth/register', popular:true },
+    { slug:'business', name: t('business'), price: t('priceCustom'), period: t('periodTailored'), features:[t('featureFullAI'), t('featureGrowthAgent'), 'Custom lead targeting', 'Priority deliverability', 'Dedicated account manager', 'Custom integrations'], cta: t('Nav.login'), href:'mailto:contact@ecomate.dz' },
   ]
   const activePlans = plans && plans.length > 0 
     ? plans.map(p => ({
@@ -287,42 +376,51 @@ export function Pricing({ plans }: { plans?: any[] }) {
     : fallbackPlans
 
   return (
-    <section id="pricing" style={{ padding: '100px 5%', background: 'var(--bg-section)' }}>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 11, fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase', color: '#2563eb', marginBottom: 18 }}>
-          <span style={{ width: 16, height: 1.5, background: '#2563eb' }} />Transparent Pricing
+    <section id="pricing" className="py-20 lg:py-32 px-6 lg:px-[8%] bg-[var(--bg-section)]">
+      <div className="text-center mb-16 lg:mb-20">
+        <div className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-blue-500 mb-6">
+          <span className="w-4 h-[1.5px] bg-blue-600" />
+          {t('subtitle')}
         </div>
-        <h2 style={{ fontFamily: 'var(--font-poppins)', fontSize: 'clamp(30px,3.8vw,52px)', fontWeight: 800, letterSpacing: '-.03em', color: 'var(--text-main)', marginBottom: 16, lineHeight: 1.1 }}>
-          Plans that <span style={{ background: 'linear-gradient(135deg,#2563eb,#93c5fd)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>scale with you.</span>
+        <h2 className="font-poppins text-3xl lg:text-5xl font-black tracking-tight text-[var(--text-main)] mb-6 leading-[1.1]">
+          {t('title')}
         </h2>
-        <p style={{ fontSize: 16, color: 'var(--text-sub)', lineHeight: 1.75, margin: '0 auto 56px', maxWidth: 400 }}>No hidden fees. No contracts. Start free for 14 days.</p>
+        <p className="text-base text-[var(--text-sub)] opacity-70 max-w-sm mx-auto">{t('desc')}</p>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 18, maxWidth: 960, margin: '0 auto' }}>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 max-w-6xl mx-auto">
         {activePlans.map((p: any) => (
-          <div key={p.slug} style={{ position: 'relative', border: `1px solid ${p.popular ? 'rgba(37,99,235,.35)' : 'var(--border-c)'}`, borderRadius: 22, padding: '34px 28px', background: p.popular ? 'linear-gradient(145deg,rgba(30,58,138,.85),rgba(10,20,38,.95))' : 'var(--bg-card)', transition: 'transform .25s, box-shadow .25s' }}>
-            {p.popular && <span style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: 'linear-gradient(135deg,#10B981,#0d9488)', color: '#fff', fontFamily: 'var(--font-poppins)', fontSize: 10, fontWeight: 800, padding: '4px 14px', borderRadius: 100, letterSpacing: '.06em', textTransform: 'uppercase', boxShadow: '0 4px 14px rgba(16,185,129,.35)' }}>Most Popular</span>}
-            <div style={{ fontFamily: 'var(--font-poppins)', fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 9 }}>{p.name}</div>
-            <div style={{ fontFamily: 'var(--font-poppins)', fontSize: 44, fontWeight: 900, letterSpacing: '-.04em', color: 'var(--text-main)', lineHeight: 1, marginBottom: 4 }}>
-              {p.price !== 'Free' && p.price !== 'Custom' && <sup style={{ fontSize: 18, fontWeight: 700, verticalAlign: 'top', marginTop: 8, display: 'inline-block' }}>DA</sup>}
+          <div key={p.slug} className={`relative flex flex-col border rounded-[2rem] p-8 lg:p-10 transition-all duration-300 hover:-translate-y-2 ${p.popular ? 'border-blue-500/50 bg-gradient-to-b from-blue-900/40 to-[var(--bg-card)] shadow-2xl shadow-blue-500/10' : 'border-[var(--border-c)] bg-[var(--bg-card)]'}`}>
+            {p.popular && (
+              <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-poppins text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-lg shadow-emerald-500/20">
+                Most Popular
+              </span>
+            )}
+            
+            <div className="font-poppins text-xs font-black text-[var(--text-muted)] uppercase tracking-widest mb-4 opacity-60">
+              {p.name}
+            </div>
+            
+            <div className="font-poppins text-4xl lg:text-5xl font-black tracking-tighter text-[var(--text-main)] mb-2 flex items-start">
+              {p.price !== 'Free' && p.price !== 'Custom' && <span className="text-xl mt-2 mr-1">DA</span>}
               {p.price}
             </div>
-            <span style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 26, display: 'block' }}>{p.period}</span>
-            <ul style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 28, listStyle: 'none', padding: 0 }}>
+            <div className="text-[11px] lg:text-xs text-[var(--text-muted)] mb-10 opacity-50">
+              {p.period}
+            </div>
+            
+            <ul className="flex-1 space-y-4 mb-10">
               {p.features.map((f: string) => (
-                <li key={f} style={{ fontSize: 13, color: p.popular ? 'rgba(255,255,255,.8)' : 'var(--text-sub)', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                  <span style={{ color: '#10B981', fontWeight: 700, flexShrink: 0 }}>✓</span>{f}
+                <li key={f} className="text-[13px] lg:text-sm text-[var(--text-sub)] flex items-start gap-3">
+                  <span className="text-emerald-500 font-bold block shrink-0 mt-0.5">✓</span>
+                  <span className="opacity-80">{f}</span>
                 </li>
               ))}
             </ul>
-            <Link href={p.href} style={{
-              display: 'block', width: '100%', padding: 12, borderRadius: 11,
-              fontFamily: 'var(--font-poppins)', fontSize: 14, fontWeight: 700, textAlign: 'center', textDecoration: 'none',
-              background: p.popular ? 'linear-gradient(135deg,#10B981,#0d9488)' : 'transparent',
-              border: p.popular ? 'none' : '1.5px solid var(--border-c)',
-              color: p.popular ? '#fff' : 'var(--text-sub)',
-              boxShadow: p.popular ? '0 4px 18px rgba(16,185,129,.3)' : 'none',
-              transition: 'all .2s',
-            }}>{p.cta}</Link>
+            
+            <Link href={p.href} className={`block w-full py-4 rounded-2xl font-poppins text-sm font-black text-center uppercase tracking-widest transition-all ${p.popular ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/20 hover:bg-blue-500' : 'bg-white/5 border border-white/10 text-[var(--text-sub)] hover:bg-white/10'}`}>
+              {p.cta}
+            </Link>
           </div>
         ))}
       </div>
@@ -331,64 +429,91 @@ export function Pricing({ plans }: { plans?: any[] }) {
 }
 
 export function CTA() {
+  const t = useTranslations('Landing.CTA')
+  
   return (
-    <section id="cta" style={{ background: 'linear-gradient(135deg,#1E3A8A,#1e3a8a 45%,#07101f 100%)', padding: '120px 5%', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
-      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 80% 50% at 50% -10%,rgba(37,99,235,.25),transparent 65%)', pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 600, height: 280, background: 'radial-gradient(ellipse,rgba(16,185,129,.12) 0%,transparent 70%)', pointerEvents: 'none' }} />
-      <h2 style={{ fontFamily: 'var(--font-poppins)', fontSize: 'clamp(36px,5vw,64px)', fontWeight: 900, letterSpacing: '-.03em', color: '#fff', lineHeight: 1.1, marginBottom: 20, position: 'relative' }}>
-        Ready to build your<br />
-        <span style={{ background: 'linear-gradient(135deg,#10B981,#34d399)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>digital business?</span>
-      </h2>
-      <p style={{ fontSize: 17, color: 'rgba(255,255,255,.5)', maxWidth: 480, margin: '0 auto 46px', lineHeight: 1.7, position: 'relative' }}>
-        Join Algerian merchants already automating their sales. Seven powerful tools. One platform. Zero complexity.
-      </p>
-      <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap', position: 'relative' }}>
-        <Link href="/auth/register" style={{ display: 'inline-flex', alignItems: 'center', gap: 9, fontFamily: 'var(--font-poppins)', fontSize: 15, fontWeight: 700, color: '#07101f', background: 'linear-gradient(135deg,#fff,#e2e8f0)', borderRadius: 12, padding: '15px 34px', boxShadow: '0 4px 24px rgba(0,0,0,.3)', transition: 'all .25s', textDecoration: 'none' }}>
-          Start Free — No Card Needed ↗
-        </Link>
-        <a href="mailto:contact@ecomate.dz" style={{ display: 'inline-flex', alignItems: 'center', gap: 9, fontFamily: 'var(--font-poppins)', fontSize: 15, fontWeight: 600, color: 'rgba(255,255,255,.8)', background: 'rgba(255,255,255,.07)', border: '1.5px solid rgba(255,255,255,.15)', borderRadius: 12, padding: '15px 30px', transition: 'all .25s', textDecoration: 'none' }}>
-          📞 Talk to Our Team
-        </a>
+    <section id="cta" className="bg-gradient-to-br from-blue-900 via-[#07101f] to-black py-24 lg:py-40 px-6 lg:px-[8%] text-center relative overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,rgba(37,99,235,0.25),transparent_65%)] pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-emerald-500/10 blur-[100px] pointer-events-none" />
+      
+      <div className="relative z-10 max-w-4xl mx-auto">
+        <h2 className="font-poppins text-4xl lg:text-7xl font-black text-white leading-[1.05] tracking-tight mb-8">
+          {t('title')}
+        </h2>
+        <p className="text-base lg:text-xl text-white/50 max-w-2xl mx-auto mb-12 leading-relaxed">
+          {t('desc')}
+        </p>
+        
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <Link href="/auth/register" className="w-full sm:w-auto flex items-center justify-center gap-3 bg-white text-[#07101f] font-poppins text-base font-black px-10 py-5 rounded-2xl shadow-2xl shadow-black/50 hover:bg-blue-50 active:scale-95 transition-all">
+            Start Free — No Card Needed
+            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </Link>
+          <a href="mailto:contact@ecomate.dz" className="w-full sm:w-auto flex items-center justify-center gap-3 bg-white/5 border border-white/10 text-white/80 font-poppins text-base font-bold px-10 py-5 rounded-2xl hover:bg-white/10 active:scale-95 transition-all">
+            Talk to Our Team 📞
+          </a>
+        </div>
+        
+        <p className="mt-12 text-[10px] lg:text-xs font-black uppercase tracking-[0.25em] text-white/20">
+          Built at University of Bouira Startup Incubator · 🇩🇿 Made in Algeria
+        </p>
       </div>
-      <p style={{ fontSize: 12, color: 'rgba(255,255,255,.2)', marginTop: 20, position: 'relative' }}>
-        Built at University of Bouira Startup Incubator · 🇩🇿 Made in Algeria
-      </p>
     </section>
   )
 }
 
 export function Footer() {
+  const t = useTranslations('Landing.Footer')
+  
   return (
-    <footer style={{ background: 'rgba(5,10,20,1)', padding: '60px 5% 30px', borderTop: '1px solid rgba(255,255,255,.08)' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 48, marginBottom: 52 }}>
-        <div>
-          <div style={{ fontFamily: 'var(--font-poppins)', fontWeight: 800, fontSize: 22, marginBottom: 15 }}>
-            <span style={{ background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Eco</span>
-            <span style={{ background: 'linear-gradient(135deg,#2563eb,#10B981)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Mate</span>
+    <footer className="bg-[#050a14] py-20 lg:py-24 px-6 lg:px-[8%] border-t border-white/5">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 mb-20 text-center lg:text-start">
+        <div className="flex flex-col items-center lg:items-start">
+          <div className="font-poppins font-black text-3xl mb-6">
+            <span className="bg-gradient-to-br from-blue-500 to-blue-600 bg-clip-text text-transparent">Eco</span>
+            <span className="bg-gradient-to-br from-emerald-400 to-emerald-500 bg-clip-text text-transparent">Mate</span>
           </div>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,.35)', lineHeight: 1.7, maxWidth: 250 }}>The all-in-one SaaS platform helping Algerian SMEs build automated, scalable digital businesses.</p>
-          <div style={{ display: 'flex', gap: 9, marginTop: 22 }}>
+          <p className="text-sm text-white/30 leading-relaxed max-w-xs mb-8">
+            {t('slogan')}
+          </p>
+          <div className="flex gap-3">
             {['📘','📸','💬','💼'].map((s,i) => (
-              <a key={i} href="#" style={{ width: 34, height: 34, borderRadius: 8, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, transition: 'all .2s', textDecoration: 'none' }}>{s}</a>
+              <a key={i} href="#" className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-lg hover:bg-blue-600 hover:border-blue-500 hover:scale-110 transition-all duration-300">
+                {s}
+              </a>
             ))}
           </div>
         </div>
+
         {[
-          { title:'Platform', links:['AI Chatbot','Order Management','Product Catalog','CRM','AI Growth Agent','Analytics'] },
-          { title:'Company', links:['About EcoMate','Our Team'] },
-          { title:'Support', links:['Contact Us','FAQs'] },
+          { title: t('colPlatform'), links:[t('about'), t('team')] },
+          { title: t('colCompany'), links:[t('contact'), t('faqs')] },
+          { title: t('colSupport'), links:['Privacy Policy', 'Terms of Service'] },
         ].map(col => (
           <div key={col.title}>
-            <h5 style={{ fontFamily: 'var(--font-poppins)', fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,.4)', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 18 }}>{col.title}</h5>
-            <ul style={{ display: 'flex', flexDirection: 'column', gap: 10, listStyle: 'none', padding: 0 }}>
-              {col.links.map(l => <li key={l}><a href="#" style={{ fontSize: 12.5, color: 'rgba(255,255,255,.28)', transition: 'color .2s', textDecoration: 'none' }}>{l}</a></li>)}
+            <h5 className="font-poppins text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-8">
+              {col.title}
+            </h5>
+            <ul className="space-y-4">
+              {col.links.map(l => (
+                <li key={l}>
+                  <a href="#" className="text-[13px] text-white/25 hover:text-blue-400 transition-colors duration-300">
+                    {l}
+                  </a>
+                </li>
+              ))}
             </ul>
           </div>
         ))}
       </div>
-      <div style={{ borderTop: '1px solid rgba(255,255,255,.08)', paddingTop: 26, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-        <p style={{ fontSize: 12, color: 'rgba(255,255,255,.35)' }}>© 2025 <span style={{ color: 'rgba(255,255,255,.6)', fontWeight: 600 }}>EcoMate</span>. All rights reserved.</p>
-        <p style={{ fontSize: 12, color: 'rgba(255,255,255,.2)' }}>🇩🇿 Made in Algeria</p>
+      
+      <div className="max-w-7xl mx-auto pt-10 border-t border-white/5 flex flex-col sm:flex-row justify-between items-center gap-6 opacity-40">
+        <p className="text-[11px] font-medium text-white/60">
+          © 2025 <span className="text-white font-black">EcoMate</span>. All rights reserved.
+        </p>
+        <p className="text-[11px] font-black uppercase tracking-widest text-white/60">
+          🇩🇿 Made in Algeria
+        </p>
       </div>
     </footer>
   )

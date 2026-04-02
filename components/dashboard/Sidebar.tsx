@@ -1,25 +1,40 @@
 'use client'
-import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { useState, useTransition } from 'react'
+import { Link, usePathname, useRouter } from '@/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { useTranslations, useLocale } from 'next-intl'
+import { motion, AnimatePresence } from 'framer-motion'
+import { X, LogOut, ChevronRight, Globe, Zap, Shield, Menu } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const navItems = [
-  { href: '/dashboard', icon: '📊', label: 'Dashboard', plan: 'starter' },
-  { href: '/dashboard/orders', icon: '📦', label: 'Orders', plan: 'starter' },
-  { href: '/dashboard/products', icon: '🛍️', label: 'Products', plan: 'starter' },
-  { href: '/dashboard/customers', icon: '👥', label: 'Customers', plan: 'growth' },
-  { href: '/dashboard/ai-chatbot', icon: '🤖', label: 'AI Chatbot', plan: 'starter' },
-  { href: '/dashboard/analytics', icon: '📈', label: 'Analytics', plan: 'growth' },
-  { href: '/dashboard/delivery', icon: '🚚', label: 'Delivery', plan: 'starter' },
-  { href: '/dashboard/settings', icon: '⚙️', label: 'Settings', plan: 'starter' },
+  { href: '/dashboard', icon: '📊', labelKey: 'dashboard', plan: 'starter' },
+  { href: '/dashboard/orders', icon: '📦', labelKey: 'orders', plan: 'starter' },
+  { href: '/dashboard/products', icon: '🛍️', labelKey: 'products', plan: 'starter' },
+  { href: '/dashboard/customers', icon: '👥', labelKey: 'customers', plan: 'growth' },
+  { href: '/dashboard/ai-chatbot', icon: '🤖', labelKey: 'ai_chatbot', plan: 'starter' },
+  { href: '/dashboard/analytics', icon: '📈', labelKey: 'analytics', plan: 'growth' },
+  { href: '/dashboard/delivery', icon: '🚚', labelKey: 'delivery', plan: 'starter' },
+  { href: '/dashboard/settings', icon: '⚙️', labelKey: 'settings', plan: 'starter' },
 ]
 
 const planOrder = { starter: 0, growth: 1, business: 2, none: -1 }
 
-export default function DashboardSidebar({ profile, userEmail }: { profile: any; userEmail?: string }) {
+interface SidebarProps {
+  profile: any;
+  userEmail?: string;
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
+}
+
+export default function DashboardSidebar({ profile, userEmail, isOpen, setIsOpen }: SidebarProps) {
+  const t = useTranslations('Sidebar')
+  const commonT = useTranslations('Common')
+  const locale = useLocale()
+  const isRtl = locale === 'ar'
   const pathname = usePathname()
   const router = useRouter()
+  const [isPending, startTransition] = useTransition()
   const rawPlan = profile?.plan || (profile?.is_admin ? 'business' : 'starter')
   const userPlan = rawPlan.toLowerCase()
 
@@ -27,87 +42,146 @@ export default function DashboardSidebar({ profile, userEmail }: { profile: any;
     return (planOrder[userPlan as keyof typeof planOrder] ?? 0) >= (planOrder[requiredPlan as keyof typeof planOrder] ?? 0)
   }
 
+  function toggleLocale() {
+    const nextLocale = locale === 'ar' ? 'en' : 'ar'
+    startTransition(() => {
+      router.replace(pathname, { locale: nextLocale })
+    })
+  }
+
   async function handleLogout() {
     const supabase = createClient()
     await supabase.auth.signOut()
-    toast.success('Signed out')
+    toast.success(t('sign_out'))
     router.push('/')
     router.refresh()
   }
 
+  const sidebarVariants = {
+    open: { x: 0, opacity: 1 },
+    closed: { x: isRtl ? '100%' : '-100%', opacity: 0 }
+  }
+
   return (
-    <aside style={{
-      width: 220, flexShrink: 0,
-      background: 'var(--bg-section)', borderRight: '1px solid var(--border-c)',
-      display: 'flex', flexDirection: 'column',
-      padding: '20px 12px',
-      position: 'sticky', top: 0, height: '100vh', overflowY: 'auto',
-    }}>
-      {/* Logo */}
-      <Link href="/" style={{
-        fontFamily: 'var(--font-poppins)', fontWeight: 800, fontSize: 20,
-        display: 'block', marginBottom: 28, paddingLeft: 8, textDecoration: 'none',
-      }}>
-        <span style={{ background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Eco</span>
-        <span style={{ background: 'linear-gradient(135deg,#2563eb,#10B981)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Mate</span>
-      </Link>
+    <>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsOpen(false)}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 lg:hidden"
+          />
+        )}
+      </AnimatePresence>
 
-      {/* User Info */}
-      <div style={{
-        background: 'var(--bg-card)', border: '1px solid var(--border-c)',
-        borderRadius: 12, padding: '12px 14px', marginBottom: 20,
-      }}>
-        <div style={{
-          width: 36, height: 36, borderRadius: '50%',
-          background: 'linear-gradient(135deg,#2563eb,#10B981)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 16, marginBottom: 8,
-        }}>
-          {(profile?.full_name?.[0] || profile?.business_name?.[0] || '👤').toUpperCase()}
-        </div>
-        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-main)', fontFamily: 'var(--font-poppins)', marginBottom: 2 }}>
-          {profile?.full_name || 'Client'}
-        </div>
-        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 2 }}>{profile?.business_name || 'My Store'}</div>
-        <div style={{ fontSize: 10, color: 'var(--text-sub)', opacity: 0.6 }}>{userEmail || profile?.email}</div>
-        <div style={{
-          marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 5,
-          background: userPlan === 'growth' ? 'rgba(16,185,129,.1)' : 'rgba(37,99,235,.1)',
-          border: `1px solid ${userPlan === 'growth' ? 'rgba(16,185,129,.2)' : 'rgba(37,99,235,.2)'}`,
-          borderRadius: 100, padding: '2px 10px', fontSize: 10, fontWeight: 700,
-          color: userPlan === 'growth' ? '#10B981' : '#2563eb',
-          textTransform: 'uppercase', letterSpacing: '.06em',
-        }}>
-          {userPlan === 'starter' ? '⏱ Trial' : userPlan === 'growth' ? '⚡ Growth' : '💎 Business'}
-        </div>
-      </div>
+      <motion.aside
+        initial={false}
+        animate={typeof window !== 'undefined' && window.innerWidth < 1024 ? (isOpen ? 'open' : 'closed') : 'open'}
+        variants={sidebarVariants}
+        className={`
+          fixed lg:sticky top-0 inset-y-0 z-50
+          ${isRtl ? 'right-0 border-l' : 'left-0 border-r'}
+          w-[280px] lg:w-[260px] flex-shrink-0
+          bg-[var(--bg-section)] border-[var(--border-c)]
+          flex flex-col h-screen overflow-y-auto
+          transition-colors duration-300
+        `}
+      >
+        <div className="flex flex-col h-full p-6">
+          {/* Header & Logo */}
+          <div className="flex items-center justify-between mb-8">
+            <Link href="/" className="font-extrabold text-2xl font-poppins tracking-tighter">
+              <span className="bg-gradient-to-br from-blue-500 to-blue-700 bg-clip-text text-transparent">Eco</span>
+              <span className="bg-gradient-to-br from-blue-500 to-emerald-500 bg-clip-text text-transparent">Mate</span>
+            </Link>
+            <button 
+              onClick={() => setIsOpen(false)}
+              className="lg:hidden p-2 hover:bg-[var(--card-hover)] rounded-full transition-colors"
+            >
+              <X className="w-5 h-5 text-[var(--text-sub)]" />
+            </button>
+          </div>
 
-      {/* Nav */}
-      <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {/* User Info Card */}
+          <div className="bg-[var(--bg-card)] border border-[var(--border-c)] rounded-2xl p-4 mb-6 shadow-sm">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-emerald-500 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-blue-500/20">
+                {(profile?.full_name?.[0] || profile?.business_name?.[0] || '👤').toUpperCase()}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-bold text-[var(--text-main)] truncate font-poppins">
+                  {profile?.full_name || commonT('client')}
+                </div>
+                <div className="text-[11px] text-[var(--text-muted)] truncate">{profile?.business_name || commonT('store')}</div>
+              </div>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className={`
+                flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider
+                ${userPlan === 'starter' ? 'bg-blue-500/10 text-blue-500 border border-blue-500/20' : 
+                  userPlan === 'growth' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 
+                  'bg-amber-500/10 text-amber-500 border border-amber-500/20'}
+              `}>
+                {userPlan === 'starter' ? (
+                  <><Zap className="w-3 h-3" /> {commonT('trial')}</>
+                ) : userPlan === 'growth' ? (
+                  <><Shield className="w-3 h-3" /> {commonT('growth')}</>
+                ) : (
+                  <><Shield className="w-3 h-3" /> {commonT('business')}</>
+                )}
+              </div>
+              
+              {/* Locale Switcher Button */}
+              <button
+                onClick={toggleLocale}
+                disabled={isPending}
+                className="flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-[var(--card-hover)] text-[10px] font-bold text-[var(--text-sub)] transition-all"
+              >
+                <Globe className={`w-3.5 h-3.5 ${isPending ? 'animate-spin' : ''}`} />
+                <span className="uppercase">{locale === 'ar' ? 'EN' : 'AR'}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Navigation */}
+          <nav className="flex-1 flex flex-col gap-1.5">
         {navItems.map(item => {
           const active = pathname === item.href
           const locked = !canAccess(item.plan)
           return (
-            <div key={item.href} style={{ position: 'relative' }}>
+            <div key={item.href} className="relative">
               {locked ? (
-                <div
-                  className="sidebar-item"
-                  style={{ opacity: .45, cursor: 'not-allowed' }}
-                  onClick={() => toast.error(`Upgrade to ${item.plan} plan to access ${item.label}`)}
+                <button
+                  type="button"
+                  onClick={() => toast.error(`Upgrade to ${item.plan} plan to access ${t(item.labelKey)}`)}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl opacity-40 cursor-not-allowed group transition-all"
                 >
-                  <span style={{ fontSize: 16 }}>{item.icon}</span>
-                  <span style={{ flex: 1 }}>{item.label}</span>
-                  <span style={{ fontSize: 10, background: 'rgba(255,255,255,.08)', borderRadius: 4, padding: '2px 6px' }}>🔒</span>
-                </div>
+                  <span className="text-xl grayscale group-hover:grayscale-0 transition-all">{item.icon}</span>
+                  <span className="flex-1 text-sm font-medium text-[var(--text-sub)] text-start">{t(item.labelKey)}</span>
+                  <Shield className="w-3.5 h-3.5 opacity-50" />
+                </button>
               ) : (
                 <Link
                   href={item.href}
-                  className={`sidebar-item ${active ? 'active' : ''}`}
-                  style={{ background: active ? 'rgba(37,99,235,.12)' : '' }}
+                  onClick={() => setIsOpen(false)}
+                  className={`
+                    flex items-center gap-3 px-4 py-3 rounded-xl transition-all group
+                    ${active ? 'bg-blue-600/10 text-blue-500' : 'text-[var(--text-sub)] hover:bg-[var(--card-hover)] hover:text-[var(--text-main)]'}
+                  `}
                 >
-                  <span style={{ fontSize: 16 }}>{item.icon}</span>
-                  <span>{item.label}</span>
-                  {active && <span style={{ width: 3, height: 18, background: '#2563eb', borderRadius: 2, marginLeft: 'auto' }} />}
+                  <span className={`text-xl ${active ? 'scale-110' : 'group-hover:scale-110'} transition-transform`}>
+                    {item.icon}
+                  </span>
+                  <span className="flex-1 text-sm font-semibold">{t(item.labelKey)}</span>
+                  {active && (
+                    <motion.div 
+                      layoutId="sidebar-active"
+                      className="w-1.5 h-1.5 rounded-full bg-blue-600 shadow-[0_0_12px_rgba(37,99,235,0.8)]" 
+                    />
+                  )}
                 </Link>
               )}
             </div>
@@ -115,34 +189,36 @@ export default function DashboardSidebar({ profile, userEmail }: { profile: any;
         })}
       </nav>
 
-      {/* Upgrade CTA */}
-      {(userPlan === 'starter' || userPlan === 'growth') && (
-        <Link href="/checkout" style={{
-          background: 'linear-gradient(135deg,rgba(16,185,129,.12),rgba(37,99,235,.08))',
-          border: '1px solid rgba(16,185,129,.2)',
-          borderRadius: 12, padding: '14px', marginBottom: 12, display: 'block', textDecoration: 'none',
-        }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#10B981', fontFamily: 'var(--font-poppins)', marginBottom: 4 }}>
-            ⚡ {userPlan === 'starter' ? 'Upgrade to Growth' : 'Contact for Business'}
-          </div>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,.4)', lineHeight: 1.5 }}>
-            {userPlan === 'starter' ? 'Unlock CRM, Analytics & AI Growth Agent' : 'Scale with custom leads & priority support'}
-          </div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#fff', marginTop: 6 }}>
-             {userPlan === 'starter' ? '4,900 DA/month →' : 'Plan Details →'}
-          </div>
-        </Link>
-      )}
+      {/* Upgrade / Footer Section */}
+      <div className="mt-8 space-y-4">
+        {(userPlan === 'starter' || userPlan === 'growth') && (
+          <Link href="/checkout" className="group block p-4 rounded-2xl bg-gradient-to-br from-blue-600/10 to-emerald-500/10 border border-blue-500/20 hover:border-blue-500/40 transition-all">
+            <div className="flex items-center gap-2 text-xs font-bold text-emerald-500 mb-1.5">
+              <Zap className="w-3.5 h-3.5 animate-pulse" />
+              {t('upgrade')}
+            </div>
+            <p className="text-[10px] text-[var(--text-sub)] leading-relaxed mb-3 opacity-80">
+              {userPlan === 'starter' ? 'Unlock CRM & Analytics.' : 'Scale with custom priority support.'}
+            </p>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-[var(--text-main)]">
+                {userPlan === 'starter' ? '4,900 DA' : 'Contact Us'}
+              </span>
+              <ChevronRight className={`w-3.5 h-3.5 transition-transform ${isRtl ? 'rotate-180 group-hover:-translate-x-1' : 'group-hover:translate-x-1'}`} />
+            </div>
+          </Link>
+        )}
 
-      {/* Logout */}
-      <button onClick={handleLogout} style={{
-        width: '100%', padding: '10px', borderRadius: 10, border: 'none',
-        background: 'rgba(255,255,255,.04)', color: 'rgba(255,255,255,.3)',
-        cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8,
-        transition: 'all .2s',
-      }}>
-        <span>🚪</span> Sign Out
-      </button>
-    </aside>
+        <button 
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-sub)] hover:bg-red-500/10 hover:text-red-500 transition-all font-semibold text-sm"
+        >
+          <LogOut className="w-4.5 h-4.5" />
+          {t('sign_out')}
+        </button>
+      </div>
+    </div>
+  </motion.aside>
+</>
   )
 }

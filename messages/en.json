@@ -1,0 +1,143 @@
+{
+  "Sidebar": {
+    "dashboard": "Dashboard",
+    "orders": "Orders",
+    "products": "Products",
+    "customers": "Customers CRM",
+    "ai_chatbot": "AI Chatbot",
+    "analytics": "Analytics",
+    "delivery": "Delivery",
+    "settings": "Settings",
+    "sign_out": "Sign Out",
+    "upgrade": "Upgrade Plan"
+  },
+  "Common": {
+    "welcome": "Welcome",
+    "client": "Client",
+    "store": "My Store",
+    "trial": "Trial",
+    "growth": "Growth",
+    "business": "Business"
+  },
+  "Landing": {
+    "Nav": {
+      "features": "Features",
+      "howItWorks": "How it Works",
+      "ai": "AI Assistant",
+      "pricing": "Pricing",
+      "login": "Login",
+      "register": "Start Free"
+    },
+    "Integrations": {
+      "subtitle": "Connect Everything",
+      "title": "Seamless integrations with the tools you already use.",
+      "desc": "Connect your store to local carriers, payment processors, and social media with just one click.",
+      "shopify": "Shopify / WooCommerce",
+      "shopifyDesc": "Sync products and orders automatically.",
+      "yalidine": "Yalidine / ZR Express",
+      "yalidineDesc": "Auto-generate tracking and labels.",
+      "sheets": "Google Sheets",
+      "sheetsDesc": "Real-time sync for order data.",
+      "ads": "Ad Platforms",
+      "adsDesc": "Track ROAS across Facebook & TikTok."
+    },
+    "Features": {
+      "subtitle": "One Platform, 7 Powerful Tools",
+      "title": "Everything you need to grow your e-commerce business at scale.",
+      "chatbot": "AI Sales Chatbot",
+      "chatbotDesc": "Automated sales on Messenger & Instagram.",
+      "order": "Order Management",
+      "orderDesc": "Centralized dashboard for all platforms.",
+      "catalog": "Product Catalog",
+      "catalogDesc": "Smart inventory tracking and sync.",
+      "crm": "CRM & Customer Database",
+      "crmDesc": "Know your customers and their history.",
+      "automation": "WhatsApp Automation",
+      "automationDesc": "Order confirmations sent automatically.",
+      "dropshipping": "Local Dropshipping",
+      "dropshippingDesc": "Connect to Algerian local suppliers.",
+      "analytics": "Advanced Analytics",
+      "analyticsDesc": "Real-time Profit/Loss tracking."
+    },
+    "HowItWorks": {
+      "subtitle": "The Process",
+      "title": "Your journey to automation in 4 simple steps.",
+      "step1Title": "Connect Your Shop",
+      "step1Desc": "Link Shopify, WooCommerce, or your social pages to EcoMate.",
+      "step2Title": "Setup AI Assistant",
+      "step2Desc": "Train your AI on products in seconds and go live.",
+      "step3Title": "Capture Orders Hub",
+      "step3Desc": "AI handles chats, confirms orders, syncs to dashboard.",
+      "step4Title": "Fulfill & Scale",
+      "step4Desc": "Print labels, track delivery, and see your profit grow.",
+      "register": "Register Your Account",
+      "registerDesc": "Start your 14-day free trial."
+    },
+    "DashboardPreview": {
+      "subtitle": "Powerful Management",
+      "title": "Control your entire empire from a single dashboard.",
+      "desc": "Real-time tracking of every conversation, every order, and every Dinar. Built for teams of 1 to 50.",
+      "statRevenue": "Weekly Revenue",
+      "statOrders": "Total Orders",
+      "statRate": "Conversion Rate",
+      "statProfit": "Estimated Profit",
+      "chartTitle": "Weekly Revenue — دج"
+    },
+    "AI": {
+      "subtitle": "AI-Powered Core",
+      "title": "Your store sells while you sleep.",
+      "desc": "Our AI handles the full customer journey — product discovery, order confirmation, and delivery tracking — automatically in Arabic, French, and English.",
+      "platformsTitle": "All Social Platforms",
+      "platformsDesc": "Messenger, Instagram DM, WhatsApp, and more — wherever your customers are.",
+      "shoppingTitle": "Shopping Inside the Chat",
+      "shoppingDesc": "Customers browse products, pick options, and order — all within the conversation.",
+      "orderTitle": "Auto Order Management",
+      "orderDesc": "Every order logged instantly to your dashboard and Google Sheets.",
+      "trackingTitle": "Delivery Auto-Tracking",
+      "trackingDesc": "Integrates with all Algerian delivery companies.",
+      "cta": "See AI in Action"
+    },
+    "Pricing": {
+      "subtitle": "Transparent Pricing",
+      "title": "Plans that scale with you.",
+      "desc": "No hidden fees. No contracts. Start free for 14 days.",
+      "starter": "Starter",
+      "growth": "Growth",
+      "business": "Business",
+      "priceFree": "Free",
+      "priceCustom": "Custom",
+      "periodStarter": "14-day trial · no card needed",
+      "periodMonthly": "per month · billed monthly",
+      "periodTailored": "tailored to your scale",
+      "featureChatbot": "AI Chatbot (basic)",
+      "featureOrders50": "Up to 50 orders/month",
+      "feature1Channel": "1 social channel",
+      "feature20Items": "Product catalog (20 items)",
+      "featureSheets": "Google Sheets export",
+      "featureFullAI": "Full AI Sales System",
+      "featureUnlimited": "Unlimited orders & products",
+      "featureAllPlatforms": "All social platforms",
+      "featureTracking": "Delivery auto-tracking",
+      "featureCRM": "CRM & customer database",
+      "featureGrowthAgent": "AI Growth Agent",
+      "featureAnalytics": "Analytics dashboard"
+    },
+    "CTA": {
+      "title": "Ready to build your digital business?",
+      "desc": "Join Algerian merchants already automating their sales. Seven powerful tools. One platform. Zero complexity.",
+      "startFree": "Start Free — No Card Needed",
+      "talkTeam": "Talk to Our Team 📞",
+      "builtAt": "Built at University of Bouira Startup Incubator · 🇩🇿 Made in Algeria"
+    },
+    "Footer": {
+      "slogan": "The all-in-one SaaS platform helping Algerian SMEs build automated, scalable digital businesses.",
+      "colPlatform": "Platform",
+      "colCompany": "Company",
+      "colSupport": "Support",
+      "about": "About EcoMate",
+      "team": "Our Team",
+      "contact": "Contact Us",
+      "faqs": "FAQs"
+    }
+  }
+}

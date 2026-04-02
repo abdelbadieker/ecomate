@@ -6,12 +6,9 @@ import toast from 'react-hot-toast'
 
 const menuItems = [
   { name: 'Overview', icon: '📊', path: '/admin' },
-  { name: 'Partners', icon: '🤝', path: '/admin/partners' },
-  { name: 'Services', icon: '🛠️', path: '/admin/services' },
-  { name: 'Plans', icon: '💎', path: '/admin/plans' },
-  { name: 'Reviews', icon: '⭐', path: '/admin/reviews' },
-  { name: 'Checkouts', icon: '💳', path: '/admin/checkouts' },
-  { name: 'Clients', icon: '👥', path: '/admin/clients' },
+  { name: 'Warehouse', icon: '📦', path: '/admin/warehouse' },
+  { name: 'EcoTrack Queue', icon: '🚚', path: '/admin/queue' },
+  { name: 'Agency CRM', icon: '👥', path: '/admin/clients' },
 ]
 
 export default function AdminSidebar({ adminName }: { adminName: string }) {
@@ -55,14 +52,15 @@ export default function AdminSidebar({ adminName }: { adminName: string }) {
           }}>Mate</span>
           <span style={{ 
             fontSize: 10, 
-            background: 'rgba(16, 185, 129, 0.1)', 
-            color: '#10b981', 
+            background: 'rgba(239, 68, 68, 0.1)', 
+            color: '#ef4444', 
             padding: '2px 8px', 
             borderRadius: 100,
             marginLeft: 8,
             verticalAlign: 'middle',
-            border: '1px solid rgba(16, 185, 129, 0.2)'
-          }}>ADMIN</span>
+            border: '1px solid rgba(239, 68, 68, 0.2)',
+            fontWeight: 700
+          }}>ADMIN MODE</span>
         </Link>
       </div>
 

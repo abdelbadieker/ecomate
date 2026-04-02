@@ -1,26 +1,33 @@
-import { redirect } from 'next/navigation'
+import { redirect } from '@/navigation'
 import { createClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/admin/Sidebar'
 
-export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminLayout({ 
+  children,
+  params
+}: { 
+  children: React.ReactNode;
+  params: Promise<{ locale: string }> | { locale: string };
+}) {
+  const { locale } = await (params instanceof Promise ? params : Promise.resolve(params));
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) {
-    redirect('/auth/login')
-  }
+  if (!user) return null
 
-  // Final role check for security using the admin_users table
-  const [{ data: profile }, { data: admin }] = await Promise.all([
-    supabase.from('profiles').select('full_name').eq('id', user.id).single(),
-    supabase.from('admin_users').select('role').eq('user_id', user.id).single()
-  ])
-
-  const isAdmin = !!admin
+  // Strict Admin Email Check for Phase 6 MVP
+  const isAdmin = user.email === 'abdelbadie.kertimi1212@gmail.com'
 
   if (!isAdmin) {
-    redirect('/dashboard')
+    redirect({ href: '/dashboard', locale: locale as any })
   }
+
+  // Still fetch profile for the display name
+  const { data: profile } = await supabase
+    .from('clients')
+    .select('agency_name')
+    .eq('id', user.id)
+    .single()
 
   return (
     <div style={{ 
@@ -29,7 +36,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       background: '#050a14',
       fontFamily: 'var(--font-inter)'
     }}>
-      <Sidebar adminName={profile?.full_name || 'Admin'} />
+      <Sidebar adminName={profile?.agency_name || 'Admin'} />
       <main style={{ 
         flex: 1, 
         padding: '36px 48px',
