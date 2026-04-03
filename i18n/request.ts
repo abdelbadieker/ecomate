@@ -2,10 +2,9 @@ import { getRequestConfig } from 'next-intl/server';
 import { routing } from '../routing';
 
 export default getRequestConfig(async ({ locale }) => {
-  const activeLocale = locale || 'ar';
-  
+  // Direct binding to the locale param and strictly formatted dynamic import
   return {
-    locale: activeLocale,
-    messages: (await import(`../messages/${activeLocale}.json`)).default
+    locale,
+    messages: (await import(`../messages/${locale}.json`)).default
   };
 });
