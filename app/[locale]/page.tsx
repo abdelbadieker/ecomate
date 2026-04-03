@@ -51,11 +51,11 @@ export default async function HomePage() {
       <Hero />
       <Integrations />
       <Partners partners={partners} />
-      <Features services={services || []} />
+      <Features />
       <HowItWorks />
       <DashboardPreview />
       <AISection />
-      <Pricing plans={plans || []} />
+      <Pricing />
       <Reviews reviews={reviews || []} />
       <CTA />
       <Footer />
