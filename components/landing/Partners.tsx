@@ -1,69 +1,76 @@
+'use client'
+import { useTranslations, useLocale } from 'next-intl'
+
 export default function Partners({ partners }: { partners: any[] }) {
+  const t = useTranslations('Landing.Partners')
+  const locale = useLocale()
+  const isRtl = locale === 'ar'
+
   const row1 = partners.filter(p => p.row_num === 1)
   const row2 = partners.filter(p => p.row_num === 2)
 
-  function card(p: any) {
+  function PartnerCard(p: any) {
     return (
-      <div key={p.id} style={{
-        display: 'inline-flex', alignItems: 'center', gap: 12,
-        padding: '13px 20px',
-        background: 'var(--bg-card)', border: '1px solid var(--border-c)',
-        borderRadius: 14, whiteSpace: 'nowrap', flexShrink: 0,
-        opacity: p.is_live ? 1 : 0.55,
-        position: 'relative', overflow: 'hidden',
-        transition: 'border-color .3s, transform .25s',
-        cursor: 'default',
-      }}>
-        {!p.is_live && (
-          <span style={{ position: 'absolute', top: 6, right: 8, fontSize: 8, fontWeight: 800, letterSpacing: '.1em', color: 'rgba(245,158,11,.7)' }}>SOON</span>
-        )}
-        <div style={{ width: 40, height: 40, borderRadius: 11, background: 'rgba(255,255,255,.06)', border: '1px solid var(--border-c)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>
+      <div key={p.id} className="inline-flex items-center gap-3.5 px-6 py-3.5 bg-white/[0.03] border border-white/10 rounded-2xl whitespace-nowrap flex-shrink-0 hover:border-blue-500/30 hover:bg-white/[0.05] transition-all group">
+        <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center p-2 group-hover:scale-110 transition-transform">
           {p.logo?.startsWith('http') ? (
-            <img src={p.logo} alt={p.name} style={{ width: 22, height: 22, borderRadius: 4, objectFit: 'contain' }} />
-          ) : p.logo}
+            <img src={p.logo} alt={p.name} className="w-full h-full object-contain filter grayscale group-hover:grayscale-0 transition-all" />
+          ) : (
+            <span className="text-xl">{p.logo}</span>
+          )}
         </div>
         <div>
-          <span style={{ fontFamily: 'var(--font-poppins)', fontSize: 13, fontWeight: 700, color: 'var(--text-main)', display: 'block', lineHeight: 1.25 }}>{p.name}</span>
-          <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--text-muted)', display: 'block', marginTop: 2 }}>{p.category}</span>
+          <span className="block text-[14px] font-bold text-white/90 font-poppins leading-tight">{p.name}</span>
+          <span className="block text-[10px] font-bold text-white/30 uppercase tracking-wider mt-0.5">{p.category}</span>
         </div>
+        {!p.is_live && (
+          <span className="ml-2 px-1.5 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/20 text-[8px] font-black text-amber-500/80 uppercase tracking-tighter">Soon</span>
+        )}
       </div>
     )
   }
 
   return (
-    <div style={{ padding: '56px 0 52px', borderTop: '1px solid var(--border-c)', borderBottom: '1px solid var(--border-c)', background: 'var(--bg-body)', overflow: 'hidden', position: 'relative' }}>
+    <section className="py-20 border-y border-white/5 bg-[#01050a] overflow-hidden relative">
       {/* Header */}
-      <div style={{ textAlign: 'center', padding: '0 5% 40px' }}>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 11, fontWeight: 700, letterSpacing: '.13em', textTransform: 'uppercase', color: 'var(--s)', marginBottom: 12 }}>
-          <span style={{ width: 18, height: 1.5, background: 'var(--s)', display: 'block' }} />
-          Our Ecosystem
-          <span style={{ width: 18, height: 1.5, background: 'var(--s)', display: 'block' }} />
+      <div className="max-w-4xl mx-auto text-center px-6 mb-12">
+        <div className="inline-flex items-center gap-3 text-[11px] font-black uppercase tracking-[0.2em] text-blue-500 mb-4">
+          <span className="w-10 h-[1.5px] bg-blue-500/30" />
+          {t('subtitle')}
+          <span className="w-10 h-[1.5px] bg-blue-500/30" />
         </div>
-        <h2 style={{ fontFamily: 'var(--font-poppins)', fontSize: 'clamp(22px,2.6vw,30px)', fontWeight: 800, letterSpacing: '-.02em', color: 'var(--text-main)', marginBottom: 8, lineHeight: 1.15 }}>
-          Growing together with{' '}
-          <span style={{ background: 'linear-gradient(135deg,#2563eb,#93c5fd)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>trusted partners.</span>
+        <h2 className="text-3xl md:text-4xl font-black font-poppins tracking-tighter text-white mb-4 leading-tight">
+          {t.rich('title', {
+            spanTag: (chunks) => <span className="bg-gradient-to-r from-blue-500 to-blue-300 bg-clip-text text-transparent">{chunks}</span>
+          })}
         </h2>
-        <p style={{ fontSize: 14, color: 'var(--text-muted)', fontWeight: 500 }}>Strategic alliances across logistics, technology, finance and beyond — 🇩🇿 Algeria</p>
+        <p className="text-white/40 text-sm font-medium">{t('desc')}</p>
       </div>
 
-      {/* Scroll tracks */}
-      <div style={{ position: 'relative', overflow: 'hidden' }}>
-        {/* Fade edges */}
-        <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: 160, background: 'linear-gradient(90deg,var(--bg-body),transparent)', zIndex: 2, pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', top: 0, bottom: 0, right: 0, width: 160, background: 'linear-gradient(-90deg,var(--bg-body),transparent)', zIndex: 2, pointerEvents: 'none' }} />
+      {/* Marquee Tracks */}
+      <div className="relative">
+        {/* Gradient Fades */}
+        <div className="absolute inset-y-0 left-0 w-32 md:w-60 bg-gradient-to-r from-[#01050a] to-transparent z-10 pointer-events-none" />
+        <div className="absolute inset-y-0 right-0 w-32 md:w-60 bg-gradient-to-l from-[#01050a] to-transparent z-10 pointer-events-none" />
 
-        {/* Row 1 */}
-        <div className="ptn-row" style={{ display: 'flex', gap: 16, width: 'max-content', padding: '8px 0', animation: 'pscroll-l 36s linear infinite' }}>
-          {row1.map(p => card(p))}
-          {row1.map(p => ({ ...p, id: p.id + '_dup' })).map(p => card(p))}
-        </div>
+        <div className="space-y-4">
+          {/* Row 1 */}
+          <div className="marquee-container">
+            <div className="marquee-content ptn-row-1">
+              {row1.map(p => <PartnerCard key={p.id} {...p} />)}
+              {row1.map(p => <PartnerCard key={`${p.id}-dup`} {...p} />)}
+            </div>
+          </div>
 
-        {/* Row 2 */}
-        <div className="ptn-row" style={{ display: 'flex', gap: 16, width: 'max-content', padding: '8px 0', marginTop: 8, animation: 'pscroll-r 42s linear infinite' }}>
-          {row2.map(p => card(p))}
-          {row2.map(p => ({ ...p, id: p.id + '_dup' })).map(p => card(p))}
+          {/* Row 2 */}
+          <div className="marquee-container">
+            <div className="marquee-content ptn-row-2">
+              {row2.map(p => <PartnerCard key={p.id} {...p} />)}
+              {row2.map(p => <PartnerCard key={`${p.id}-dup`} {...p} />)}
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </section>
   )
 }

@@ -26,24 +26,40 @@
       "ai": "AI Assistant",
       "pricing": "Pricing",
       "login": "Login",
-      "register": "Start Free"
+      "register": "Start Free",
+      "dashboard": "Dashboard"
     },
     "Integrations": {
-      "subtitle": "Connect Everything",
+      "subtitle": "Connects seamlessly with the platforms your customers already use",
       "title": "Seamless integrations with the tools you already use.",
       "desc": "Connect your store to local carriers, payment processors, and social media with just one click.",
-      "shopify": "Shopify / WooCommerce",
-      "shopifyDesc": "Sync products and orders automatically.",
-      "yalidine": "Yalidine / ZR Express",
-      "yalidineDesc": "Auto-generate tracking and labels.",
-      "sheets": "Google Sheets",
-      "sheetsDesc": "Real-time sync for order data.",
-      "ads": "Ad Platforms",
-      "adsDesc": "Track ROAS across Facebook & TikTok."
+      "socialBadge": "All Social Platforms",
+      "socialTitle": "Where your customers message you",
+      "deliveryBadge": "Algerian Delivery Network",
+      "deliveryTitle": "Shipping partners across all wilayas",
+      "toolsBadge": "Business Tools",
+      "toolsTitle": "Keep using the tools you love",
+      "pills": {
+        "facebook": "Facebook",
+        "instagram": "Instagram",
+        "whatsapp": "WhatsApp",
+        "telegram": "Telegram",
+        "snapchat": "Snapchat",
+        "homeDelivery": "Home Delivery",
+        "officePickup": "Office Pickup",
+        "expressDelivery": "Express Delivery",
+        "codReady": "COD Ready",
+        "wilayas58": "58 Wilayas",
+        "googleSheets": "Google Sheets",
+        "googleDrive": "Google Drive",
+        "excelExport": "Excel Export",
+        "pdfReports": "PDF Reports"
+      }
     },
     "Features": {
       "subtitle": "One Platform, 7 Powerful Tools",
       "title": "Everything you need to grow your e-commerce business at scale.",
+      "desc": "EcoMate centralizes every tool Algerian SMEs need into one platform — AI chatbot automation, order management, CRM, and AI-powered client acquisition.",
       "chatbot": "AI Sales Chatbot",
       "chatbotDesc": "Automated sales on Messenger & Instagram.",
       "order": "Order Management",
@@ -62,26 +78,70 @@
     "HowItWorks": {
       "subtitle": "The Process",
       "title": "Your journey to automation in 4 simple steps.",
-      "step1Title": "Connect Your Shop",
-      "step1Desc": "Link Shopify, WooCommerce, or your social pages to EcoMate.",
-      "step2Title": "Setup AI Assistant",
-      "step2Desc": "Train your AI on products in seconds and go live.",
-      "step3Title": "Capture Orders Hub",
-      "step3Desc": "AI handles chats, confirms orders, syncs to dashboard.",
-      "step4Title": "Fulfill & Scale",
-      "step4Desc": "Print labels, track delivery, and see your profit grow.",
-      "register": "Register Your Account",
-      "registerDesc": "Start your 14-day free trial."
+      "registerDesc": "Start your 14-day free trial.",
+      "steps": {
+        "one": {
+          "title": "Connect Your Shop",
+          "desc": "Link Shopify, WooCommerce, or your social pages to EcoMate."
+        },
+        "two": {
+          "title": "Setup AI Assistant",
+          "desc": "Train your AI on products in seconds and go live."
+        },
+        "three": {
+          "title": "Capture Orders Hub",
+          "desc": "AI handles chats, confirms orders, syncs to dashboard."
+        },
+        "four": {
+          "title": "Fulfill & Scale",
+          "desc": "Print labels, track delivery, and see your profit grow."
+        }
+      }
+    },
+    "Hero": {
+      "badge": "All-in-One SaaS Platform for Algerian Business",
+      "title1": "Build your",
+      "title2": "Business",
+      "title3": "without the",
+      "title4": "complexity.",
+      "desc": "EcoMate centralizes every tool Algerian SMEs need into one platform — AI chatbot automation, order management, CRM, and AI-powered client acquisition. No technical knowledge required.",
+      "ctaStart": "Start Free Trial",
+      "ctaPreview": "Live AI Preview",
+      "stat1": "Tools in one platform",
+      "stat2": "AI response rate",
+      "stat3": "Always-on automation",
+      "stat4": "Missed orders",
+      "floatRevenue": "Revenue Today",
+      "floatRevenueChange": "↑ +23.4% vs yesterday",
+      "floatOrder": "New Order ✅",
+      "floatOrderConfirmed": "Confirmed by AI · 2 min ago",
+      "floatAIRate": "AI Response Rate",
+      "floatAIMessages": "← 3.4k messages handled"
     },
     "DashboardPreview": {
       "subtitle": "Powerful Management",
       "title": "Control your entire empire from a single dashboard.",
-      "desc": "Real-time tracking of every conversation, every order, and every Dinar. Built for teams of 1 to 50.",
-      "statRevenue": "Weekly Revenue",
-      "statOrders": "Total Orders",
-      "statRate": "Conversion Rate",
-      "statProfit": "Estimated Profit",
-      "chartTitle": "Weekly Revenue — دج"
+      "desc": "EcoMate provides clear insights into your business performance, marketing ROAS, and customer behavior with one simple link.",
+      "chartTitle": "Weekly Revenue — DA",
+      "stats": {
+        "revenue": "Revenue",
+        "revenueChange": "↑ +12.4% vs last week",
+        "orders": "Orders",
+        "ordersChange": "↑ +8 today",
+        "ai": "AI Chats",
+        "aiChange": "98.2% automated",
+        "cod": "COD pending",
+        "codChange": "Ready for dispatch"
+      },
+      "sidebar": {
+        "dashboard": "Dashboard",
+        "orders": "Orders",
+        "products": "Products",
+        "customers": "Customers",
+        "aiChatbot": "AI Chatbot",
+        "analytics": "Analytics",
+        "delivery": "Delivery"
+      }
     },
     "AI": {
       "subtitle": "AI-Powered Core",
@@ -95,12 +155,54 @@
       "orderDesc": "Every order logged instantly to your dashboard and Google Sheets.",
       "trackingTitle": "Delivery Auto-Tracking",
       "trackingDesc": "Integrates with all Algerian delivery companies.",
-      "cta": "See AI in Action"
+      "cta": "Watch AI in Action",
+      "chat": {
+        "assistantName": "EcoMate AI Assistant",
+        "onlineStatus": "Online · Replies instantly",
+        "userInputPlaceholder": "Type in Arabic, French or English...",
+        "userMsg1": "Looking for black jeans size 32",
+        "aiMsg1": "I have these 3 options available for you right now:",
+        "userMsg2": "I'll take the grey one, please confirm for Abdelkader",
+        "orderConfirm": "Order #2847 confirmed! 🚀",
+        "products": {
+          "black": "Black",
+          "blue": "Blue",
+          "grey": "Grey"
+        }
+      }
+    },
+    "Reviews": {
+      "subtitle": "Real Results",
+      "title": "Trusted by Algerian merchants.",
+      "desc": "Real feedback from real business owners across Algeria.",
+      "leaveReview": "⭐ Leave Your Review",
+      "submitted": "✅ Review submitted — pending approval",
+      "featured": "⭐ Featured",
+      "noReviews": "Be the first to share your experience with EcoMate!",
+      "form": {
+        "title": "Share your experience ⭐",
+        "desc": "Your review will appear on our landing page after approval.",
+        "ratingLabel": "Your Rating *",
+        "contentLabel": "Your Review *",
+        "contentPlaceholder": "Share your experience with EcoMate — what changed for your business?",
+        "submittingAs": "Submitting as:",
+        "cancel": "Cancel",
+        "submit": "Submit Review →",
+        "submitting": "Submitting..."
+      },
+      "errors": {
+        "signIn": "Please sign in to leave a review",
+        "length": "Review must be at least 20 characters",
+        "failed": "Submission failed: "
+      }
     },
     "Pricing": {
       "subtitle": "Transparent Pricing",
       "title": "Plans that scale with you.",
       "desc": "No hidden fees. No contracts. Start free for 14 days.",
+      "mostPopular": "Most Popular",
+      "contactSales": "Contact Sales",
+      "getStarted": "Get Started →",
       "starter": "Starter",
       "growth": "Growth",
       "business": "Business",
@@ -137,7 +239,11 @@
       "about": "About EcoMate",
       "team": "Our Team",
       "contact": "Contact Us",
-      "faqs": "FAQs"
+      "faqs": "FAQs",
+      "privacyPolicy": "Privacy Policy",
+      "termsOfService": "Terms of Service",
+      "allRightsReserved": "All rights reserved.",
+      "madeInAlgeria": "🇩🇿 Made in Algeria"
     }
   }
 }

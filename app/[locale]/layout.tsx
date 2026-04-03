@@ -3,6 +3,7 @@ import { Poppins, Inter, Almarai } from 'next/font/google'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages } from 'next-intl/server'
 import { Toaster } from 'react-hot-toast'
+import AuthModals from '@/components/landing/AuthModals'
 import '../globals.css'
 
 const poppins = Poppins({
@@ -43,18 +44,21 @@ export default async function RootLayout({
 
   return (
     <html lang={locale} dir={direction} data-theme="dark" suppressHydrationWarning>
-      <body className={`${fontClass} ${fontBody}`}>
+      <body className={`${fontClass} ${fontBody} antialiased`}>
         <NextIntlClientProvider messages={messages}>
           <Toaster
             position="top-right"
             toastOptions={{
               style: {
-                background: '#0a1628',
+                background: '#050a14',
                 color: '#fff',
                 border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: '12px',
+                fontSize: '14px',
               },
             }}
           />
+          <AuthModals />
           {children}
         </NextIntlClientProvider>
       </body>

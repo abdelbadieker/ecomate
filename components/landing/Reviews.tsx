@@ -1,19 +1,21 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { useTranslations, useLocale } from 'next-intl'
 import toast from 'react-hot-toast'
+import { Star, MessageSquare, Send, X, CheckCircle2 } from 'lucide-react'
 
-function StarRating({ value, onChange }: { value: number; onChange?: (v: number) => void }) {
+function StarRating({ value, onChange, size = 18 }: { value: number; onChange?: (v: number) => void, size?: number }) {
   const [hover, setHover] = useState(0)
   return (
-    <div style={{ display: 'flex', gap: 4 }}>
+    <div className="flex gap-1">
       {[1, 2, 3, 4, 5].map(s => (
         <button key={s} type="button"
           onClick={() => onChange?.(s)}
           onMouseEnter={() => onChange && setHover(s)}
           onMouseLeave={() => onChange && setHover(0)}
-          style={{ background: 'none', border: 'none', cursor: onChange ? 'pointer' : 'default', fontSize: 22, padding: 0, color: (hover || value) >= s ? '#f59e0b' : 'rgba(255,255,255,.2)', transition: 'color .15s' }}>
-          ★
+          className={`transition-all ${onChange ? 'cursor-pointer hover:scale-110' : 'cursor-default'}`}>
+          <Star size={size} className={`${(hover || value) >= s ? 'fill-amber-500 text-amber-500' : 'text-white/10'} transition-colors`} />
         </button>
       ))}
     </div>
@@ -21,6 +23,10 @@ function StarRating({ value, onChange }: { value: number; onChange?: (v: number)
 }
 
 export default function Reviews({ reviews: initialReviews }: { reviews: any[] }) {
+  const t = useTranslations('Landing.Reviews')
+  const locale = useLocale()
+  const isRtl = locale === 'ar'
+  
   const [reviews] = useState(initialReviews)
   const [showForm, setShowForm] = useState(false)
   const [user, setUser] = useState<any>(null)
@@ -45,14 +51,14 @@ export default function Reviews({ reviews: initialReviews }: { reviews: any[] })
 
   async function submitReview(e: React.FormEvent) {
     e.preventDefault()
-    if (!user) { toast.error('Please sign in to leave a review'); return }
-    if (form.content.length < 20) { toast.error('Review must be at least 20 characters'); return }
+    if (!user) { toast.error(t('errors.signIn')); return }
+    if (form.content.length < 20) { toast.error(t('errors.length')); return }
     setSubmitting(true)
     const supabase = createClient()
     const { error } = await supabase.from('reviews').insert({
       user_id: user.id,
       reviewer_name: profile?.full_name || 'Anonymous',
-      author_name: profile?.full_name || 'Anonymous', // Added for schema compatibility
+      author_name: profile?.full_name || 'Anonymous',
       business_name: profile?.business_name || '',
       rating: form.rating,
       content: form.content,
@@ -60,83 +66,75 @@ export default function Reviews({ reviews: initialReviews }: { reviews: any[] })
       is_approved: false,
     })
     if (error) { 
-      console.error('Review Error:', error)
-      toast.error('Submission failed: ' + (error.message || 'Check database schema'))
+      toast.error(t('errors.failed') + (error.message || ''))
       setSubmitting(false) 
       return 
     }
     setSubmitted(true)
     setShowForm(false)
     setSubmitting(false)
-    toast.success('Review submitted! It will appear after admin approval.')
+    toast.success(t('submitted'))
   }
 
   return (
-    <section id="reviews" style={{ padding: '100px 5%', background: 'var(--bg-section)' }}>
-      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+    <section id="reviews" className="py-24 px-[5%] bg-[#050a14] border-y border-white/5 relative overflow-hidden">
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-[1px] bg-gradient-to-r from-transparent via-blue-500/10 to-transparent" />
+      
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: 60 }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 11, fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--s)', marginBottom: 18 }}>
-            <span style={{ width: 16, height: 1.5, background: 'var(--s)', display: 'block' }} />
-            Real Results
-            <span style={{ width: 16, height: 1.5, background: 'var(--s)', display: 'block' }} />
+        <div className="text-center mb-20">
+          <div className="hbadge bg-amber-500/10 border-amber-500/20 text-amber-500 mb-6 mx-auto">
+            <Star className="w-3.5 h-3.5 fill-amber-500" />
+            <span className="text-[10px] font-black uppercase tracking-widest">{t('subtitle')}</span>
           </div>
-          <h2 style={{ fontFamily: 'var(--font-poppins)', fontSize: 'clamp(30px,3.8vw,52px)', fontWeight: 800, letterSpacing: '-.03em', color: 'var(--text-main)', marginBottom: 16, lineHeight: 1.1 }}>
-            Trusted by Algerian{' '}
-            <span style={{ background: 'linear-gradient(135deg,#10B981,#34d399)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>merchants.</span>
+          <h2 className="text-4xl md:text-5xl font-black font-poppins tracking-tighter text-white mb-6">
+            {t.rich('title', {
+              spanTag: (chunks) => <span className="bg-gradient-to-r from-emerald-400 to-emerald-600 bg-clip-text text-transparent">{chunks}</span>
+            })}
           </h2>
-          <p style={{ fontSize: 16, color: 'var(--text-sub)', lineHeight: 1.75, maxWidth: 480, margin: '0 auto 32px' }}>
-            Real feedback from real business owners across Algeria.
+          <p className="text-white/40 text-lg font-medium max-w-xl mx-auto mb-10">
+            {t('desc')}
           </p>
 
           {!submitted ? (
             <button
-              onClick={() => user ? setShowForm(true) : toast.error('Sign in first to leave a review')}
-              className="btn-secondary"
-              style={{ fontSize: 14, padding: '11px 26px' }}
+              onClick={() => user ? setShowForm(true) : toast.error(t('errors.signIn'))}
+              className="bh2 group !py-3 !px-8"
             >
-              ⭐ Leave Your Review
+              <span className="text-sm font-black tracking-tight">{t('leaveReview')}</span>
             </button>
           ) : (
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(16,185,129,.1)', border: '1px solid rgba(16,185,129,.2)', borderRadius: 100, padding: '8px 18px', fontSize: 13, color: '#10B981', fontWeight: 600 }}>
-              ✅ Review submitted — pending approval
+            <div className="inline-flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-6 py-3 text-sm font-black text-emerald-500 shadow-xl shadow-emerald-500/5">
+              <CheckCircle2 size={18} />
+              {t('submitted')}
             </div>
           )}
         </div>
 
         {/* Reviews Grid */}
         {reviews.length > 0 ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: 20, marginBottom: 40 }}>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {reviews.map((r: any) => (
-              <div key={r.id} style={{
-                background: 'var(--bg-card)', border: '1px solid var(--border-c)',
-                borderRadius: 18, padding: '24px',
-                transition: 'border-color .3s, transform .3s',
-              }}>
+              <div key={r.id} className="bc group hover:!border-amber-500/30 !p-8">
                 {r.is_featured && (
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(245,158,11,.1)', border: '1px solid rgba(245,158,11,.2)', borderRadius: 100, padding: '3px 10px', fontSize: 10, fontWeight: 700, color: '#f59e0b', marginBottom: 12 }}>
-                    ⭐ Featured
+                  <div className="absolute top-4 right-4 bg-amber-500/10 border border-amber-500/20 rounded-lg px-2 py-1 text-[9px] font-black uppercase tracking-tighter text-amber-500">
+                    {t('featured')}
                   </div>
                 )}
-                <div style={{ marginBottom: 12 }}>
-                  <div style={{ display: 'flex', gap: 3 }}>
-                    {[1,2,3,4,5].map(s => (
-                      <span key={s} style={{ fontSize: 16, color: r.rating >= s ? '#f59e0b' : 'rgba(255,255,255,.15)' }}>★</span>
-                    ))}
-                  </div>
+                <div className="mb-6">
+                  <StarRating value={r.rating} />
                 </div>
-                <p style={{ fontSize: 14, color: 'var(--text-sub)', lineHeight: 1.7, marginBottom: 18, fontStyle: 'italic' }}>
+                <p className="text-white/60 text-[15px] leading-relaxed italic mb-8 font-medium">
                   &ldquo;{r.content}&rdquo;
                 </p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 16, borderTop: '1px solid var(--border-c)' }}>
-                  <div style={{ width: 38, height: 38, borderRadius: '50%', background: 'linear-gradient(135deg,#2563eb,#10B981)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>
+                <div className="flex items-center gap-4 pt-6 border-t border-white/5">
+                  <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-600 to-emerald-500 flex items-center justify-center text-white font-black text-lg shadow-lg">
                     {r.reviewer_name?.[0]?.toUpperCase()}
                   </div>
                   <div>
-                    <div style={{ fontFamily: 'var(--font-poppins)', fontSize: 13.5, fontWeight: 700, color: 'var(--text-main)' }}>{r.reviewer_name}</div>
-                    <div style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>
-                      {r.business_name || 'EcoMate User'}
-                      {(r.plan_slug || r.plan_used) && ` · ${(r.plan_slug || r.plan_used).charAt(0).toUpperCase() + (r.plan_slug || r.plan_used).slice(1)} Plan`}
+                    <div className="font-poppins text-[15px] font-black text-white tracking-tight">{r.reviewer_name}</div>
+                    <div className="text-[11px] font-bold text-white/20 uppercase tracking-widest mt-0.5">
+                      {r.business_name || 'EcoMate Merchant'}
                     </div>
                   </div>
                 </div>
@@ -144,51 +142,62 @@ export default function Reviews({ reviews: initialReviews }: { reviews: any[] })
             ))}
           </div>
         ) : (
-          <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)', fontSize: 14 }}>
-            <div style={{ fontSize: 36, marginBottom: 12 }}>⭐</div>
-            Be the first to share your experience with EcoMate!
+          <div className="text-center py-20 bg-white/[0.02] border border-dashed border-white/10 rounded-[40px]">
+            <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl">⭐</div>
+            <p className="text-white/30 font-bold uppercase tracking-[0.2em]">{t('noReviews')}</p>
           </div>
         )}
       </div>
 
       {/* Review Form Modal */}
       {showForm && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(7,16,31,.85)', backdropFilter: 'blur(16px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6 bg-[#01050a]/90 backdrop-blur-xl animate-in fade-in duration-300"
           onClick={e => e.target === e.currentTarget && setShowForm(false)}>
-          <div style={{ background: '#0a1628', border: '1px solid rgba(255,255,255,.1)', borderRadius: 22, padding: '36px', width: '100%', maxWidth: 480 }}>
-            <h3 style={{ fontFamily: 'var(--font-poppins)', fontSize: 20, fontWeight: 800, color: '#fff', marginBottom: 6 }}>Share your experience ⭐</h3>
-            <p style={{ fontSize: 13.5, color: 'rgba(255,255,255,.38)', marginBottom: 24 }}>Your review will appear on our landing page after approval.</p>
+          <div className="bg-[#050a14] border border-white/10 rounded-[40px] p-10 w-full max-w-[540px] shadow-2xl animate-in zoom-in-95 duration-300 relative">
+            <button onClick={() => setShowForm(false)} className="absolute top-6 right-6 p-2 text-white/20 hover:text-white transition-colors">
+              <X size={24} />
+            </button>
 
-            <form onSubmit={submitReview} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <h3 className="text-2xl font-black font-poppins text-white mb-2 tracking-tight">{t('form.title')}</h3>
+            <p className="text-white/40 text-sm font-medium mb-10 leading-relaxed">{t('form.desc')}</p>
+
+            <form onSubmit={submitReview} className="space-y-8">
               <div>
-                <label style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,.4)', letterSpacing: '.06em', textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>Your Rating *</label>
-                <StarRating value={form.rating} onChange={v => setForm(f => ({ ...f, rating: v }))} />
-              </div>
-
-              <div>
-                <label style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,.4)', letterSpacing: '.06em', textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>Your Review *</label>
-                <textarea
-                  required
-                  rows={4}
-                  placeholder="Share your experience with EcoMate — what changed for your business?"
-                  value={form.content}
-                  onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
-                  style={{ width: '100%', padding: '12px 14px', background: 'rgba(255,255,255,.05)', border: '1.5px solid rgba(255,255,255,.08)', borderRadius: 11, fontSize: 14, color: '#fff', outline: 'none', fontFamily: 'var(--font-inter)', resize: 'none', lineHeight: 1.6 }}
-                />
-                <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,.2)', marginTop: 4 }}>{form.content.length}/500 characters (min. 20)</div>
-              </div>
-
-              <div style={{ background: 'rgba(37,99,235,.06)', border: '1px solid rgba(37,99,235,.15)', borderRadius: 10, padding: '12px 14px', fontSize: 12.5, color: 'rgba(255,255,255,.45)' }}>
-                <div style={{ fontWeight: 600, color: 'rgba(255,255,255,.7)', marginBottom: 4 }}>Submitting as:</div>
-                <div style={{ fontSize: 12 }}>
-                   {profile?.full_name || 'Anonymous'} · {profile?.business_name || 'EcoMate User'} · {((profile?.plan || 'trial')).charAt(0).toUpperCase() + (profile?.plan || 'trial').slice(1)} Plan
+                <label className="block text-[11px] font-black text-white/20 uppercase tracking-[0.2em] mb-4">{t('form.ratingLabel')}</label>
+                <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                  <StarRating value={form.rating} onChange={v => setForm(f => ({ ...f, rating: v }))} size={28} />
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: 10 }}>
-                <button type="button" onClick={() => setShowForm(false)} className="btn-secondary" style={{ flex: 1 }}>Cancel</button>
-                <button type="submit" disabled={submitting} className="btn-primary" style={{ flex: 1, justifyContent: 'center' }}>
-                  {submitting ? 'Submitting...' : 'Submit Review →'}
+              <div>
+                <label className="block text-[11px] font-black text-white/20 uppercase tracking-[0.2em] mb-4">{t('form.contentLabel')}</label>
+                <textarea
+                  required
+                  rows={4}
+                  placeholder={t('form.contentPlaceholder')}
+                  value={form.content}
+                  onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 text-white text-[15px] outline-none focus:border-blue-500/50 transition-all resize-none leading-relaxed"
+                />
+                <div className={`text-[11px] mt-2 font-bold uppercase tracking-wider ${form.content.length < 20 ? 'text-white/20' : 'text-emerald-500'}`}>
+                  {form.content.length}/500 {isRtl ? 'حرفاً' : 'characters'}
+                </div>
+              </div>
+
+              <div className="bg-blue-600/10 border border-blue-500/20 rounded-2xl p-5 flex items-center gap-4">
+                 <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center text-white shrink-0 shadow-lg">
+                    {profile?.full_name?.[0]?.toUpperCase() || 'A'}
+                 </div>
+                 <div>
+                    <div className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">{t('form.submittingAs')}</div>
+                    <div className="text-[13px] font-bold text-white/80">{profile?.full_name || 'Anonymous'} · {profile?.business_name || 'EcoMate Business'}</div>
+                 </div>
+              </div>
+
+              <div className="flex gap-4">
+                <button type="button" onClick={() => setShowForm(false)} className="flex-1 bh2 !text-white/40">{t('form.cancel')}</button>
+                <button type="submit" disabled={submitting} className="flex-1 bh1 justify-center">
+                   {submitting ? t('form.submitting') : t('form.submit')}
                 </button>
               </div>
             </form>

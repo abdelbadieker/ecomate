@@ -1,115 +1,75 @@
-import Link from 'next/link'
+'use client'
+import Image from 'next/image'
+import { Link } from '@/navigation'
+import { useTranslations, useLocale } from 'next-intl'
+import ThreeNetwork from './ThreeNetwork'
+import { ArrowRight, Play, TrendingUp, Package, MessageSquare } from 'lucide-react'
 
 export default function Hero() {
+  const t = useTranslations('Landing.Hero')
+  const locale = useLocale()
+  const isRtl = locale === 'ar'
+
   return (
-    <section style={{
-      minHeight: '100vh', display: 'flex', alignItems: 'center',
-      padding: '110px 5% 80px', position: 'relative', overflow: 'hidden',
-      background: 'var(--bg-body)',
-    }}>
-      {/* Three.js canvas — right 56% */}
-      <canvas id="hcanvas" style={{
-        position: 'absolute', top: 0, right: 0,
-        width: '56%', height: '100%', zIndex: 0, pointerEvents: 'none',
-      }} />
+    <section className="min-h-screen flex items-center pt-[110px] pb-20 px-[5%] relative overflow-hidden bg-[#01050a]">
+      {/* Three.js Background */}
+      <div className={`absolute top-0 w-[56%] h-full z-0 pointer-events-none hidden md:block ${isRtl ? 'left-0 scale-x-[-1]' : 'right-0'}`}>
+        <ThreeNetwork />
+      </div>
 
-      {/* Glow blobs */}
-      <div style={{
-        position: 'absolute', top: '10%', right: '6%',
-        width: 600, height: 600, borderRadius: '50%',
-        background: 'radial-gradient(circle,rgba(37,99,235,.13) 0%,transparent 70%)',
-        animation: 'glow-pulse 4s ease-in-out infinite', pointerEvents: 'none',
-      }} />
-      <div style={{
-        position: 'absolute', bottom: '5%', left: 0,
-        width: 420, height: 420, borderRadius: '50%',
-        background: 'radial-gradient(circle,rgba(16,185,129,.07) 0%,transparent 70%)',
-        animation: 'glow-pulse 6s ease-in-out infinite reverse', pointerEvents: 'none',
-      }} />
+      {/* Glow Blobs */}
+      <div className={`absolute top-[10%] w-[600px] h-[600px] rounded-full bg-blue-600/10 blur-[120px] pointer-events-none animate-pulse ${isRtl ? 'left-[6%]' : 'right-[6%]'}`} />
+      <div className={`absolute bottom-[5%] w-[420px] h-[420px] rounded-full bg-emerald-500/5 blur-[100px] pointer-events-none animate-pulse delay-700 ${isRtl ? 'right-0' : 'left-0'}`} />
 
-      {/* Hero text content */}
-      <div style={{ position: 'relative', zIndex: 2, maxWidth: 680 }}>
+      <div className={`relative z-10 max-w-[720px] ${isRtl ? 'mr-auto text-right' : 'ml-0 text-left'}`}>
         {/* Badge */}
-        <div className="hero-badge" style={{
-          display: 'inline-flex', alignItems: 'center', gap: 8,
-          background: 'rgba(37,99,235,.1)', border: '1px solid rgba(37,99,235,.25)',
-          borderRadius: 100, padding: '6px 16px',
-          fontSize: 12, fontWeight: 600, color: 'var(--text-sub)',
-          marginBottom: 36,
-        }}>
-          <span className="blink" style={{ width: 6, height: 6, borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />
-          All-in-One SaaS Platform for Algerian Business
+        <div className="hbadge mb-9 font-poppins flex items-center gap-2.5">
+          <span className="hbdot bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.5)]" />
+          <span className="tracking-wide uppercase text-[11px] font-extrabold text-blue-400/80">{t('badge')}</span>
         </div>
 
-        <h1 style={{ fontFamily: 'var(--font-poppins)', lineHeight: 1.06, letterSpacing: '-.03em', marginBottom: 28 }}>
-          <span className="hero-h1" style={{ display: 'block', fontSize: 'clamp(44px,5vw,68px)', fontWeight: 700, color: 'var(--text-main)' }}>
-            Build your
+        <h1 className="hhline font-poppins mb-7">
+          <span className="hh1 block leading-[1.1] mb-2">{t('title1')}</span>
+          <span className="hh2 block leading-[0.9] italic mb-2 py-2">
+            {t('title2')}
           </span>
-          <span className="hero-h2" style={{
-            display: 'block', fontSize: 'clamp(78px,11vw,140px)', fontWeight: 900,
-            fontStyle: 'italic', lineHeight: .92,
-            background: 'linear-gradient(135deg,#2563eb 0%,#93c5fd 55%,#1e3a8a 100%)',
-            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-            filter: 'drop-shadow(0 0 40px rgba(37,99,235,.3))',
-          }}>
-            Business
-          </span>
-          <span className="hero-h3" style={{ display: 'block', fontSize: 'clamp(44px,5vw,68px)', fontWeight: 700, color: 'var(--text-main)' }}>
-            without the{' '}
-            <span style={{ color: '#10B981', textShadow: '0 0 40px rgba(16,185,129,.5)' }}>complexity.</span>
+          <span className="hh3 block leading-[1.1]">
+            {t('title3')}{' '}
+            <span className="text-emerald-500 drop-shadow-[0_0_25px_rgba(16,185,129,0.4)]">{t('title4')}</span>
           </span>
         </h1>
 
-        <p className="hero-sub" style={{
-          fontSize: 'clamp(15px,1.6vw,18px)', color: 'var(--text-sub)',
-          lineHeight: 1.75, maxWidth: 520, marginBottom: 48,
-        }}>
-          EcoMate centralizes every tool Algerian SMEs need into one platform — AI chatbot automation,
-          order management, CRM, and AI-powered client acquisition. No technical knowledge required.
+        <p className="hsub mb-12 max-w-[540px] text-lg leading-relaxed text-white/50 font-light">
+          {t('desc')}
         </p>
 
-        <div className="hero-cta" style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-          <Link href="/auth/register" className="btn-primary" style={{ fontSize: 15, padding: '15px 32px' }}>
-            Start Free Trial
-            <svg className="arri" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-              <path d="M5 12h14M12 5l7 7-7 7" />
-            </svg>
+        <div className="hact flex items-center gap-5 flex-wrap">
+          <Link href="/?auth=register" className="bh1 group">
+            <span>{t('ctaStart')}</span>
+            <ArrowRight className={`w-5 h-5 transition-transform ${isRtl ? 'rotate-180 group-hover:-translate-x-1' : 'group-hover:translate-x-1'}`} />
           </Link>
-          <a href="#ai-section" style={{
-            display: 'inline-flex', alignItems: 'center', gap: 10,
-            fontFamily: 'var(--font-poppins)', fontSize: 15, fontWeight: 600,
-            color: 'var(--text-sub)', background: 'var(--bg-card)',
-            border: '1px solid var(--border-c)', borderRadius: 12, padding: '15px 28px',
-            transition: 'all .25s', backdropFilter: 'blur(8px)', cursor: 'pointer',
-            textDecoration: 'none',
-          }}>
-            <span className="blink" style={{ width: 8, height: 8, borderRadius: '50%', background: '#10B981', display: 'inline-block', flexShrink: 0 }} />
-            Live AI Preview
-            <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-              <path d="M5 12h14M12 5l7 7-7 7" />
-            </svg>
-          </a>
+          
+          <button className="bh2 group flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-blue-500/50 transition-colors">
+              <Play className="w-4 h-4 text-blue-500 fill-blue-500" />
+            </div>
+            <span className="font-bold text-sm tracking-tight">{t('ctaPreview')}</span>
+          </button>
         </div>
 
         {/* Stats row */}
-        <div className="hero-stats" style={{ display: 'flex', gap: 0, marginTop: 50 }}>
+        <div className="hstats mt-16 flex items-center">
           {[
-            { num: '7', suf: '', label: 'Tools in one platform' },
-            { num: '98', suf: '%', label: 'AI response rate' },
-            { num: '24', suf: '/7', label: 'Always-on automation' },
-            { num: '0', suf: '', label: 'Missed orders' },
+            { num: '7', suf: '', label: t('stat1') },
+            { num: '98', suf: '%', label: t('stat2') },
+            { num: '24', suf: '/7', label: t('stat3') },
+            { num: '0', suf: '', label: t('stat4') },
           ].map((s, i) => (
-            <div key={i} style={{
-              padding: i === 0 ? '0 26px 0 0' : i === 3 ? '0 0 0 26px' : '0 26px',
-              borderRight: i < 3 ? '1px solid var(--border-c)' : 'none',
-            }}>
-              <span style={{
-                fontFamily: 'var(--font-poppins)', fontSize: 26, fontWeight: 800,
-                letterSpacing: '-.03em', display: 'block', color: 'var(--text-main)',
-              }}>
-                {s.num}<span style={{ color: '#10B981' }}>{s.suf}</span>
+            <div key={i} className={`flex flex-col gap-1 px-8 border-white/10 ${i === 0 ? 'pl-0' : i === 3 ? 'pr-0 border-none' : 'border-r'}`}>
+              <span className="text-3xl font-black font-poppins tracking-tighter">
+                {s.num}<span className="text-emerald-500">{s.suf}</span>
               </span>
-              <span style={{ fontSize: 11, color: 'rgba(255,255,255,.3)', display: 'block', marginTop: 2 }}>
+              <span className="text-[10px] font-bold text-white/30 uppercase tracking-[0.1em]">
                 {s.label}
               </span>
             </div>
@@ -117,66 +77,54 @@ export default function Hero() {
         </div>
       </div>
 
-      {/* Floating card 1 — Revenue */}
-      <div style={{
-        position: 'absolute', top: '22%', right: '6%', zIndex: 3,
-        background: 'var(--float-bg, rgba(8,18,38,.9))', border: '1px solid var(--border-c)',
-        borderRadius: 14, padding: '14px 18px', backdropFilter: 'blur(20px)',
-        boxShadow: '0 20px 60px rgba(0,0,0,.18)',
-        animation: 'float1 5s ease-in-out infinite',
-      }}>
-        <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 7 }}>Revenue Today</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 22 }}>💰</span>
-          <span style={{ fontFamily: 'var(--font-poppins)', fontSize: 18, fontWeight: 800, color: '#10B981' }}>127,400 DA</span>
-        </div>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(16,185,129,.1)', border: '1px solid rgba(16,185,129,.2)', borderRadius: 6, padding: '3px 8px', fontSize: 11, fontWeight: 700, color: '#10B981', marginTop: 8 }}>
-          ↑ +23.4% vs yesterday
-        </div>
-        {/* Spark bars */}
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 28, marginTop: 10 }}>
-          {[40, 55, 70, 60, 90, 80, 100].map((h, i) => (
-            <div key={i} style={{
-              width: 7, borderRadius: '3px 3px 0 0',
-              height: `${h}%`,
-              background: i >= 4 ? '#10B981' : i >= 2 ? '#2563EB' : 'rgba(37,99,235,.2)',
-            }} />
-          ))}
-        </div>
-      </div>
-
-      {/* Floating card 2 — Order */}
-      <div style={{
-        position: 'absolute', bottom: '26%', right: '3%', zIndex: 3,
-        background: 'var(--float-bg, rgba(8,18,38,.9))', border: '1px solid var(--border-c)',
-        borderRadius: 14, padding: '14px 18px', backdropFilter: 'blur(20px)',
-        boxShadow: '0 20px 60px rgba(0,0,0,.18)',
-        animation: 'float2 6.5s ease-in-out infinite',
-      }}>
-        <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 7 }}>New Order ✅</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 20 }}>📦</span>
-          <div>
-            <div style={{ fontFamily: 'var(--font-poppins)', fontSize: 14, fontWeight: 700, color: 'var(--text-main)' }}>Order #2847</div>
-            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>Confirmed by AI · 2 min ago</div>
+      {/* Floating Cards (Desktop only) */}
+      <div className="hidden xl:block">
+        {/* Revenue Card */}
+        <div className={`fc fc1 w-[220px] ${isRtl ? 'left-[6%]' : 'right-[6%]'}`}>
+          <div className="flex justify-between items-start mb-3">
+            <span className="fct tracking-widest">{t('floatRevenue')}</span>
+            <div className="w-8 h-8 rounded-full overflow-hidden border border-white/20">
+              <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=100" alt="stat" className="w-full h-full object-cover" />
+            </div>
+          </div>
+          <div className="fcm text-emerald-500">127,400 DA</div>
+          <div className="flex items-center gap-1.5 mt-2">
+             <TrendingUp size={14} className="text-emerald-500" />
+             <span className="text-[11px] font-bold text-emerald-500/80">{t('floatRevenueChange')}</span>
+          </div>
+          <div className="fcspark flex items-end gap-1.5 mt-4">
+             {[30, 45, 35, 60, 50, 80, 70].map((h, i) => (
+               <div key={i} className={`w-full rounded-t-sm transition-all duration-500 ${i === 6 ? 'bg-emerald-500' : 'bg-white/10'}`} style={{ height: `${h}%` }} />
+             ))}
           </div>
         </div>
-      </div>
 
-      {/* Floating card 3 — AI Response Rate */}
-      <div style={{
-        position: 'absolute', top: '44%', right: '31%', zIndex: 3,
-        background: 'var(--float-bg, rgba(8,18,38,.9))', border: '1px solid var(--border-c)',
-        borderRadius: 14, padding: '14px 18px', backdropFilter: 'blur(20px)',
-        boxShadow: '0 20px 60px rgba(0,0,0,.18)',
-        animation: 'float3 7s ease-in-out infinite',
-      }}>
-        <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 7 }}>AI Response Rate</div>
-        <div style={{ fontFamily: 'var(--font-poppins)', fontSize: 26, fontWeight: 800, color: 'var(--text-main)' }}>
-          98.7<span style={{ fontSize: 15, color: 'var(--text-muted)' }}>%</span>
+        {/* Order Card */}
+        <div className={`fc fc2 w-[240px] ${isRtl ? 'left-[3%]' : 'right-[3%]'}`}>
+          <span className="fct mb-3 block">{t('floatOrder')}</span>
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/20">
+              <img src="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&q=80&w=100" alt="package" className="w-full h-full object-cover" />
+            </div>
+            <div>
+              <div className="font-bold text-sm text-white font-poppins">Order #2847</div>
+              <div className="text-[11px] text-white/40 font-medium">{t('floatOrderConfirmed')}</div>
+            </div>
+          </div>
         </div>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(16,185,129,.1)', border: '1px solid rgba(16,185,129,.2)', borderRadius: 6, padding: '3px 8px', fontSize: 11, fontWeight: 700, color: '#10B981', marginTop: 6 }}>
-          ← 3.4k messages handled
+
+        {/* AI Rate Card */}
+        <div className={`fc fc3 w-[200px] ${isRtl ? 'left-[31%]' : 'right-[31%]'}`}>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 rounded-lg bg-blue-600/20 flex items-center justify-center text-blue-500">
+              <MessageSquare size={16} />
+            </div>
+            <span className="fct">{t('floatAIRate')}</span>
+          </div>
+          <div className="text-4xl font-black font-poppins tracking-tighter">98<span className="text-lg text-white/30">.7%</span></div>
+          <div className="fctag mt-3 bg-blue-500/10 border-blue-500/20 text-blue-400">
+            {t('floatAIMessages')}
+          </div>
         </div>
       </div>
     </section>

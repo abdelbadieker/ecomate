@@ -1,519 +1,532 @@
-import { Fragment } from 'react'
+'use client'
 import { Link } from '@/navigation'
-import { useTranslations } from 'next-intl'
-import { CheckCircle2 } from 'lucide-react'
+import { useTranslations, useLocale } from 'next-intl'
+import { 
+  CheckCircle2, 
+  MessageSquare, 
+  Package, 
+  ShoppingCart, 
+  Users, 
+  Zap, 
+  ArrowRight,
+  TrendingUp,
+  BarChart3,
+  ShieldCheck,
+  Globe,
+  HeadphonesIcon
+} from 'lucide-react'
+import Image from 'next/image'
 
+/* ── INTEGRATIONS ── */
 export function Integrations() {
   const t = useTranslations('Landing.Integrations')
+  const locale = useLocale()
+  const isRtl = locale === 'ar'
   
   const cols = [
-    { badge: 'All Social Platforms', title: 'Where your customers message you', pills: [['blue','Facebook'],['pink','Instagram'],['green','WhatsApp'],['tg','Telegram'],['snap','Snapchat']] },
-    { badge: 'Algerian Delivery Network', title: 'Shipping partners across all wilayas', pills: [['dz','Home Delivery'],['dz','Office Pickup'],['dz','Express Delivery'],['dz','COD Ready'],['dz','58 Wilayas']] },
-    { badge: 'Business Tools', title: 'Keep using the tools you love', pills: [['sheets','Google Sheets'],['sheets','Google Drive'],['gray','Excel Export'],['gray','PDF Reports']] },
+    { badge: t('socialBadge'), title: t('socialTitle'), pills: [['blue', t('pills.facebook')],['pink', t('pills.instagram')],['green', t('pills.whatsapp')],['tg', t('pills.telegram')],['snap', t('pills.snapchat')]] },
+    { badge: t('deliveryBadge'), title: t('deliveryTitle'), pills: [['dz', t('pills.homeDelivery')],['dz', t('pills.officePickup')],['dz', t('pills.expressDelivery')],['dz', t('pills.codReady')],['dz', t('pills.wilayas58')]] },
+    { badge: t('toolsBadge'), title: t('toolsTitle'), pills: [['sheets', t('pills.googleSheets')],['sheets', t('pills.googleDrive')],['gray', t('pills.excelExport')],['gray', t('pills.pdfReports')]] },
   ]
   
-  const dotColors: Record<string,string> = { blue:'#1877f2', pink:'#e1306c', green:'#25d366', tg:'#229ED9', snap:'#FFBD00', dz:'#006233', sheets:'#34a853', gray:'#94a3b8' }
+  const dotColors: Record<string,string> = { blue:'#1877f2', pink:'#e1306c', green:'#25d366', tg:'#229ED9', snap:'#FFBD00', dz:'#10b981', sheets:'#34a853', gray:'#94a3b8' }
 
   return (
-    <div className="py-16 lg:py-24 px-6 lg:px-[8%] bg-[var(--bg-section)] transition-all">
-      <div className="max-w-7xl mx-auto text-center">
-        <span className="text-[10px] lg:text-xs font-black uppercase tracking-[0.2em] text-[var(--text-sub)] opacity-40 mb-12 block">
-          Connects seamlessly with the platforms your customers already use
-        </span>
+    <section className="py-24 px-[5%] bg-[#050a14] border-y border-white/5 relative overflow-hidden">
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[1px] bg-gradient-to-r from-transparent via-blue-500/20 to-transparent" />
+      
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center mb-16">
+           <span className="text-[11px] font-black uppercase tracking-[0.25em] text-white/20 mb-4 block">
+            {t('subtitle')}
+          </span>
+        </div>
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-0 lg:divide-x lg:divide-[var(--border-c)] rtl:lg:divide-x-reverse items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-0 lg:divide-x lg:divide-white/5 rtl:lg:divide-x-reverse">
           {cols.map((col, i) => (
-            <div key={i} className="px-4 lg:px-10 text-center">
-              <div className="inline-flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-4 py-1.5 text-[11px] font-black text-emerald-500 mb-5 uppercase tracking-wide">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                {col.badge}
-              </div>
-              <h3 className="font-poppins text-xs lg:text-sm font-black text-[var(--text-muted)] uppercase tracking-widest mb-6 px-4">
-                {col.title}
-              </h3>
-              <div className="flex justify-center items-center gap-2.5 flex-wrap">
-                {col.pills.map(([color, label]) => (
-                  <span key={label} className="inline-flex items-center gap-2 bg-[var(--bg-card)] border border-[var(--border-c)] rounded-full px-4 py-2 text-xs font-semibold text-[var(--text-muted)] shadow-sm hover:border-blue-500/30 transition-all cursor-default">
-                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: dotColors[color] }} />
-                    {label}
-                  </span>
-                ))}
+            <div key={i} className="px-6 lg:px-12">
+              <div className="flex flex-col items-center text-center">
+                <div className="hbadge bg-emerald-500/10 border-emerald-500/20 text-emerald-500 mb-6 scale-90">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span className="text-[10px] font-black uppercase tracking-wider">{col.badge}</span>
+                </div>
+                <h3 className="text-xs font-black text-white/40 uppercase tracking-[0.15em] mb-8 font-poppins h-8">
+                  {col.title}
+                </h3>
+                <div className="flex justify-center items-center gap-2.5 flex-wrap">
+                  {col.pills.map(([color, label]) => (
+                    <div key={label} className="inline-flex items-center gap-2.5 bg-white/[0.03] border border-white/10 rounded-xl px-4 py-2.5 text-[13px] font-bold text-white/60 hover:border-blue-500/30 hover:bg-white/[0.05] transition-all cursor-default">
+                      <span className="w-1.5 h-1.5 rounded-full shrink-0 shadow-[0_0_8px_currentColor]" style={{ color: dotColors[color], background: dotColors[color] }} />
+                      {label}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           ))}
         </div>
       </div>
-    </div>
+    </section>
   )
 }
 
-export function Features({ services }: { services?: any[] }) {
+/* ── FEATURES ── */
+export function Features() {
   const t = useTranslations('Landing.Features')
+  const locale = useLocale()
+  const isRtl = locale === 'ar'
   
-  const bentosFallback = [
-    { id:'b1', desktopCols:'col-span-12 lg:col-span-12', icon:'🤖', iconBg:'rgba(37,99,235,.15)', title: t('chatbot'), desc: t('chatbotDesc'), tag: '' },
-    { id:'b2', desktopCols:'col-span-12 lg:col-span-6', icon:'📦', iconBg:'rgba(16,185,129,.15)', title: t('order'), desc: t('orderDesc'), tag: '' },
-    { id:'b3', desktopCols:'col-span-12 lg:col-span-6', icon:'🛍️', iconBg:'rgba(96,165,250,.1)', title: t('catalog'), desc: t('catalogDesc'), tag: '' },
-    { id:'b5', desktopCols:'col-span-12 lg:col-span-6', icon:'👥', iconBg:'rgba(16,185,129,.15)', title: t('crm'), desc: t('crmDesc'), tag: '' },
-    { id:'b6', desktopCols:'col-span-12 lg:col-span-6', icon:'🎯', iconBg:'rgba(245,158,11,.15)', title: t('automation'), desc: t('automationDesc'), tag: '', tagColor:'#f59e0b' },
-  ]
-
-  const bentos = services && services.length > 0 
-    ? services.map((s, i) => ({
-        id: s.id,
-        desktopCols: 'col-span-12 lg:col-span-6',
-        icon: s.icon && (s.icon.startsWith('http') || s.icon.startsWith('/')) 
-          ? <img src={s.icon} alt="" className="w-6 h-6 object-contain" /> 
-          : (s.icon || '⚡'),
-        iconBg: 'rgba(37,99,235,.1)',
-        title: s.name, 
-        desc: s.description,
-        tag: s.tag, 
-        tagColor: s.tag_color
-      }))
-    : bentosFallback
-
-  return (
-    <section id="features" className="py-20 lg:py-32 px-6 lg:px-[8%] bg-[var(--bg-section)]">
-      <div className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-blue-500 mb-6 px-1">
-        <span className="w-4 h-[1.5px] bg-blue-600" />
-        {t('subtitle')}
-      </div>
-      
-      <h2 className="font-poppins text-3xl lg:text-5xl font-black tracking-tight text-[var(--text-main)] mb-6 leading-[1.1]">
-        {t('title')}
-      </h2>
-      
-      <p className="text-base lg:text-lg text-[var(--text-sub)] leading-relaxed max-w-xl mb-16 opacity-80">
-        {t('desc')}
-      </p>
-      
-      <div className="grid grid-cols-12 gap-4 lg:gap-6">
-        {bentos.map(b => (
-          <div key={b.id} className={`${b.desktopCols} group bg-[var(--bg-card)] border border-[var(--border-c)] rounded-3xl p-8 lg:p-10 relative overflow-hidden transition-all hover:border-blue-500/40 hover:shadow-2xl hover:shadow-blue-500/5 hover:-translate-y-1`}>
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl mb-6 border border-white/5 shadow-inner" style={{ background: b.iconBg }}>
-              {b.icon}
-            </div>
-            <h3 className="font-poppins text-lg lg:text-xl font-bold text-[var(--text-main)] mb-3">{b.title}</h3>
-            <p className="text-sm lg:text-base text-[var(--text-sub)] leading-relaxed opacity-70">{b.desc}</p>
-            {b.tag && (
-              <div className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-[10px] font-black uppercase tracking-wider mt-6 border" style={{ 
-                background: b.tagColor ? `${b.tagColor}15` : 'rgba(16,185,129,.1)',
-                borderColor: b.tagColor ? `${b.tagColor}30` : 'rgba(16,185,129,.2)',
-                color: b.tagColor || '#10B981' 
-              }}>
-                {b.tag}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    </section>
-  )
-}
-
-export function HowItWorks() {
-  const t = useTranslations('Landing.HowItWorks')
-  
-  const steps = [
-    { n:1, icon:'📋', title: t('steps.one.title'), desc: t('steps.one.desc') },
-    { n:2, icon:'⚙️', title: t('steps.two.title'), desc: t('steps.two.desc') },
-    { n:3, icon:'🔗', title: t('steps.three.title'), desc: t('steps.three.desc') },
-    { n:4, icon:'🚀', title: t('steps.four.title'), desc: t('steps.four.desc') },
+  const fb = [
+    { 
+      id:'b1', 
+      span:'lg:col-span-8', 
+      title: t('chatbot'), 
+      desc: t('chatbotDesc'), 
+      img: 'https://images.unsplash.com/photo-1531746790731-6c087fdec65a?auto=format&fit=crop&q=80&w=800',
+      tag: 'AI Powered',
+      icon: <MessageSquare className="w-5 h-5 text-blue-500" />
+    },
+    { 
+      id:'b2', 
+      span:'lg:col-span-4', 
+      title: t('order'), 
+      desc: t('orderDesc'), 
+      img: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&q=80&w=600',
+      tag: 'Smart Sync',
+      icon: <Package className="w-5 h-5 text-emerald-500" />
+    },
+    { 
+      id:'b3', 
+      span:'lg:col-span-4', 
+      title: t('catalog'), 
+      desc: t('catalogDesc'), 
+      img: 'https://images.unsplash.com/photo-1472851294608-062f824d29cc?auto=format&fit=crop&q=80&w=600',
+      tag: 'Visual Shop',
+      icon: <ShoppingCart className="w-5 h-5 text-amber-500" />
+    },
+    { 
+      id:'b4', 
+      span:'lg:col-span-8', 
+      title: t('crm'), 
+      desc: t('crmDesc'), 
+      img: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=800',
+      tag: 'Customer Obsessed',
+      icon: <Users className="w-5 h-5 text-blue-400" />
+    }
   ]
 
   return (
-    <section id="how" className="py-20 lg:py-32 px-6 lg:px-[8%]">
-      <div className="text-center mb-16 lg:mb-24">
-        <div className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-blue-500 mb-6">
-          <span className="w-4 h-[1.5px] bg-blue-600" />
-          {t('subtitle')}
-        </div>
-        <h2 className="font-poppins text-3xl lg:text-5xl font-black tracking-tight text-[var(--text-main)] mb-6 leading-[1.1]">
-          {t('title')}
-        </h2>
-        <p className="text-base text-[var(--text-sub)] leading-relaxed max-w-lg mx-auto opacity-70">
-          {t('registerDesc')}
-        </p>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8 relative">
-        {/* Connection Line (Desktop) */}
-        <div className="hidden lg:block absolute top-[52px] left-[10%] right-[10%] h-[1px] bg-gradient-to-r from-transparent via-[var(--border-c)] to-transparent opacity-50 transition-all duration-1000" />
-        
-        {steps.map((s, idx) => (
-          <div key={s.n} className="text-center relative z-10 group">
-            <div className="w-24 h-24 lg:w-28 lg:h-28 rounded-full mx-auto mb-8 flex items-center justify-center text-3xl lg:text-4xl relative bg-[var(--bg-card)] border-2 border-[var(--border-c)] group-hover:border-blue-500/50 group-hover:shadow-xl group-hover:shadow-blue-500/10 transition-all duration-500">
-              <div className="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-gradient-to-br from-blue-600 to-blue-800 font-poppins text-[10px] font-black text-white flex items-center justify-center border-2 border-[var(--bg-body)]">
-                {s.n}
-              </div>
-              {s.icon}
-            </div>
-            <h3 className="font-poppins text-lg font-bold text-[var(--text-main)] mb-3">{s.title}</h3>
-            <p className="text-sm text-[var(--text-sub)] leading-relaxed opacity-60 px-4">{s.desc}</p>
+    <section id="features" className="py-24 px-[5%] bg-[#01050a]">
+      <div className="max-w-7xl mx-auto">
+        <div className={`mb-16 ${isRtl ? 'text-right' : 'text-left'}`}>
+          <div className="hbadge bg-blue-500/10 border-blue-500/20 text-blue-500 mb-6">
+            <Zap className="w-3.5 h-3.5" />
+            <span className="text-[10px] font-black uppercase tracking-wider">{t('subtitle')}</span>
           </div>
-        ))}
-      </div>
-    </section>
-  )
-}
-
-export function DashboardPreview() {
-  const t = useTranslations('Landing.DashboardPreview')
-  
-  const stats = [
-    { label: t('stats.revenue'), value:'127,400 DA', color:'text-emerald-500', change: t('stats.revenueChange') },
-    { label: t('stats.orders'), value:'84', color:'text-blue-500', change: t('stats.ordersChange') },
-    { label: t('stats.ai'), value:'3,421', color:'text-[var(--text-main)]', change: t('stats.aiChange') },
-    { label: t('stats.cod'), value:'32', color:'text-amber-500', change: t('stats.codChange') },
-  ]
-  const bars = [40,58,72,55,87,78,100]
-
-  return (
-    <section id="dashboard" className="py-20 lg:py-32 px-6 lg:px-[8%] bg-[var(--bg-section)] overflow-hidden">
-      <div className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-blue-500 mb-6 px-1">
-        <span className="w-4 h-[1.5px] bg-blue-600" />
-        {t('subtitle')}
-      </div>
-      <h2 className="font-poppins text-3xl lg:text-5xl font-black tracking-tight text-[var(--text-main)] mb-6 leading-[1.1]">
-        {t('title')}
-      </h2>
-      <p className="text-base lg:text-lg text-[var(--text-sub)] leading-relaxed max-w-xl mb-12 opacity-70">
-        {t('desc')}
-      </p>
-
-      {/* Browser Mockup */}
-      <div className="relative group mx-auto max-w-5xl">
-        <div className="absolute -inset-1 bg-gradient-to-r from-blue-600/20 to-emerald-500/20 rounded-[2.5rem] blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
-        <div className="relative bg-[#0a1426ec] border border-[var(--border-c)] rounded-[2rem] overflow-hidden shadow-2xl">
-          {/* Browser bar */}
-          <div className="px-6 py-4 border-b border-[var(--border-c)] flex items-center justify-between bg-black/20">
-            <div className="flex gap-2">
-              {['#ff5f57','#ffbd2e','#28c840'].map((c,i) => <div key={i} className="w-3 h-3 rounded-full" style={{ background: c }} />)}
-            </div>
-            <div className="bg-[var(--bg-card)] rounded-lg px-4 py-1 text-[10px] lg:text-[11px] text-[var(--text-muted)] font-mono opacity-60">
-              app.ecomate.dz/dashboard
-            </div>
-            <div className="w-12" /> {/* Spacer */}
-          </div>
-          
-          <div className="flex flex-col lg:flex-row min-h-[400px]">
-            {/* Mock Sidebar - Hidden on mobile */}
-            <div className="hidden lg:block w-48 border-r border-[var(--border-c)] py-6">
-              {[['📊','Dashboard',true],['📦','Orders',false],['🛍️','Products',false],['👥','Customers',false],['🤖','AI Chatbot',false],['📈','Analytics',false],['🚚','Delivery',false]].map(([icon,label,active],i) => (
-                <div key={i} className={`px-5 py-2.5 flex items-center gap-3 text-[12px] font-semibold transition-all ${active ? 'text-[var(--text-main)] bg-blue-500/10 border-r-2 border-blue-500' : 'text-[var(--text-muted)] opacity-50'}`}>
-                  <span className="text-base">{icon as string}</span>{label as string}
-                </div>
-              ))}
-            </div>
-            
-            {/* Mock Main Content */}
-            <div className="flex-1 p-6 lg:p-8">
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                {stats.map((s,i) => (
-                  <div key={i} className="bg-[var(--bg-card)] border border-[var(--border-c)] rounded-xl p-4 transition-all hover:border-blue-500/20">
-                    <div className="text-[9px] font-black uppercase tracking-wider text-[var(--text-muted)] opacity-50 mb-2 truncate">
-                      {s.label}
-                    </div>
-                    <div className={`font-poppins text-lg lg:text-xl font-black ${s.color} mb-1 truncate`}>
-                      {s.value}
-                    </div>
-                    <div className="text-[10px] text-emerald-500 font-bold">
-                      {s.change}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              
-              <div className="bg-[var(--bg-card)] border border-[var(--border-c)] rounded-2xl p-6">
-                <div className="font-poppins text-xs font-black text-[var(--text-main)] mb-6 uppercase tracking-widest opacity-80">
-                  Weekly Revenue — دج
-                </div>
-                <div className="flex items-end gap-2 lg:gap-4 h-32 lg:h-40">
-                  {bars.map((h,i) => (
-                    <div 
-                      key={i} 
-                      className={`flex-1 rounded-t-lg transition-all duration-1000`} 
-                      style={{ 
-                        height: `${h}%`,
-                        background: i === 4 || i === 6 
-                          ? 'linear-gradient(180deg,#10B981,rgba(16,185,129,.1))' 
-                          : i === 2 || i === 5 
-                          ? 'linear-gradient(180deg,#2563eb,rgba(37,99,235,.1))' 
-                          : 'rgba(37,99,235,0.05)' 
-                      }} 
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  )
-}
-
-export function AISection() {
-  const t = useTranslations('Landing.AI')
-  
-  return (
-    <section id="ai-section" className="py-20 lg:py-32 px-6 lg:px-[8%]">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center">
-        {/* Chat mockup */}
-        <div className="order-2 lg:order-1 relative group">
-          <div className="absolute -inset-4 bg-gradient-to-r from-blue-600/20 to-emerald-500/20 rounded-[3rem] blur-2xl opacity-0 group-hover:opacity-100 transition duration-1000"></div>
-          <div className="relative bg-[#0a1426e6] border border-[var(--border-c)] rounded-[2.5rem] overflow-hidden shadow-2xl lg:transform lg:perspective-[1000px] lg:-rotate-y-6 lg:rotate-x-2 hover:rotate-0 transition-transform duration-700">
-            <div className="px-5 py-4 bg-[var(--bg-card)] border-b border-[var(--border-c)] flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-emerald-500 flex items-center justify-center text-lg shadow-lg">🤖</div>
-              <div>
-                <h4 className="font-poppins text-xs lg:text-sm font-bold text-[var(--text-main)]">EcoMate AI Assistant</h4>
-                <p className="text-[10px] text-emerald-500 flex items-center gap-1.5 font-bold uppercase tracking-wider">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  Online · Replies instantly
-                </p>
-              </div>
-            </div>
-            
-            <div className="p-5 flex flex-col gap-4">
-              <div className="self-end bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-2xl rounded-tr-none px-4 py-2.5 text-xs lg:text-sm max-w-[85%] shadow-md">
-                {t('chat.userMsg1')}
-              </div>
-              
-              <div className="self-start bg-[var(--bg-card)] text-[var(--text-main)] rounded-2xl rounded-tl-none px-4 py-3 text-xs lg:text-sm border border-[var(--border-c)] max-w-[90%] shadow-sm">
-                {t('chat.aiMsg1')}
-                <div className="grid grid-cols-3 gap-2 mt-3">
-                  {[['👖','Black','3,500'],['👖','Blue','3,200'],['👖','Grey','3,800']].map(([e,n,p]) => (
-                    <div key={n} className="bg-black/20 border border-[var(--border-c)] rounded-xl p-2 text-center transition-all hover:bg-black/40">
-                      <span className="text-xl block mb-1">{e as string}</span>
-                      <span className="text-[9px] font-black uppercase text-[var(--text-sub)] block truncate">{n as string}</span>
-                      <span className="font-poppins text-[10px] font-black text-emerald-500 block mt-1">{p as string} <span className="text-[8px]">DA</span></span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="self-end bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-2xl rounded-tr-none px-4 py-2.5 text-xs lg:text-sm max-w-[85%] shadow-md">
-                {t('chat.userMsg2')}
-              </div>
-              
-              <div className="flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3.5 text-xs lg:text-sm font-bold text-emerald-500">
-                <span className="text-lg">✅</span>
-                {t('chat.orderConfirm')}
-              </div>
-            </div>
-            
-            <div className="p-4 border-t border-[var(--border-c)] flex gap-3 bg-black/10">
-              <div className="flex-1 bg-[var(--bg-card)] border border-[var(--border-c)] rounded-xl px-4 py-2.5 text-xs text-[var(--text-muted)] opacity-50">
-                Type in Arabic, French or English...
-              </div>
-              <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg active:scale-95 transition-all">➤</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="order-1 lg:order-2">
-          <div className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-blue-500 mb-6 px-1">
-            <span className="w-4 h-[1.5px] bg-blue-600" />
-            {t('subtitle')}
-          </div>
-          <h2 className="font-poppins text-3xl lg:text-5xl font-black tracking-tight text-[var(--text-main)] mb-6 leading-[1.1]">
+          <h2 className="text-4xl md:text-6xl font-black font-poppins tracking-tighter text-white mb-6 leading-tight max-w-3xl">
             {t('title')}
           </h2>
-          <p className="text-base lg:text-lg text-[var(--text-sub)] leading-relaxed mb-10 opacity-70">
+          <p className="text-white/40 text-lg font-medium max-w-2xl leading-relaxed">
             {t('desc')}
           </p>
-          
-          <div className="grid grid-cols-1 gap-4 mb-10">
-            {[
-              { icon:'💬', iconBg:'rgba(37,99,235,0.15)', title: t('platformsTitle'), desc: t('platformsDesc') },
-              { icon:'🛒', iconBg:'rgba(37,99,235,0.15)', title: t('shoppingTitle'), desc: t('shoppingDesc') },
-              { icon:'📋', iconBg:'rgba(16,185,129,0.15)', title: t('orderTitle'), desc: t('orderDesc') },
-              { icon:'🚚', iconBg:'rgba(16,185,129,0.15)', title: t('trackingTitle'), desc: t('trackingDesc') },
-            ].map(f => (
-              <div key={f.title} className="flex items-start gap-4 p-5 bg-[var(--bg-card)] border border-[var(--border-c)] rounded-2xl hover:border-blue-500/30 transition-all group">
-                <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0 border border-white/5 group-hover:scale-110 transition-transform" style={{ background: f.iconBg }}>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {fb.map(f => (
+            <div key={f.id} className={`${f.span} group relative h-[480px] rounded-[32px] overflow-hidden border border-white/5 bg-[#050a14] hover:border-blue-500/30 transition-all duration-500`}>
+              <img src={f.img} alt={f.title} className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-60 group-hover:scale-105 transition-all duration-700" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#01050a] via-[#01050a]/40 to-transparent" />
+              
+              <div className="absolute bottom-0 left-0 right-0 p-10 z-10">
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 rounded-lg backdrop-blur-md mb-4">
                   {f.icon}
+                  <span className="text-[10px] font-black uppercase tracking-widest text-white/50">{f.tag}</span>
                 </div>
-                <div>
-                  <h4 className="font-poppins text-sm lg:text-base font-bold text-[var(--text-main)] mb-1">{f.title}</h4>
-                  <p className="text-[13px] text-[var(--text-sub)] leading-relaxed opacity-60">{f.desc}</p>
+                <h3 className="text-2xl font-black font-poppins text-white mb-3 tracking-tight">{f.title}</h3>
+                <p className="text-white/40 text-sm font-medium leading-relaxed max-w-md">{f.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+/* ── HOW IT WORKS ── */
+export function HowItWorks() {
+  const t = useTranslations('Landing.HowItWorks')
+  const locale = useLocale()
+  const isRtl = locale === 'ar'
+  
+  const steps = [
+    { n:1, icon: <Package className="w-8 h-8" />, title: t('steps.one.title'), desc: t('steps.one.desc') },
+    { n:2, icon: <Zap className="w-8 h-8" />, title: t('steps.two.title'), desc: t('steps.two.desc') },
+    { n:3, icon: <Globe className="w-8 h-8" />, title: t('steps.three.title'), desc: t('steps.three.desc') },
+    { n:4, icon: <TrendingUp className="w-8 h-8" />, title: t('steps.four.title'), desc: t('steps.four.desc') },
+  ]
+
+  return (
+    <section id="how" className="py-24 px-[5%] bg-[#050a14] border-y border-white/5">
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center mb-20">
+          <div className="hbadge bg-emerald-500/10 border-emerald-500/20 text-emerald-500 mb-6 mx-auto">
+            <span className="text-[10px] font-black uppercase tracking-widest">{t('subtitle')}</span>
+          </div>
+          <h2 className="text-4xl md:text-5xl font-black font-poppins tracking-tighter text-white mb-6">
+            {t('title')}
+          </h2>
+          <p className="text-white/40 text-base font-medium max-w-xl mx-auto leading-relaxed">
+            {t('registerDesc')}
+          </p>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 relative items-start">
+          {/* Animated Line */}
+          <div className="hidden lg:block absolute top-14 left-[15%] right-[15%] h-[1.5px] bg-white/[0.03] overflow-hidden">
+             <div className="h-full bg-gradient-to-r from-transparent via-blue-500 to-transparent w-40 animate-marquee" style={{ animationDuration: '3s' }} />
+          </div>
+
+          {steps.map((s, idx) => (
+            <div key={s.n} className="group relative text-center">
+              <div className="w-28 h-28 mx-auto mb-8 rounded-[32px] bg-white/[0.03] border border-white/10 flex items-center justify-center text-blue-500 group-hover:border-blue-500/40 group-hover:bg-blue-500/5 transition-all duration-500 relative z-10">
+                <div className="absolute -top-3 -right-3 w-8 h-8 rounded-xl bg-blue-600 font-poppins text-[12px] font-black text-white flex items-center justify-center shadow-lg border-2 border-[#050a14]">
+                  0{s.n}
                 </div>
+                {s.icon}
+              </div>
+              <h3 className="text-[17px] font-black font-poppins text-white mb-4 tracking-tight">{s.title}</h3>
+              <p className="text-white/30 text-[13.5px] font-medium leading-relaxed px-4">{s.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+/* ── DASHBOARD PREVIEW ── */
+export function DashboardPreview() {
+  const t = useTranslations('Landing.DashboardPreview')
+  const locale = useLocale()
+  const isRtl = locale === 'ar'
+  
+  return (
+    <section id="dashboard" className="py-24 px-[5%] bg-[#01050a] overflow-hidden">
+      <div className="max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center mb-20">
+          <div className={isRtl ? 'text-right' : 'text-left'}>
+            <div className="hbadge bg-blue-500/10 border-blue-500/20 text-blue-500 mb-6">
+               <span className="text-[10px] font-black uppercase tracking-widest">{t('subtitle')}</span>
+            </div>
+            <h2 className="text-4xl md:text-6xl font-black font-poppins tracking-tighter text-white mb-6 leading-tight">
+              {t('title')}
+            </h2>
+            <p className="text-white/40 text-lg font-medium leading-relaxed">
+              {t('desc')}
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+             {[
+               { icon: <BarChart3 className="text-emerald-500" />, label: t('stats.revenue'), val: '127.4K', change: '+14%' },
+               { icon: <Package className="text-blue-500" />, label: t('stats.orders'), val: '840+', change: '+22%' },
+               { icon: <ShieldCheck className="text-amber-500" />, label: t('stats.ai'), val: '98.2%', change: 'Stable' },
+               { icon: <TrendingUp className="text-purple-500" />, label: t('stats.cod'), val: '0', change: 'Fail Rate' },
+             ].map((s, i) => (
+               <div key={i} className="bg-white/[0.03] border border-white/5 p-6 rounded-3xl hover:border-white/10 transition-colors">
+                  <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center mb-4">{s.icon}</div>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-white/20 mb-1">{s.label}</div>
+                  <div className="text-2xl font-black font-poppins text-white tracking-tighter">{s.val}</div>
+                  <div className="text-[10px] font-bold text-emerald-500 mt-2">{s.change}</div>
+               </div>
+             ))}
+          </div>
+        </div>
+
+        {/* Mega Mockup */}
+        <div className="relative group">
+          <div className="absolute -inset-[2px] bg-gradient-to-r from-blue-500/50 to-emerald-500/50 rounded-[40px] opacity-20 blur-xl group-hover:opacity-40 transition-all duration-1000" />
+          <div className="relative rounded-[32px] overflow-hidden border border-white/10 shadow-2xl bg-[#050a14]">
+            <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+              <div className="flex gap-2">
+                <div className="w-3 h-3 rounded-full bg-red-500/50" />
+                <div className="w-3 h-3 rounded-full bg-amber-500/50" />
+                <div className="w-3 h-3 rounded-full bg-emerald-500/50" />
+              </div>
+              <div className="px-5 py-1.5 bg-white/5 rounded-xl border border-white/5 text-[11px] font-mono text-white/30 tracking-tight">
+                 app.ecomate.dz/analytics
+              </div>
+              <div className="w-12 h-4" />
+            </div>
+            <div className="relative h-[400px] md:h-[600px] overflow-hidden">
+               <img 
+                 src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=1600" 
+                 alt="Dashboard" 
+                 className="w-full h-full object-cover object-top opacity-90 group-hover:scale-[1.02] transition-transform duration-[20s] ease-linear" 
+               />
+               <div className="absolute inset-0 bg-gradient-to-t from-[#050a14] via-transparent to-transparent" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+/* ── AI SECTION ── */
+export function AISection() {
+  const t = useTranslations('Landing.AI')
+  const locale = useLocale()
+  const isRtl = locale === 'ar'
+  
+  return (
+    <section id="ai-section" className="py-24 px-[5%] bg-[#050a14]">
+      <div className="max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+          {/* Chat Mockup */}
+          <div className="relative order-2 lg:order-1">
+             <div className="absolute -inset-10 bg-blue-600/10 blur-[100px] rounded-full pointer-events-none" />
+             <div className="relative bg-[#01050a] border border-white/10 rounded-[40px] overflow-hidden shadow-2xl lg:transform lg:perspective-[1500px] lg:-rotate-y-12 lg:rotate-x-6 hover:rotate-0 transition-transform duration-1000 group">
+                <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                      <Zap className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <div className="text-white font-black font-poppins text-sm tracking-tight">EcoBot AI</div>
+                      <div className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        {t('chat.onlineStatus')}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-8 flex flex-col gap-6 h-[460px] overflow-hidden">
+                  <div className={`max-w-[85%] p-4 rounded-2xl rounded-bl-sm bg-white/5 border border-white/10 text-white/80 text-[14px] leading-relaxed self-start`}>
+                    {t('chat.aiMsg1')}
+                  </div>
+                  <div className={`max-w-[85%] self-end p-4 rounded-2xl rounded-br-sm bg-blue-600 text-white text-[14px] font-medium shadow-xl shadow-blue-600/10`}>
+                    {t('chat.userMsg1')}
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 mt-2">
+                     {[
+                       { img: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=300', name: 'Nike Air Max', price: '12,500 DA' },
+                       { img: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=300', name: 'Apple Watch S8', price: '68,000 DA' }
+                     ].map((p, i) => (
+                       <div key={i} className="bg-black/40 border border-white/5 rounded-2xl p-3 group/item cursor-pointer hover:border-blue-500/30 transition-all">
+                          <img src={p.img} alt={p.name} className="w-full h-32 object-cover rounded-xl mb-3" />
+                          <div className="text-[11px] font-black text-white/90 truncate">{p.name}</div>
+                          <div className="text-[12px] font-black text-blue-400 mt-1">{p.price}</div>
+                       </div>
+                     ))}
+                  </div>
+                </div>
+
+                <div className="p-6 border-t border-white/5 bg-white/[0.02] flex gap-4">
+                  <div className="flex-1 px-5 py-3.5 bg-white/5 rounded-2xl border border-white/10 text-[13px] text-white/30 font-medium">
+                    {t('chat.userInputPlaceholder')}
+                  </div>
+                  <button className="w-14 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg active:scale-95 transition-all">
+                    <ArrowRight className={isRtl ? 'rotate-180' : ''} />
+                  </button>
+                </div>
+             </div>
+          </div>
+
+          {/* Content */}
+          <div className={isRtl ? 'text-right' : 'text-left'}>
+            <div className="hbadge bg-emerald-500/10 border-emerald-500/20 text-emerald-500 mb-8">
+              <Zap className="w-3.5 h-3.5" />
+              <span className="text-[10px] font-black uppercase tracking-widest">{t('subtitle')}</span>
+            </div>
+            <h2 className="text-4xl md:text-6xl font-black font-poppins tracking-tighter text-white mb-8 leading-tight">
+              {t('title')}
+            </h2>
+            <p className="text-white/40 text-lg font-medium leading-relaxed mb-12">
+              {t('desc')}
+            </p>
+            
+            <div className="space-y-6 mb-12">
+               {[
+                 { icon: <MessageSquare className="w-5 h-5" />, title: t('platformsTitle'), desc: t('platformsDesc') },
+                 { icon: <ShoppingCart className="w-5 h-5" />, title: t('shoppingTitle'), desc: t('shoppingDesc') },
+                 { icon: <ShieldCheck className="w-5 h-5" />, title: t('orderTitle'), desc: t('orderDesc') },
+               ].map((f, i) => (
+                 <div key={i} className="flex gap-6 group">
+                    <div className="w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-center text-blue-500 group-hover:border-blue-500/40 group-hover:bg-blue-500/5 transition-all">
+                      {f.icon}
+                    </div>
+                    <div>
+                      <h4 className="text-[17px] font-black font-poppins text-white mb-1 tracking-tight">{f.title}</h4>
+                      <p className="text-white/30 text-sm font-medium leading-relaxed">{f.desc}</p>
+                    </div>
+                 </div>
+               ))}
+            </div>
+
+            <Link href="/?auth=register" className="bh1 group">
+               <span>{t('cta')}</span>
+               <ArrowRight className={`w-5 h-5 transition-transform ${isRtl ? 'rotate-180 group-hover:-translate-x-1' : 'group-hover:translate-x-1'}`} />
+            </Link>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+/* ── PRICING ── */
+export function Pricing() {
+  const t = useTranslations('Landing.Pricing')
+  const locale = useLocale()
+  const isRtl = locale === 'ar'
+  
+  const plans = [
+    { slug:'starter', name: t('starter'), price: '0', period: t('periodStarter'), feat: [t('featureChatbot'), t('featureOrders50'), t('feature1Channel'), t('feature20Items')], popular: false },
+    { slug:'growth', name: t('growth'), price: '4,900', period: t('periodMonthly'), feat: [t('featureFullAI'), t('featureUnlimited'), t('featureAllPlatforms'), t('featureTracking'), t('featureCRM')], popular: true },
+    { slug:'business', name: t('business'), price: 'Custom', period: t('periodTailored'), feat: ['All Growth Features', 'Dedicated Manager', 'Custom Integrations', 'Priority Support'], popular: false },
+  ]
+
+  return (
+    <section id="pricing" className="py-24 px-[5%] bg-[#01050a]">
+       <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-20">
+            <div className="hbadge bg-blue-500/10 border-blue-500/20 text-blue-500 mb-6 mx-auto">
+               <span className="text-[10px] font-black uppercase tracking-widest">{t('subtitle')}</span>
+            </div>
+            <h2 className="text-4xl md:text-6xl font-black font-poppins tracking-tighter text-white mb-6">
+              {t('title')}
+            </h2>
+            <p className="text-white/40 text-lg font-medium max-w-xl mx-auto">
+               {t('desc')}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {plans.map(p => (
+              <div key={p.slug} className={`relative p-10 rounded-[40px] border transition-all duration-500 hover:-translate-y-4 ${p.popular ? 'bg-blue-600/10 border-blue-500 shadow-2xl shadow-blue-500/10' : 'bg-white/[0.03] border-white/10 hover:border-white/20'}`}>
+                 {p.popular && (
+                   <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-blue-600 text-[10px] font-black uppercase tracking-widest px-6 py-2 rounded-full shadow-lg shadow-blue-600/30">
+                     {t('mostPopular')}
+                   </div>
+                 )}
+                 <div className="text-[11px] font-black uppercase tracking-[0.2em] text-white/20 mb-8">{p.name}</div>
+                 <div className="flex items-end gap-2 mb-2">
+                   <span className="text-5xl md:text-6xl font-black font-poppins text-white tracking-tighter">
+                     {p.price !== '0' && p.price !== 'Custom' && <span className="text-2xl mr-1">DA</span>}
+                     {p.price}
+                   </span>
+                 </div>
+                 <div className="text-sm font-bold text-white/30 mb-10">{p.period}</div>
+                 
+                 <div className="space-y-5 flex-1 mb-12">
+                   {p.feat.map((f, i) => (
+                     <div key={i} className="flex items-center gap-3 text-sm font-bold text-white/50">
+                        <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+                        {f}
+                     </div>
+                   ))}
+                 </div>
+
+                 <Link href="/?auth=register" className={`block w-full py-5 rounded-2xl font-black font-poppins text-center text-[13px] uppercase tracking-widest transition-all ${p.popular ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/20 hover:bg-blue-500' : 'bg-white/[0.05] border border-white/10 text-white/60 hover:bg-white/10'}`}>
+                    {p.slug === 'business' ? 'Contact Sales' : 'Get Started'}
+                 </Link>
               </div>
             ))}
           </div>
-          
-          <Link href="/auth/register" className="btn-primary inline-flex items-center gap-3 px-8 py-4 text-sm font-black uppercase tracking-widest shadow-xl shadow-blue-600/10 active:scale-95 transition-all">
-            {t('cta')}
-            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </Link>
-        </div>
-      </div>
+       </div>
     </section>
   )
 }
 
-export function Pricing({ plans }: { plans?: any[] }) {
-  const t = useTranslations('Landing.Pricing')
-  
-  const fallbackPlans = [
-    { slug:'starter', name: t('starter'), price: t('priceFree'), period: t('periodStarter'), features:[t('featureChatbot'), t('featureOrders50'), t('feature1Channel'), t('feature20Items'), t('featureSheets')], cta: t('Nav.register'), href:'/auth/register' },
-    { slug:'growth', name: t('growth'), price:'4,900', period: t('periodMonthly'), features:[t('featureFullAI'), t('featureUnlimited'), t('featureAllPlatforms'), t('featureTracking'), t('featureCRM'), t('featureGrowthAgent'), t('featureAnalytics')], cta: t('Nav.register'), href:'/auth/register', popular:true },
-    { slug:'business', name: t('business'), price: t('priceCustom'), period: t('periodTailored'), features:[t('featureFullAI'), t('featureGrowthAgent'), 'Custom lead targeting', 'Priority deliverability', 'Dedicated account manager', 'Custom integrations'], cta: t('Nav.login'), href:'mailto:contact@ecomate.dz' },
-  ]
-  const activePlans = plans && plans.length > 0 
-    ? plans.map(p => ({
-        slug: p.id, 
-        name: p.name, 
-        price: p.price === 0 ? (p.id === 'starter' ? 'Free' : 'Custom') : p.price.toLocaleString(), 
-        period: p.period || '',
-        features: Array.isArray(p.features) ? p.features : [], 
-        cta: p.cta_text || (p.id === 'business' ? 'Contact Sales' : 'Get Started →'), 
-        href: p.id === 'business' ? 'mailto:contact@ecomate.dz' : '/auth/register', 
-        popular: p.is_popular
-      }))
-    : fallbackPlans
-
-  return (
-    <section id="pricing" className="py-20 lg:py-32 px-6 lg:px-[8%] bg-[var(--bg-section)]">
-      <div className="text-center mb-16 lg:mb-20">
-        <div className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-blue-500 mb-6">
-          <span className="w-4 h-[1.5px] bg-blue-600" />
-          {t('subtitle')}
-        </div>
-        <h2 className="font-poppins text-3xl lg:text-5xl font-black tracking-tight text-[var(--text-main)] mb-6 leading-[1.1]">
-          {t('title')}
-        </h2>
-        <p className="text-base text-[var(--text-sub)] opacity-70 max-w-sm mx-auto">{t('desc')}</p>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 max-w-6xl mx-auto">
-        {activePlans.map((p: any) => (
-          <div key={p.slug} className={`relative flex flex-col border rounded-[2rem] p-8 lg:p-10 transition-all duration-300 hover:-translate-y-2 ${p.popular ? 'border-blue-500/50 bg-gradient-to-b from-blue-900/40 to-[var(--bg-card)] shadow-2xl shadow-blue-500/10' : 'border-[var(--border-c)] bg-[var(--bg-card)]'}`}>
-            {p.popular && (
-              <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-poppins text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-lg shadow-emerald-500/20">
-                Most Popular
-              </span>
-            )}
-            
-            <div className="font-poppins text-xs font-black text-[var(--text-muted)] uppercase tracking-widest mb-4 opacity-60">
-              {p.name}
-            </div>
-            
-            <div className="font-poppins text-4xl lg:text-5xl font-black tracking-tighter text-[var(--text-main)] mb-2 flex items-start">
-              {p.price !== 'Free' && p.price !== 'Custom' && <span className="text-xl mt-2 mr-1">DA</span>}
-              {p.price}
-            </div>
-            <div className="text-[11px] lg:text-xs text-[var(--text-muted)] mb-10 opacity-50">
-              {p.period}
-            </div>
-            
-            <ul className="flex-1 space-y-4 mb-10">
-              {p.features.map((f: string) => (
-                <li key={f} className="text-[13px] lg:text-sm text-[var(--text-sub)] flex items-start gap-3">
-                  <span className="text-emerald-500 font-bold block shrink-0 mt-0.5">✓</span>
-                  <span className="opacity-80">{f}</span>
-                </li>
-              ))}
-            </ul>
-            
-            <Link href={p.href} className={`block w-full py-4 rounded-2xl font-poppins text-sm font-black text-center uppercase tracking-widest transition-all ${p.popular ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/20 hover:bg-blue-500' : 'bg-white/5 border border-white/10 text-[var(--text-sub)] hover:bg-white/10'}`}>
-              {p.cta}
-            </Link>
-          </div>
-        ))}
-      </div>
-    </section>
-  )
-}
-
+/* ── CTA ── */
 export function CTA() {
   const t = useTranslations('Landing.CTA')
-  
+  const locale = useLocale()
+  const isRtl = locale === 'ar'
+
   return (
-    <section id="cta" className="bg-gradient-to-br from-blue-900 via-[#07101f] to-black py-24 lg:py-40 px-6 lg:px-[8%] text-center relative overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,rgba(37,99,235,0.25),transparent_65%)] pointer-events-none" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-emerald-500/10 blur-[100px] pointer-events-none" />
-      
-      <div className="relative z-10 max-w-4xl mx-auto">
-        <h2 className="font-poppins text-4xl lg:text-7xl font-black text-white leading-[1.05] tracking-tight mb-8">
-          {t('title')}
-        </h2>
-        <p className="text-base lg:text-xl text-white/50 max-w-2xl mx-auto mb-12 leading-relaxed">
-          {t('desc')}
-        </p>
-        
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <Link href="/auth/register" className="w-full sm:w-auto flex items-center justify-center gap-3 bg-white text-[#07101f] font-poppins text-base font-black px-10 py-5 rounded-2xl shadow-2xl shadow-black/50 hover:bg-blue-50 active:scale-95 transition-all">
-            Start Free — No Card Needed
-            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </Link>
-          <a href="mailto:contact@ecomate.dz" className="w-full sm:w-auto flex items-center justify-center gap-3 bg-white/5 border border-white/10 text-white/80 font-poppins text-base font-bold px-10 py-5 rounded-2xl hover:bg-white/10 active:scale-95 transition-all">
-            Talk to Our Team 📞
-          </a>
-        </div>
-        
-        <p className="mt-12 text-[10px] lg:text-xs font-black uppercase tracking-[0.25em] text-white/20">
-          Built at University of Bouira Startup Incubator · 🇩🇿 Made in Algeria
-        </p>
+    <section id="cta" className="py-32 px-[5%] relative overflow-hidden bg-[#050a14]">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(37,99,235,0.15),transparent_70%)] pointer-events-none" />
+      <div className="max-w-5xl mx-auto text-center relative z-10">
+         <h2 className="text-5xl md:text-8xl font-black font-poppins tracking-tighter text-white mb-10 leading-[1] max-w-4xl mx-auto">
+            {t('title')}
+         </h2>
+         <p className="text-white/40 text-lg md:text-xl font-medium mb-16 max-w-2xl mx-auto leading-relaxed">
+            {t('desc')}
+         </p>
+         <div className="flex flex-col md:flex-row gap-6 justify-center items-center">
+            <Link href="/?auth=register" className="bh1 !px-12 !py-6 !text-base scale-110 active:scale-105">
+               <span>{t('startFree')}</span>
+               <ArrowRight className={isRtl ? 'rotate-180' : ''} />
+            </Link>
+            <button className="bh2 !px-12 !py-6 !text-base !font-black !text-white/60 hover:!text-white transition-all">
+               {t('talkTeam')}
+            </button>
+         </div>
+         <div className="mt-20 flex flex-col items-center gap-4 opacity-20">
+            <div className="text-[10px] font-black uppercase tracking-[0.4em]">{t('builtAt')}</div>
+            <div className="text-xs font-black tracking-widest">ECOMARE 2.0 ─ PRODUCTION READY</div>
+         </div>
       </div>
     </section>
   )
 }
 
+/* ── FOOTER ── */
 export function Footer() {
   const t = useTranslations('Landing.Footer')
-  
+  const locale = useLocale()
+  const isRtl = locale === 'ar'
+
   return (
-    <footer className="bg-[#050a14] py-20 lg:py-24 px-6 lg:px-[8%] border-t border-white/5">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 mb-20 text-center lg:text-start">
-        <div className="flex flex-col items-center lg:items-start">
-          <div className="font-poppins font-black text-3xl mb-6">
-            <span className="bg-gradient-to-br from-blue-500 to-blue-600 bg-clip-text text-transparent">Eco</span>
-            <span className="bg-gradient-to-br from-emerald-400 to-emerald-500 bg-clip-text text-transparent">Mate</span>
-          </div>
-          <p className="text-sm text-white/30 leading-relaxed max-w-xs mb-8">
-            {t('slogan')}
-          </p>
-          <div className="flex gap-3">
-            {['📘','📸','💬','💼'].map((s,i) => (
-              <a key={i} href="#" className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-lg hover:bg-blue-600 hover:border-blue-500 hover:scale-110 transition-all duration-300">
-                {s}
-              </a>
-            ))}
-          </div>
+    <footer className="py-24 px-[5%] bg-[#01050a] border-t border-white/5">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 mb-24">
+        <div className={`flex flex-col ${isRtl ? 'items-end text-right' : 'items-start text-left'}`}>
+           <div className="font-poppins font-black text-3xl mb-8 flex items-center gap-1">
+             <span className="text-white">Eco</span>
+             <span className="text-blue-500">Mate</span>
+           </div>
+           <p className="text-white/30 text-sm font-medium leading-relaxed max-w-xs mb-10">
+             {t('slogan')}
+           </p>
+           <div className="flex gap-4">
+             {['Facebook', 'Instagram', 'LinkedIn'].map(s => (
+               <div key={s} className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-[10px] font-black text-white/30 hover:bg-blue-600 hover:text-white hover:border-blue-500 cursor-pointer transition-all">
+                 {s[0]}
+               </div>
+             ))}
+           </div>
         </div>
 
         {[
-          { title: t('colPlatform'), links:[t('about'), t('team')] },
-          { title: t('colCompany'), links:[t('contact'), t('faqs')] },
-          { title: t('colSupport'), links:['Privacy Policy', 'Terms of Service'] },
+          { title: t('colPlatform'), links: [t('about'), t('team'), 'Carrers'] },
+          { title: t('colCompany'), links: [t('contact'), t('faqs'), 'Blog'] },
+          { title: t('colSupport'), links: ['Privacy Policy', 'Terms of Service', 'Cookie Policy'] },
         ].map(col => (
-          <div key={col.title}>
-            <h5 className="font-poppins text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-8">
-              {col.title}
-            </h5>
-            <ul className="space-y-4">
-              {col.links.map(l => (
-                <li key={l}>
-                  <a href="#" className="text-[13px] text-white/25 hover:text-blue-400 transition-colors duration-300">
-                    {l}
-                  </a>
-                </li>
-              ))}
-            </ul>
+          <div key={col.title} className={isRtl ? 'text-right' : 'text-left'}>
+             <h5 className="text-[11px] font-black uppercase tracking-[0.25em] text-white/20 mb-10">{col.title}</h5>
+             <ul className="space-y-5">
+               {col.links.map(l => (
+                 <li key={l}>
+                   <a href="#" className="text-[14px] font-bold text-white/40 hover:text-blue-500 transition-colors">{l}</a>
+                 </li>
+               ))}
+             </ul>
           </div>
         ))}
       </div>
-      
-      <div className="max-w-7xl mx-auto pt-10 border-t border-white/5 flex flex-col sm:flex-row justify-between items-center gap-6 opacity-40">
-        <p className="text-[11px] font-medium text-white/60">
-          © 2025 <span className="text-white font-black">EcoMate</span>. All rights reserved.
-        </p>
-        <p className="text-[11px] font-black uppercase tracking-widest text-white/60">
-          🇩🇿 Made in Algeria
-        </p>
+
+      <div className="max-w-7xl mx-auto pt-10 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8">
+         <div className="text-[12px] font-medium text-white/20">
+            © 2025 <span className="text-white/40 font-black">ECOMATE</span>. {isRtl ? 'جميع الحقوق محفوظة' : 'All rights reserved.'}
+         </div>
+         <div className="flex items-center gap-3">
+            <span className="w-8 h-[1.5px] bg-white/5" />
+            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20">Made in Algeria 🇩🇿</span>
+            <span className="w-8 h-[1.5px] bg-white/5" />
+         </div>
       </div>
     </footer>
   )
