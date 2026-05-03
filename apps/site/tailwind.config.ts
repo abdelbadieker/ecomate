@@ -27,10 +27,17 @@ const config: Config = {
         mqani: {
           '0%': { transform: 'translateX(0)' },
           '100%': { transform: 'translateX(-50%)' },
+        },
+        float: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-15px)' },
         }
       },
       animation: {
         mqani: 'mqani 40s linear infinite',
+        float: 'float 5s ease-in-out infinite',
+        'float-slow': 'float 7s ease-in-out infinite',
+        'float-fast': 'float 4s ease-in-out infinite',
       }
     },
   },
