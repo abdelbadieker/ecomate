@@ -28,6 +28,7 @@ const navItems = [
   { name: 'Overview', href: '/dashboard', icon: <LayoutDashboard size={20} /> },
   { name: 'Merchants & Users', href: '/merchants', icon: <Users size={20} /> },
   { name: 'Subscriptions', href: '/subscriptions', icon: <CreditCard size={20} /> },
+  { name: 'Billing Settings', href: '/billing', icon: <DollarSign size={20} /> },
   { name: 'Creative Studio', href: '/creative-studio', icon: <Palette size={20} /> },
   { name: 'Services', href: '/services', icon: <LayoutList size={20} /> },
   { name: 'Partner Links', href: '/partner-links', icon: <Share2 size={20} /> },
