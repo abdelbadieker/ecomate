@@ -38,8 +38,10 @@ export async function ServicesSection() {
 
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
         {services.map((service, index) => {
-          // Dynamically get the lucide icon
-          const Icon = service.icon && (LucideIcons as any)[service.icon] ? (LucideIcons as any)[service.icon] : LucideIcons.CheckCircle2;
+          // Dynamically get the lucide icon or treat as emoji
+          const hasValidIcon = service.icon && !!(LucideIcons as any)[service.icon];
+          const isEmoji = service.icon && !hasValidIcon;
+          const Icon = hasValidIcon ? (LucideIcons as any)[service.icon] : LucideIcons.CheckCircle2;
           
           // Make the first item span 2 columns to mimic the original Bento design if there are enough items
           const isFeatured = index === 0 && services.length > 3;
@@ -58,7 +60,11 @@ export async function ServicesSection() {
                  </div>
               ) : (
                 <div className={`w-14 h-14 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-center justify-center mb-6 ${isFullWidth ? 'w-16 h-16 shrink-0' : ''}`}>
-                  <Icon className={`w-7 h-7 ${index % 2 === 0 ? 'text-blue-400' : 'text-emerald-400'} ${isFullWidth ? 'w-8 h-8' : ''}`} />
+                  {isEmoji ? (
+                    <span className="text-3xl">{service.icon}</span>
+                  ) : (
+                    <Icon className={`w-7 h-7 ${index % 2 === 0 ? 'text-blue-400' : 'text-emerald-400'} ${isFullWidth ? 'w-8 h-8' : ''}`} />
+                  )}
                 </div>
               )}
               

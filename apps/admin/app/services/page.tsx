@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { LayoutList, Plus, Trash2, Edit2, Check, X, Loader2, GripVertical } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
 
 interface Service {
   id: string;
@@ -142,8 +143,19 @@ export default function ServicesPage() {
               <input value={form.title} onChange={e => setForm({...form, title: e.target.value})} className="w-full bg-[#07101F] border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-blue-500 transition-colors" placeholder="e.g. AI Sales Chatbot" />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Lucide Icon Name</label>
-              <input value={form.icon} onChange={e => setForm({...form, icon: e.target.value})} className="w-full bg-[#07101F] border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-blue-500 transition-colors" placeholder="e.g. Bot, BarChart3, Package" />
+              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Icon Name or Emoji</label>
+              <div className="relative flex items-center">
+                <div className="absolute left-3 w-8 h-8 rounded bg-blue-500/10 flex items-center justify-center text-blue-400">
+                  {(() => {
+                    if (!form.icon) return <LayoutList className="w-4 h-4" />;
+                    const hasValidIcon = !!(LucideIcons as any)[form.icon];
+                    const IconPreview = hasValidIcon ? (LucideIcons as any)[form.icon] : null;
+                    if (IconPreview) return <IconPreview className="w-4 h-4" />;
+                    return <span className="text-lg leading-none">{form.icon}</span>;
+                  })()}
+                </div>
+                <input value={form.icon} onChange={e => setForm({...form, icon: e.target.value})} className="w-full bg-[#07101F] border border-slate-700 rounded-xl pl-14 pr-4 py-3 text-white outline-none focus:border-blue-500 transition-colors" placeholder="e.g. Bot, 🔥, Package" />
+              </div>
             </div>
           </div>
           <div className="mb-4">
@@ -178,8 +190,15 @@ export default function ServicesPage() {
           services.map((s) => (
             <div key={s.id} className="bg-[#0A1628] border border-slate-800 rounded-xl p-4 flex items-center gap-4 hover:border-slate-700 transition-colors">
               <div className="text-slate-600 cursor-grab px-2"><GripVertical className="w-5 h-5" /></div>
-              <div className="w-10 h-10 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0 font-bold text-xs">
-                {s.icon ? s.icon.substring(0, 2).toUpperCase() : s.order_index}
+              <div className="w-10 h-10 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0 font-bold">
+                {(() => {
+                  if (s.image_url) return <img src={s.image_url} alt="img" className="w-full h-full object-cover rounded-lg" />;
+                  if (!s.icon) return s.order_index;
+                  const hasValidIcon = !!(LucideIcons as any)[s.icon];
+                  const IconComp = hasValidIcon ? (LucideIcons as any)[s.icon] : null;
+                  if (IconComp) return <IconComp className="w-5 h-5" />;
+                  return <span className="text-xl leading-none">{s.icon}</span>;
+                })()}
               </div>
               <div className="flex-1">
                 <h4 className="text-white font-bold text-sm">{s.title}</h4>
