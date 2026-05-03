@@ -563,14 +563,14 @@ export default function MessagingPage() {
                             >
                               {formatTimestamp(msg.created_at)}
                             </span>
-                            {isAdmin && (
-                              <div className="flex items-center gap-2">
-                                <button
-                                  onClick={() => handleDeleteMessage(msg.id)}
-                                  className="text-[10px] text-red-400 hover:text-red-300 transition-colors opacity-0 group-hover:opacity-100"
-                                >
-                                  Delete
-                                </button>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleDeleteMessage(msg.id)}
+                                className={`text-[10px] text-red-400 hover:text-red-300 transition-colors opacity-0 group-hover:opacity-100 ${isAdmin ? '' : 'absolute -right-12 top-1/2 -translate-y-1/2'}`}
+                              >
+                                Delete
+                              </button>
+                              {isAdmin && (
                                 <span
                                   className={`text-[10px] ${
                                     msg.is_read ? 'text-emerald-300' : 'text-blue-200/40'
@@ -578,8 +578,8 @@ export default function MessagingPage() {
                                 >
                                   {msg.is_read ? 'Read' : 'Sent'}
                                 </span>
-                              </div>
-                            )}
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>

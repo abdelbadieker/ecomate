@@ -1,41 +1,66 @@
 'use client';
 import { useRef, useState, useEffect } from 'react';
-import { Upload, FileText, CheckCircle2, AlertCircle, Loader2, Link as LinkIcon, FileSpreadsheet, X, Folder, Trash2, ExternalLink } from 'lucide-react';
+import { Upload, FileText, CheckCircle2, AlertCircle, Loader2, Link as LinkIcon, FileSpreadsheet, X, Folder, Trash2, ExternalLink, FileDown, Image as ImageIcon, FileArchive } from 'lucide-react';
 import { uploadFile } from '@/lib/storage-utils';
 import { createBrowserClient } from '@supabase/ssr';
 
 function createClient() { return createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!); }
 
 type Merchant = { id: string; full_name: string; email: string };
-type CrmAsset = { id: string; client_id: string; type: 'file' | 'link'; title: string; file_url: string | null; external_url: string | null; created_at: string };
+type CrmFile = { id: string; client_id: string; file_name: string; file_url: string; file_type: string; file_size: number; created_at: string };
 
-const ACCEPTED_EXTENSIONS = ['.csv', '.xlsx', '.xls'];
-const ACCEPT_STRING = '.csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel';
+const IMPORT_EXTENSIONS = ['.csv', '.xlsx', '.xls'];
+const FILE_EXTENSIONS = ['.pdf', '.docx', '.doc', '.xlsx', '.xls', '.csv', '.jpg', '.jpeg', '.png', '.zip'];
 
 function getFileExtension(filename: string): string {
   return ('.' + filename.split('.').pop()?.toLowerCase()) || '';
 }
 
-function parseCSV(text: string): Record<string, string>[] {
-  const lines = text.split('\n').filter(l => l.trim());
-  if (lines.length < 2) return [];
-  const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-  return lines.slice(1).map(line => {
-    const values = line.split(',').map(v => v.trim());
-    const row: Record<string, string> = {};
-    headers.forEach((header, index) => {
-      const v = values[index] || '';
-      const h = header.toLowerCase();
-      if (h.includes('name') || h.includes('nom') || h === 'n') row.name = v;
-      if (h.includes('email') || h.includes('mail')) row.email = v;
-      if (h.includes('phone') || h.includes('tel') || h.includes('mobile') || h.includes('tlf')) row.phone = v;
-      if (h.includes('city') || h.includes('wilaya') || h.includes('ville') || h.includes('location') || h.includes('place')) row.city = v;
-      if (h.includes('note') || h.includes('obs') || h.includes('remarque') || h.includes('desc')) row.notes = v;
-      if (h.includes('order') || h.includes('commande')) row.total_orders = v;
-      if (h.includes('spent') || h.includes('total') || h.includes('da')) row.total_spent = v;
-    });
-    return row;
+/**
+ * Robustly detect column index based on common header variations
+ */
+function detectCol(headers: string[], variations: string[]): number {
+  return headers.findIndex(h => {
+    const header = h.toLowerCase().trim();
+    return variations.some(v => header.includes(v.toLowerCase()) || header === v.toLowerCase());
   });
+}
+
+function processRows(rows: any[][], headers: string[]): { valid: any[], invalidCount: number } {
+  const nameIdx = detectCol(headers, ['name', 'nom', 'client', 'customer', 'n']);
+  const emailIdx = detectCol(headers, ['email', 'mail', 'e-mail']);
+  const phoneIdx = detectCol(headers, ['phone', 'tel', 'mobile', 'telephone', 'portable']);
+  const cityIdx = detectCol(headers, ['city', 'wilaya', 'ville', 'location', 'place', 'address', 'adresse']);
+  const noteIdx = detectCol(headers, ['note', 'obs', 'remarque', 'desc', 'comment']);
+  const ordersIdx = detectCol(headers, ['order', 'commande', 'total orders']);
+  const spentIdx = detectCol(headers, ['spent', 'total spent', 'da', 'price', 'total']);
+
+  const valid: any[] = [];
+  let invalidCount = 0;
+
+  rows.forEach(row => {
+    // Skip empty rows
+    if (!row || row.length === 0 || row.every(cell => !cell)) return;
+
+    const name = nameIdx !== -1 ? String(row[nameIdx] || '').trim() : '';
+    
+    if (!name) {
+      invalidCount++;
+      return;
+    }
+
+    valid.push({
+      name,
+      email: emailIdx !== -1 ? String(row[emailIdx] || '').trim() : null,
+      phone: phoneIdx !== -1 ? String(row[phoneIdx] || '').trim() : null,
+      city: cityIdx !== -1 ? String(row[cityIdx] || '').trim() : null,
+      notes: noteIdx !== -1 ? String(row[noteIdx] || '').trim() : null,
+      total_orders: ordersIdx !== -1 ? parseInt(String(row[ordersIdx])) || 0 : 0,
+      total_spent: spentIdx !== -1 ? parseFloat(String(row[spentIdx])) || 0 : 0,
+    });
+  });
+
+  return { valid, invalidCount };
 }
 
 export default function CRMImportClient({ initialMerchants = [] }: { initialMerchants?: Merchant[] }) {
@@ -43,243 +68,228 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
   const [selectedMerchant, setSelectedMerchant] = useState<string>('');
   
   // Tabs
-  const [activeTab, setActiveTab] = useState<'import' | 'assets'>('import');
+  const [activeTab, setActiveTab] = useState<'import' | 'files'>('import');
 
   // Import State
-  const [file, setFile] = useState<File | null>(null);
+  const [importFile, setImportFile] = useState<File | null>(null);
   const [importing, setImporting] = useState(false);
-  const [results, setResults] = useState<{ success: number; failed: number } | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [googleSheetsUrl, setGoogleSheetsUrl] = useState('');
+  const [importResults, setImportResults] = useState<{ total: number; success: number; failed: number } | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
   const [importMode, setImportMode] = useState<'file' | 'sheets'>('file');
+  const [googleSheetsUrl, setGoogleSheetsUrl] = useState('');
   const abortRef = useRef<AbortController | null>(null);
 
-  // Assets State
+  // Files State
   const supabase = createClient();
-  const [assets, setAssets] = useState<CrmAsset[]>([]);
-  const [assetType, setAssetType] = useState<'file' | 'link'>('file');
-  const [assetTitle, setAssetTitle] = useState('');
-  const [assetFile, setAssetFile] = useState<File | null>(null);
-  const [assetLink, setAssetLink] = useState('');
-  const [assetSaving, setAssetSaving] = useState(false);
-  const assetUploadAbortRef = useRef<AbortController | null>(null);
+  const [files, setFiles] = useState<CrmFile[]>([]);
+  const [uploadingFile, setUploadingFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [fileLoadError, setFileLoadError] = useState<string | null>(null);
+  const uploadAbortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    if (selectedMerchant && activeTab === 'assets') {
-      loadAssets();
+    if (selectedMerchant && activeTab === 'files') {
+      loadFiles();
     }
   }, [selectedMerchant, activeTab]);
 
-  const loadAssets = async () => {
+  const loadFiles = async () => {
     try {
-      const res = await fetch(`/api/admin/crm/assets?client_id=${selectedMerchant}`);
+      setFileLoadError(null);
+      const res = await fetch(`/api/admin/crm/files?client_id=${selectedMerchant}`);
       const data = await res.json();
-      setAssets(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error('Failed to load assets', err);
-      setAssets([]);
+      if (!res.ok) throw new Error(data.error || 'Failed to load files');
+      setFiles(Array.isArray(data) ? data : []);
+    } catch (err: any) {
+      setFileLoadError(err.message);
+      setFiles([]);
     }
   };
 
-  const handleAssetSave = async () => {
-    if (!assetTitle || !selectedMerchant) return;
-    if (assetType === 'file' && !assetFile) return;
-    if (assetType === 'link' && !assetLink) return;
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f || !selectedMerchant) return;
 
-    setAssetSaving(true);
-    let fileUrl = null;
+    const ext = getFileExtension(f.name);
+    if (!FILE_EXTENSIONS.includes(ext)) {
+      alert(`Unsupported file type. Allowed: ${FILE_EXTENSIONS.join(', ')}`);
+      return;
+    }
 
+    setIsUploading(true);
     try {
-      if (assetType === 'file' && assetFile) {
-        const controller = new AbortController();
-        assetUploadAbortRef.current = controller;
-        const res = await uploadFile(supabase, assetFile, {
-          bucket: 'platform-assets',
-          path: `crm/${selectedMerchant}`,
-          signal: controller.signal,
-        });
-        if (res.error || !res.url) throw new Error(res.error || 'Failed to upload file');
-        fileUrl = res.url;
-      }
+      const controller = new AbortController();
+      uploadAbortRef.current = controller;
 
-      await fetch('/api/admin/crm/assets', {
+      const uploadRes = await uploadFile(supabase, f, {
+        bucket: 'platform-assets',
+        path: `crm-files/${selectedMerchant}`,
+        signal: controller.signal,
+      });
+
+      if (uploadRes.error || !uploadRes.url) throw new Error(uploadRes.error || 'Upload failed');
+
+      const saveRes = await fetch('/api/admin/crm/files', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           client_id: selectedMerchant,
-          type: assetType,
-          title: assetTitle,
-          file_url: fileUrl,
-          external_url: assetType === 'link' ? assetLink : null
-        })
+          file_name: f.name,
+          file_url: uploadRes.url,
+          file_type: f.type || ext.replace('.', ''),
+          file_size: f.size,
+        }),
       });
 
-      setAssetTitle('');
-      setAssetFile(null);
-      setAssetLink('');
-      loadAssets();
-    } catch (e: any) {
-      if (e.name !== 'AbortError' && e.message !== 'Upload cancelled') {
-        alert(e.message);
-      }
+      if (!saveRes.ok) throw new Error('Failed to save file metadata');
+
+      loadFiles();
+      setUploadingFile(null);
+    } catch (err: any) {
+      if (err.name !== 'AbortError') alert(err.message);
     } finally {
-      assetUploadAbortRef.current = null;
-      setAssetSaving(false);
+      setIsUploading(false);
+      uploadAbortRef.current = null;
     }
   };
 
-  const cancelAssetUpload = () => {
-    assetUploadAbortRef.current?.abort();
+  const deleteFile = async (id: string) => {
+    if (!confirm('Delete this file? This cannot be undone.')) return;
+    try {
+      const res = await fetch(`/api/admin/crm/files?id=${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Delete failed');
+      loadFiles();
+    } catch (err: any) {
+      alert(err.message);
+    }
   };
 
-  const deleteAsset = async (id: string) => {
-    if (!confirm('Delete this asset?')) return;
-    await fetch('/api/admin/crm/assets?id=' + id, { method: 'DELETE' });
-    loadAssets();
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImportFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
-    
     const ext = getFileExtension(f.name);
-    if (ACCEPTED_EXTENSIONS.includes(ext)) {
-      setFile(f);
-      setError(null);
+    if (IMPORT_EXTENSIONS.includes(ext)) {
+      setImportFile(f);
+      setImportError(null);
     } else {
-      setError(`Unsupported file type. Accepted: ${ACCEPTED_EXTENSIONS.join(', ')}`);
-      setFile(null);
+      setImportError(`Invalid format. Use ${IMPORT_EXTENSIONS.join(', ')} for customer import.`);
+      setImportFile(null);
     }
     e.target.value = '';
   };
 
-  const processFile = async (file: File): Promise<Record<string, string>[]> => {
-    const ext = getFileExtension(file.name);
-
-    if (ext === '.csv') {
-      const text = await file.text();
-      return parseCSV(text);
-    }
-
-    if (ext === '.xlsx' || ext === '.xls') {
-       const XLSX = await import('xlsx');
-       const buffer = await file.arrayBuffer();
-       const workbook = XLSX.read(buffer, { type: 'array' });
-       const sheetName = workbook.SheetNames[0];
-       const sheet = workbook.Sheets[sheetName];
-       const jsonData: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-       
-       if (jsonData.length < 2) return [];
-       
-       const headers = (jsonData[0] as string[]).map(h => String(h || '').trim().toLowerCase());
-       return jsonData.slice(1).filter(row => row.some(cell => cell)).map(row => {
-         const record: Record<string, string> = {};
-           headers.forEach((header, index) => {
-            const value = String(row[index] || '').trim();
-            const h = header.toLowerCase();
-            if (h.includes('name') || h.includes('nom') || h === 'n') record.name = value;
-            if (h.includes('email') || h.includes('mail')) record.email = value;
-            if (h.includes('phone') || h.includes('tel') || h.includes('mobile') || h.includes('tlf')) record.phone = value;
-            if (h.includes('city') || h.includes('wilaya') || h.includes('ville') || h.includes('location') || h.includes('place')) record.city = value;
-            if (h.includes('note') || h.includes('obs') || h.includes('remarque') || h.includes('desc')) record.notes = value;
-            if (h.includes('order') || h.includes('commande')) record.total_orders = value;
-            if (h.includes('spent') || h.includes('total') || h.includes('da')) record.total_spent = value;
-          });
-         return record;
-       });
-    }
-
-    if (ext === '.docx' || ext === '.pdf') {
-      throw new Error('PDF and DOCX are not supported for customer import. Please upload a CSV or Excel file.');
-    }
-
-    throw new Error('Unsupported format. Please upload a CSV or Excel file.');
-  };
-
   const handleImport = async () => {
-    const target = importMode === 'file' ? file : googleSheetsUrl;
-    if (!target || !selectedMerchant) return;
-    
+    if (!selectedMerchant) return;
+    if (importMode === 'file' && !importFile) return;
+    if (importMode === 'sheets' && !googleSheetsUrl) return;
+
+    setImporting(true);
+    setImportError(null);
+    setImportResults(null);
     const controller = new AbortController();
     abortRef.current = controller;
-    setImporting(true);
-    setError(null);
-    setResults(null);
 
     try {
-      let dataRows: Record<string, string>[] = [];
-      
-      if (importMode === 'sheets') {
+      let dataRows: any[] = [];
+      let invalidCount = 0;
+
+      if (importMode === 'file') {
+        const ext = getFileExtension(importFile!.name);
+        if (ext === '.csv') {
+          const text = await importFile!.text();
+          const csvRows = text.split('\n').filter(l => l.trim()).map(line => line.split(',').map(v => v.trim()));
+          if (csvRows.length < 2) throw new Error('File is empty or missing headers');
+          const res = processRows(csvRows.slice(1), csvRows[0]);
+          dataRows = res.valid;
+          invalidCount = res.invalidCount;
+        } else {
+          const XLSX = await import('xlsx');
+          const buffer = await importFile!.arrayBuffer();
+          const workbook = XLSX.read(buffer, { type: 'array' });
+          const sheet = workbook.Sheets[workbook.SheetNames[0]];
+          const jsonData: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+          if (jsonData.length < 2) throw new Error('File is empty or missing headers');
+          const res = processRows(jsonData.slice(1), jsonData[0] as string[]);
+          dataRows = res.valid;
+          invalidCount = res.invalidCount;
+        }
+      } else {
+        // Google Sheets
         let csvUrl = googleSheetsUrl;
         const match = googleSheetsUrl.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
-        if (match) {
-          const sheetId = match[1];
-          csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`;
-        }
+        if (match) csvUrl = `https://docs.google.com/spreadsheets/d/${match[1]}/export?format=csv`;
+        
         const response = await fetch(csvUrl, { signal: controller.signal });
-        if (!response.ok) throw new Error('Could not fetch Google Sheet.');
+        if (!response.ok) throw new Error('Could not fetch Google Sheet data.');
         const text = await response.text();
-        dataRows = parseCSV(text);
-      } else {
-        dataRows = await processFile(file!);
+        const csvRows = text.split('\n').filter(l => l.trim()).map(line => line.split(',').map(v => v.trim()));
+        const res = processRows(csvRows.slice(1), csvRows[0]);
+        dataRows = res.valid;
+        invalidCount = res.invalidCount;
       }
 
-      if (dataRows.length === 0) throw new Error('No data rows found.');
-
-      // Filter to valid rows having a name
-      const validRows = dataRows.filter(r => r.name && r.name.trim() !== '');
-      if (validRows.length === 0) {
-        throw new Error('All records are missing a valid customer name. Customer name is required.');
+      if (dataRows.length === 0) {
+        throw new Error(`All records were invalid. Missing 'name' column or empty data.`);
       }
 
-      const importRes = await fetch('/api/admin/crm/import', {
+      const res = await fetch('/api/admin/crm/import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ merchantId: selectedMerchant, customers: validRows }),
+        body: JSON.stringify({ merchantId: selectedMerchant, customers: dataRows }),
         signal: controller.signal,
       });
 
-      if (!importRes.ok) {
-        const errData = await importRes.json();
-        throw new Error(errData.error || 'Import failed');
-      }
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Import failed');
 
-      const { count } = await importRes.json();
-      setResults({ success: count, failed: 0 });
+      setImportResults({
+        total: dataRows.length + invalidCount,
+        success: json.count || dataRows.length,
+        failed: invalidCount
+      });
+      setImportFile(null);
+      setGoogleSheetsUrl('');
     } catch (err: any) {
-      setError(err.name === 'AbortError' ? 'Import cancelled' : err.message || 'Error processing import');
+      if (err.name !== 'AbortError') setImportError(err.message);
     } finally {
-      abortRef.current = null;
       setImporting(false);
+      abortRef.current = null;
     }
   };
 
-  const cancelImport = () => {
-    abortRef.current?.abort();
+  const getFileIcon = (type: string) => {
+    const t = type.toLowerCase();
+    if (t.includes('pdf')) return <FileText className="text-red-400" />;
+    if (t.includes('word') || t.includes('docx')) return <FileText className="text-blue-400" />;
+    if (t.includes('excel') || t.includes('sheet') || t.includes('xls')) return <FileSpreadsheet className="text-emerald-400" />;
+    if (t.includes('image') || t.includes('png') || t.includes('jpg')) return <ImageIcon className="text-amber-400" />;
+    if (t.includes('zip') || t.includes('archive')) return <FileArchive className="text-purple-400" />;
+    return <Folder className="text-slate-400" />;
   };
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500">
+      {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-3xl font-black text-white flex items-center gap-3">
             <Upload className="text-blue-500 w-10 h-10" />
             CRM Hub
           </h2>
-          <p className="text-slate-400 mt-1 font-medium">Manage merchant customers and shared CRM assets.</p>
+          <p className="text-slate-400 mt-1 font-medium">Advanced customer import and document management system.</p>
         </div>
       </div>
 
-      {/* Target Organization */}
+      {/* Target Merchant */}
       <div className="bg-[#0A1628] border border-slate-800 rounded-3xl p-8 shadow-xl space-y-6">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center font-black text-xs">1</div>
-          <h3 className="font-black text-white uppercase tracking-widest text-xs">Target Organization</h3>
+          <h3 className="font-black text-white uppercase tracking-widest text-xs">Select Merchant Context</h3>
         </div>
         <select
           value={selectedMerchant}
           onChange={e => setSelectedMerchant(e.target.value)}
-          className="w-full bg-[#07101F] border border-slate-700 rounded-2xl px-5 py-4 text-white outline-none focus:border-blue-500 transition-all appearance-none text-sm font-bold"
+          className="w-full bg-[#07101F] border border-slate-700 rounded-2xl px-5 py-4 text-white outline-none focus:border-blue-500 transition-all text-sm font-bold shadow-inner"
         >
           <option value="">Choose Merchant...</option>
           {merchants.map(m => (
@@ -288,264 +298,198 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
         </select>
       </div>
 
+      {/* Tabs */}
       <div className="flex border-b border-slate-800">
         <button
-          className={`pb-3 px-6 text-sm font-bold transition-colors ${activeTab === 'import' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-slate-500 hover:text-slate-300'}`}
+          className={`pb-3 px-8 text-sm font-black uppercase tracking-widest transition-all ${activeTab === 'import' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-slate-500 hover:text-slate-300'}`}
           onClick={() => setActiveTab('import')}
         >
           Customer Import
         </button>
         <button
-          className={`pb-3 px-6 text-sm font-bold transition-colors ${activeTab === 'assets' ? 'text-emerald-400 border-b-2 border-emerald-400' : 'text-slate-500 hover:text-slate-300'}`}
-          onClick={() => setActiveTab('assets')}
+          className={`pb-3 px-8 text-sm font-black uppercase tracking-widest transition-all ${activeTab === 'files' ? 'text-emerald-400 border-b-2 border-emerald-400' : 'text-slate-500 hover:text-slate-300'}`}
+          onClick={() => setActiveTab('files')}
         >
-          Asset Manager
+          File Management
         </button>
       </div>
 
-      {activeTab === 'import' && (
-        <div className="space-y-8 animate-in fade-in">
-          {/* Step 2: Data Source */}
-          <div className="bg-[#0A1628] border border-slate-800 rounded-3xl p-8 shadow-xl space-y-6">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-black text-xs">2</div>
-              <h3 className="font-black text-white uppercase tracking-widest text-xs">Source Selection</h3>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setImportMode('file')}
-                className={`flex-1 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 border ${importMode === 'file' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-slate-800 text-slate-500 border-transparent hover:text-white'}`}
-              >
-                <FileText size={14} /> File
-              </button>
-              <button
-                onClick={() => setImportMode('sheets')}
-                className={`flex-1 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 border ${importMode === 'sheets' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-slate-800 text-slate-500 border-transparent hover:text-white'}`}
-              >
-                <FileSpreadsheet size={14} /> Sheets
-              </button>
-            </div>
+      {/* Tab Content */}
+      <div className="min-h-[400px]">
+        {!selectedMerchant ? (
+          <div className="py-20 flex flex-col items-center justify-center text-center space-y-4 bg-[#0A1628] border border-slate-800 rounded-3xl">
+             <AlertCircle size={48} className="text-slate-700" />
+             <h4 className="text-xl font-black text-slate-500 uppercase tracking-tight">Merchant Context Required</h4>
+             <p className="text-slate-600 text-sm max-w-xs mx-auto">Please select a merchant organization to activate the CRM modules.</p>
           </div>
+        ) : (
+          <>
+            {activeTab === 'import' && (
+              <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+                {/* Source Toggle */}
+                <div className="flex gap-2 p-1 bg-slate-900 rounded-2xl border border-slate-800 max-w-sm">
+                  <button onClick={() => setImportMode('file')} className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${importMode === 'file' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}>Excel/CSV File</button>
+                  <button onClick={() => setImportMode('sheets')} className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${importMode === 'sheets' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}>Google Sheets</button>
+                </div>
 
-          <div className="bg-[#0A1628] border border-slate-800 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
-            {!selectedMerchant ? (
-               <div className="py-12 flex flex-col items-center justify-center text-center space-y-4 animate-in fade-in duration-500">
-                  <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center text-blue-400 mb-2">
-                     <AlertCircle size={32} />
-                  </div>
-                  <h4 className="text-xl font-black text-white uppercase tracking-tight">Select a Merchant Context</h4>
-                  <p className="text-slate-500 text-sm font-medium">Please select a target organization above to initialize the data pipeline.</p>
-               </div>
-            ) : (
-              <>
-                {importMode === 'file' ? (
-                  <div className="space-y-6">
-                     <label className={`relative group w-full h-48 border-2 border-dashed rounded-3xl flex flex-col items-center justify-center cursor-pointer transition-all ${file ? 'border-emerald-500/50 bg-emerald-500/5' : 'border-slate-800 hover:border-slate-700 hover:bg-slate-800/20'}`}>
-                        <input type="file" className="hidden" accept={ACCEPT_STRING} onChange={handleFileChange} />
-                        {file ? (
-                           <div className="flex flex-col items-center animate-in zoom-in duration-300">
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  setFile(null);
-                                  setError(null);
-                                }}
-                                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-red-500/15 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white flex items-center justify-center transition-colors"
-                                title="Remove file"
-                              >
-                                <X size={15} />
-                              </button>
-                              <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-400 mb-4">
-                                <CheckCircle2 size={24} />
-                              </div>
-                              <span className="text-sm font-black text-white px-8 text-center line-clamp-1">{file.name}</span>
-                              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">{(file.size / 1024).toFixed(1)} KB Ready</span>
-                           </div>
-                        ) : (
-                          <div className="flex flex-col items-center text-slate-600 group-hover:text-slate-400 transition-colors">
-                            <Upload size={32} className="mb-4" />
-                            <span className="text-xs font-black uppercase tracking-widest">Deploy Local Data File</span>
+                <div className="bg-[#0A1628] border border-slate-800 rounded-3xl p-8 shadow-2xl space-y-8">
+                  {importMode === 'file' ? (
+                    <label className={`w-full h-48 border-2 border-dashed rounded-3xl flex flex-col items-center justify-center cursor-pointer transition-all ${importFile ? 'border-emerald-500/50 bg-emerald-500/5' : 'border-slate-800 hover:border-blue-500/50 hover:bg-blue-500/5'}`}>
+                      <input type="file" className="hidden" accept=".csv,.xlsx,.xls" onChange={handleImportFileChange} />
+                      {importFile ? (
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-400 mb-2">
+                             <FileSpreadsheet size={28} />
                           </div>
-                        )}
-                     </label>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest px-1">Cloud Sheet Integration URL</label>
-                    <div className="relative group">
-                      <LinkIcon size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-emerald-500 transition-colors" />
+                          <span className="text-sm font-black text-white">{importFile.name}</span>
+                          <span className="text-[10px] font-bold text-slate-500 uppercase">{(importFile.size / 1024).toFixed(1)} KB READY</span>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center gap-3 text-slate-600">
+                          <Upload size={32} />
+                          <span className="text-xs font-black uppercase tracking-widest">Drop Customer Database (XLSX/CSV)</span>
+                        </div>
+                      )}
+                    </label>
+                  ) : (
+                    <div className="space-y-4">
+                      <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest px-1">Public Google Sheet Link</label>
                       <input
                         value={googleSheetsUrl}
                         onChange={e => setGoogleSheetsUrl(e.target.value)}
-                        placeholder="Paste public Google Sheets URL..."
-                        className="w-full bg-[#07101F] border border-slate-700 rounded-2xl pl-14 pr-14 py-5 text-white outline-none focus:border-emerald-500 transition-all text-sm font-bold shadow-inner"
+                        placeholder="https://docs.google.com/spreadsheets/d/..."
+                        className="w-full bg-[#07101F] border border-slate-700 rounded-2xl px-6 py-5 text-white outline-none focus:border-blue-500 transition-all text-sm font-bold"
                       />
+                    </div>
+                  )}
+
+                  <div className="flex flex-col items-center gap-4">
+                    <button
+                      onClick={handleImport}
+                      disabled={importing || (importMode === 'file' ? !importFile : !googleSheetsUrl)}
+                      className="w-full py-5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black rounded-2xl shadow-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-3 text-sm uppercase tracking-widest"
+                    >
+                      {importing ? <Loader2 size={20} className="animate-spin" /> : <Upload size={20} />}
+                      {importing ? 'Analyzing and Ingesting Data...' : 'Begin Import Sequence'}
+                    </button>
+                    {importing && (
+                       <button onClick={() => abortRef.current?.abort()} className="text-[10px] font-black text-red-400 hover:text-red-300 uppercase tracking-widest">Cancel Pipeline</button>
+                    )}
+                  </div>
+                </div>
+
+                {importError && (
+                  <div className="bg-red-500/10 border border-red-500/20 p-5 rounded-2xl flex items-start gap-4 text-red-400 animate-in slide-in-from-top-4">
+                    <AlertCircle className="mt-0.5 shrink-0" size={18} />
+                    <div className="space-y-1">
+                      <p className="text-xs font-black uppercase tracking-wider">Analysis Failed</p>
+                      <p className="text-xs font-medium opacity-80">{importError}</p>
                     </div>
                   </div>
                 )}
 
-                <div className="mt-8 flex flex-col items-center gap-4">
-                    {file && (
-                       <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 mb-2">
-                         <CheckCircle2 size={12} className="text-emerald-500" /> Target: {merchants.find(m => m.id === selectedMerchant)?.full_name}
-                       </div>
-                    )}
-                    <button
-                      onClick={handleImport}
-                      disabled={importing || (importMode === 'file' ? !file : !googleSheetsUrl) || !selectedMerchant}
-                      className={`px-12 py-5 bg-gradient-to-r from-blue-600 to-emerald-600 hover:scale-[1.02] text-white font-black rounded-2xl shadow-2xl transition-all disabled:opacity-30 disabled:grayscale flex items-center gap-3 text-sm uppercase tracking-widest`}
-                    >
-                      {importing ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
-                      {importing ? 'Processing Data Pipeline...' : 'Confirm Bulk Ingestion'}
-                    </button>
-                    {importing && (
-                      <button
-                        type="button"
-                        onClick={cancelImport}
-                        className="px-5 py-3 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white font-black text-xs uppercase tracking-widest transition-colors flex items-center gap-2"
-                      >
-                        <X size={14} />
-                        Cancel Import
-                      </button>
-                    )}
-                </div>
-              </>
+                {importResults && (
+                  <div className="bg-emerald-500/10 border border-emerald-500/20 p-8 rounded-3xl space-y-8 animate-in zoom-in duration-300">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xl font-black text-white flex items-center gap-3">
+                        <CheckCircle2 className="text-emerald-400" />
+                        Import Report
+                      </h4>
+                      <button onClick={() => setImportResults(null)} className="text-slate-500 hover:text-white transition-colors"><X size={20}/></button>
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800 text-center">
+                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Total Rows</div>
+                        <div className="text-3xl font-black text-white">{importResults.total}</div>
+                      </div>
+                      <div className="bg-emerald-500/5 p-6 rounded-2xl border border-emerald-500/10 text-center">
+                        <div className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-2">Successful</div>
+                        <div className="text-3xl font-black text-emerald-400">{importResults.success}</div>
+                      </div>
+                      <div className="bg-red-500/5 p-6 rounded-2xl border border-red-500/10 text-center">
+                        <div className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-2">Invalid/Skip</div>
+                        <div className="text-3xl font-black text-red-400">{importResults.failed}</div>
+                      </div>
+                    </div>
+
+                    <p className="text-[10px] text-center text-slate-500 font-bold leading-relaxed">
+                      All valid rows have been synchronized with the master customer database.<br/>Rows missing names were automatically filtered to prevent data corruption.
+                    </p>
+                  </div>
+                )}
+              </div>
             )}
-          </div>
 
-          {error && (
-            <div className="bg-red-500/10 border border-red-500/30 p-5 rounded-2xl flex items-center gap-4 text-red-400 animate-in slide-in-from-top-4 duration-300">
-              <AlertCircle className="shrink-0" />
-              <span className="text-xs font-bold leading-relaxed">{error}</span>
-            </div>
-          )}
-
-          {results && (
-            <div className="bg-emerald-500/10 border border-emerald-500/30 p-8 rounded-3xl space-y-6 shadow-xl animate-in zoom-in duration-300 text-center">
-              <div className="inline-flex w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full items-center justify-center mb-2">
-                <CheckCircle2 size={32} />
-              </div>
-              <h4 className="text-xl font-black text-white">Ingestion Successful</h4>
-              <div className="flex justify-center gap-8">
-                 <div>
-                   <div className="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-1">Records Injected</div>
-                   <div className="text-3xl font-black text-emerald-400">{results.success}</div>
-                 </div>
-                 <div>
-                   <div className="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-1">Failures</div>
-                   <div className="text-3xl font-black text-slate-700">{results.failed}</div>
-                 </div>
-              </div>
-              <button
-                onClick={() => {setFile(null); setResults(null); setGoogleSheetsUrl('');}}
-                className="text-xs font-black text-emerald-400 hover:text-white uppercase tracking-widest transition-colors"
-              >
-                Start New Import Sequence
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {activeTab === 'assets' && (
-        <div className="space-y-6 animate-in fade-in">
-          {!selectedMerchant ? (
-            <div className="bg-[#0A1628] border border-slate-800 rounded-3xl p-12 text-center">
-              <Folder className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-              <p className="text-slate-400">Select a merchant above to manage their CRM assets.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Add New Asset Form */}
-              <div className="bg-[#0A1628] border border-slate-800 rounded-2xl p-6">
-                <h3 className="text-lg font-bold mb-4 text-white">Add New Asset</h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-medium text-slate-400 mb-1">Asset Title</label>
-                    <input 
-                      value={assetTitle} 
-                      onChange={e => setAssetTitle(e.target.value)} 
-                      className="w-full bg-[#07101F] border border-slate-700 rounded-xl px-4 py-3 text-sm text-white outline-none" 
-                      placeholder="e.g. Sales Playbook Q3" 
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-slate-400 mb-2">Asset Type</label>
-                    <div className="flex gap-2">
-                      <button onClick={() => setAssetType('file')} className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-colors ${assetType === 'file' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-slate-800 text-slate-400 border-transparent'}`}>File Upload</button>
-                      <button onClick={() => setAssetType('link')} className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-colors ${assetType === 'link' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-slate-800 text-slate-400 border-transparent'}`}>External Link</button>
-                    </div>
-                  </div>
-                  
-                  {assetType === 'file' ? (
+            {activeTab === 'files' && (
+              <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+                {/* Upload Zone */}
+                <div className="bg-[#0A1628] border border-slate-800 rounded-3xl p-8 shadow-xl">
+                  <div className="flex items-center justify-between mb-6">
                     <div>
-                      <input type="file" onChange={e => setAssetFile(e.target.files?.[0] || null)} className="text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white" />
+                      <h3 className="text-lg font-black text-white uppercase tracking-tight">Secure Document Storage</h3>
+                      <p className="text-xs text-slate-500 font-medium mt-1">Upload PDF, DOCX, Images, and more directly for this client.</p>
                     </div>
-                  ) : (
-                    <div>
-                      <input value={assetLink} onChange={e => setAssetLink(e.target.value)} className="w-full bg-[#07101F] border border-slate-700 rounded-xl px-4 py-3 text-sm text-white outline-none" placeholder="https://..." />
+                    <label className={`px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all cursor-pointer flex items-center gap-2 ${isUploading ? 'bg-slate-800 text-slate-500' : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/20'}`}>
+                      <Upload size={14} />
+                      {isUploading ? 'Processing...' : 'Upload File'}
+                      <input type="file" className="hidden" onChange={handleFileUpload} disabled={isUploading} />
+                    </label>
+                  </div>
+
+                  {isUploading && (
+                    <div className="py-4 border-t border-slate-800 flex items-center justify-between animate-pulse">
+                      <div className="flex items-center gap-3">
+                        <Loader2 className="animate-spin text-emerald-400" size={18} />
+                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Encrypting and Storing Data...</span>
+                      </div>
+                      <button onClick={() => uploadAbortRef.current?.abort()} className="text-red-400 text-[10px] font-black uppercase">Cancel</button>
                     </div>
                   )}
 
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={handleAssetSave}
-                      disabled={assetSaving || !assetTitle || (assetType === 'file' ? !assetFile : !assetLink)}
-                      className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                    >
-                      {assetSaving && <Loader2 className="w-4 h-4 animate-spin" />}
-                      {assetSaving ? 'Saving...' : 'Save Asset'}
-                    </button>
-                    {assetSaving && assetType === 'file' && (
-                      <button
-                        onClick={cancelAssetUpload}
-                        className="px-4 py-3 bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white font-bold rounded-xl text-sm transition-colors border border-red-500/30"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Assets List */}
-              <div className="bg-[#0A1628] border border-slate-800 rounded-2xl p-6">
-                <h3 className="text-lg font-bold mb-4 text-white">Merchant Assets ({assets.length})</h3>
-                <div className="space-y-3 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
-                  {assets.length === 0 ? (
-                    <p className="text-sm text-slate-500 text-center py-10">No assets found for this merchant.</p>
-                  ) : (
-                    assets.map(asset => (
-                      <div key={asset.id} className="flex items-start justify-between bg-[#07101F] border border-slate-800 p-4 rounded-xl group">
-                        <div className="flex gap-3">
-                          <div className="mt-1">
-                            {asset.type === 'file' ? <FileText className="w-5 h-5 text-blue-400" /> : <LinkIcon className="w-5 h-5 text-emerald-400" />}
-                          </div>
-                          <div>
-                            <div className="font-bold text-sm text-white">{asset.title}</div>
-                            <div className="text-xs text-slate-500 capitalize">{asset.type} • {new Date(asset.created_at).toLocaleDateString()}</div>
-                            <div className="mt-2">
-                              {asset.type === 'file' ? (
-                                <a href={asset.file_url!} target="_blank" rel="noreferrer" className="text-[11px] font-bold text-blue-400 flex items-center gap-1 hover:underline"><ExternalLink className="w-3 h-3"/> Download</a>
-                              ) : (
-                                <a href={asset.external_url!} target="_blank" rel="noreferrer" className="text-[11px] font-bold text-emerald-400 flex items-center gap-1 hover:underline"><ExternalLink className="w-3 h-3"/> Open Link</a>
-                              )}
+                  {/* Files List */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
+                    {files.length === 0 && !isUploading ? (
+                      <div className="col-span-full py-16 flex flex-col items-center justify-center text-slate-700 bg-slate-900/30 rounded-3xl border border-dashed border-slate-800">
+                        <Folder size={48} className="mb-4 opacity-50" />
+                        <span className="text-[10px] font-black uppercase tracking-widest">No documents found</span>
+                      </div>
+                    ) : (
+                      files.map(f => (
+                        <div key={f.id} className="group relative bg-[#07101F] border border-slate-800 p-5 rounded-2xl hover:border-slate-600 transition-all">
+                          <div className="flex gap-4">
+                            <div className="w-12 h-12 bg-slate-900 rounded-xl flex items-center justify-center border border-slate-800">
+                              {getFileIcon(f.file_type)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-sm font-black text-white truncate pr-6">{f.file_name}</h4>
+                              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter mt-1">
+                                {(f.file_size / 1024).toFixed(1)} KB • {new Date(f.created_at).toLocaleDateString()}
+                              </p>
+                              <div className="mt-3 flex gap-3">
+                                <a href={f.file_url} target="_blank" rel="noreferrer" className="text-[10px] font-black text-emerald-400 flex items-center gap-1.5 hover:text-white transition-colors">
+                                  <FileDown size={12} /> DOWNLOAD
+                                </a>
+                                <button onClick={() => deleteFile(f.id)} className="text-[10px] font-black text-slate-600 hover:text-red-400 flex items-center gap-1.5 transition-colors">
+                                  <Trash2 size={12} /> DELETE
+                                </button>
+                              </div>
                             </div>
                           </div>
                         </div>
-                        <button onClick={() => deleteAsset(asset.id)} className="text-red-400/50 hover:text-red-400 transition-colors p-2">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))
-                  )}
+                      ))
+                    )}
+                  </div>
                 </div>
+
+                {fileLoadError && (
+                  <p className="text-center text-red-400 text-xs font-bold italic">{fileLoadError}</p>
+                )}
               </div>
-            </div>
-          )}
-        </div>
-      )}
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }

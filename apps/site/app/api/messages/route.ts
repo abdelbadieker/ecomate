@@ -61,6 +61,7 @@ export async function POST(request: Request) {
         .or(
           `and(sender_id.eq.${user.id},receiver_id.eq.${ADMIN_UUID}),and(sender_id.eq.${ADMIN_UUID},receiver_id.eq.${user.id})`
         )
+        .is('deleted_at', null)
         .order('created_at', { ascending: true });
 
       if (error) {
@@ -117,7 +118,8 @@ export async function POST(request: Request) {
         .from('messages')
         .select('*', { count: 'exact', head: true })
         .eq('receiver_id', user.id)
-        .eq('is_read', false);
+        .eq('is_read', false)
+        .is('deleted_at', null);
 
       if (error) {
         const status = isMissingMessagesTable(error) ? 503 : 500;
@@ -132,4 +134,8 @@ export async function POST(request: Request) {
     console.error('[API /messages] Error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
+}
+
+export async function DELETE() {
+  return NextResponse.json({ error: 'Forbidden: Clients cannot delete messages' }, { status: 403 });
 }

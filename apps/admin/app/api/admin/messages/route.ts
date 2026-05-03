@@ -52,8 +52,9 @@ export async function POST(req: Request) {
     if (body.action === 'list_conversations') {
       const { data, error } = await supabaseAdmin
         .from('messages')
-        .select('id, sender_id, receiver_id, sender_role, content, type, is_read, created_at')
+        .select('id, sender_id, receiver_id, sender_role, content, type, is_read, created_at, deleted_at')
         .or(`sender_id.eq.${ADMIN_UUID},receiver_id.eq.${ADMIN_UUID}`)
+        .is('deleted_at', null)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -135,6 +136,7 @@ export async function POST(req: Request) {
         .or(
           `and(sender_id.eq.${ADMIN_UUID},receiver_id.eq.${clientId}),and(sender_id.eq.${clientId},receiver_id.eq.${ADMIN_UUID})`
         )
+        .is('deleted_at', null)
         .order('created_at', { ascending: true });
 
       if (error) {
@@ -231,7 +233,7 @@ export async function DELETE(req: Request) {
 
     const { error } = await supabaseAdmin
       .from('messages')
-      .delete()
+      .update({ deleted_at: new Date().toISOString() } as never)
       .eq('id', id);
 
     if (error) {
