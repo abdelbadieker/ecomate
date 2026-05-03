@@ -8,9 +8,8 @@ import {
   LayoutDashboard, ShoppingBag, Package, Users, MapPin,
   Mail, Sparkles, Paintbrush, Globe, Store,
   PieChart, CreditCard, HelpCircle, Search, Bell, LogOut,
-  ChevronRight, ChevronDown, Menu, X, User, MessageSquare
+  ChevronRight, ChevronDown, Menu, X, User, MessageSquare, Lock
 } from 'lucide-react';
-// SectionLock import removed — every section is always unlocked.
 
 const navItems = [
   { name: 'Overview', href: '/overview', icon: LayoutDashboard, feature: 'overview' },
@@ -41,6 +40,22 @@ function timeAgo(d: string) {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
+function LockedModuleNotice({ moduleName }: { moduleName: string }) {
+  return (
+    <div style={{ minHeight: 360, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ maxWidth: 420, textAlign: 'center', padding: 32, border: '1px solid rgba(248,113,113,0.22)', borderRadius: 24, background: 'rgba(127,29,29,0.12)' }}>
+        <div style={{ width: 56, height: 56, margin: '0 auto 18px', borderRadius: 18, background: 'rgba(248,113,113,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f87171' }}>
+          <Lock style={{ width: 26, height: 26 }} />
+        </div>
+        <h2 style={{ color: '#f8fafc', fontSize: 22, fontWeight: 800, marginBottom: 8 }}>{moduleName} is locked</h2>
+        <p style={{ color: '#94a3b8', fontSize: 13, lineHeight: 1.7 }}>
+          This module is currently disabled for your account.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function MerchantLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -50,7 +65,6 @@ export default function MerchantLayout({ children }: { children: ReactNode }) {
   const [userName, setUserName] = useState('');
   const [userEmail, setUserEmail] = useState('');
   const [navOpen, setNavOpen] = useState(true);
-  const [features, setFeatures] = useState<Record<string, boolean>>({});
   const [userPlan, setUserPlan] = useState('Free');
   const [lockedSections, setLockedSections] = useState<string[]>([]);
 
@@ -74,7 +88,6 @@ export default function MerchantLayout({ children }: { children: ReactNode }) {
           .eq('id', data.user.id)
           .maybeSingle();
 
-        if (profile?.features) setFeatures(profile.features);
         if (profile?.plan) setUserPlan(profile.plan);
         // Explicitly default to [] when profile is missing so sections render.
         setLockedSections(Array.isArray(profile?.locked_sections) ? profile!.locked_sections : []);
@@ -122,14 +135,12 @@ export default function MerchantLayout({ children }: { children: ReactNode }) {
               interface ProfileUpdate {
                 locked_sections?: string[];
                 plan?: string;
-                features?: Record<string, boolean>;
                 full_name?: string;
                 is_banned?: boolean;
               }
               const updatedProfile = payload.new as ProfileUpdate;
               if ('locked_sections' in updatedProfile) setLockedSections(updatedProfile.locked_sections ?? []);
               if (updatedProfile.plan) setUserPlan(updatedProfile.plan);
-              if ('features' in updatedProfile) setFeatures(updatedProfile.features ?? {});
               if (updatedProfile.full_name) setUserName(updatedProfile.full_name);
               
               // If banned, logout immediately
@@ -159,7 +170,6 @@ export default function MerchantLayout({ children }: { children: ReactNode }) {
         .maybeSingle();
       if (!profile) return;
       setLockedSections(Array.isArray(profile.locked_sections) ? profile.locked_sections : []);
-      setFeatures(profile.features ?? {});
       if (profile.plan) setUserPlan(profile.plan);
       if (profile.full_name) setUserName(profile.full_name);
       if (profile.is_banned) {
@@ -188,12 +198,56 @@ export default function MerchantLayout({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // HARD UNLOCK MODE — every section is always unlocked for every user.
-  // The admin Module Locker still writes to locked_sections in the DB
-  // (so we can re-enable gating later without a migration), but the
-  // client UI no longer reads or honors that value. The isLocked path
-  // has been removed entirely from the sidebar and main content so no
-  // lock icon or "upgrade" gate can ever render.
+  useEffect(() => {
+    const supabase = createClient();
+    let mounted = true;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    const loadPermissions = async () => {
+      try {
+        const res = await fetch('/api/permissions', { cache: 'no-store' });
+        const json = await res.json();
+        if (mounted && res.ok && Array.isArray(json.lockedModules)) {
+          setLockedSections(json.lockedModules);
+        }
+      } catch (error) {
+        console.error('[permissions] Failed to refresh permissions:', error);
+      }
+    };
+
+    supabase.auth.getUser().then(({ data }) => {
+      if (!data.user || !mounted) return;
+      loadPermissions();
+      channel = supabase
+        .channel(`client-permissions-${data.user.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'client_permissions',
+            filter: `client_id=eq.${data.user.id}`,
+          },
+          loadPermissions,
+        )
+        .subscribe();
+    });
+
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') loadPermissions();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      mounted = false;
+      document.removeEventListener('visibilitychange', onVisibility);
+      if (channel) supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const currentItem = navItems.find((item) => item.href === pathname);
+  const lockedSet = new Set(lockedSections);
+  const currentModuleLocked = currentItem ? lockedSet.has(currentItem.feature) : false;
 
   const handleLogout = async () => {
     const supabase = createClient();
@@ -270,6 +324,9 @@ export default function MerchantLayout({ children }: { children: ReactNode }) {
               <div style={{ fontSize: 10, color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {userEmail}
               </div>
+              <div style={{ fontSize: 9, color: '#34d399', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0, marginTop: 2 }}>
+                {userPlan}
+              </div>
             </div>
             <ChevronDown style={{
               width: 16, height: 16, color: '#64748b', flexShrink: 0,
@@ -278,10 +335,40 @@ export default function MerchantLayout({ children }: { children: ReactNode }) {
             }} />
           </button>
 
-          {/* Nav Items — every section is always unlocked and clickable */}
+          {/* Nav Items */}
             {navOpen && navItems.map((item) => {
               const isActive = pathname === item.href;
+              const isLocked = lockedSet.has(item.feature);
               const Icon = item.icon;
+
+              if (isLocked) {
+                return (
+                  <div
+                    key={item.name}
+                    aria-disabled="true"
+                    title={`${item.name} is locked`}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      padding: '9px 14px',
+                      paddingLeft: 24,
+                      borderRadius: 10,
+                      fontSize: 13,
+                      fontWeight: 500,
+                      color: '#475569',
+                      background: isActive ? 'rgba(239,68,68,0.08)' : 'transparent',
+                      border: isActive ? '1px solid rgba(239,68,68,0.16)' : '1px solid transparent',
+                      opacity: 0.72,
+                      cursor: 'not-allowed',
+                    }}
+                  >
+                    <Icon style={{ width: 16, height: 16, color: '#475569' }} />
+                    <span>{item.name}</span>
+                    <Lock style={{ width: 13, height: 13, marginLeft: 'auto', color: '#64748b' }} />
+                  </div>
+                );
+              }
 
               return (
                 <Link
@@ -428,10 +515,14 @@ export default function MerchantLayout({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        {/* Page Content — no lock gate; every section is always accessible */}
+        {/* Page Content */}
         <main style={{ flex: 1, overflowY: 'auto', padding: 28 }}>
           <div style={{ maxWidth: 1280, margin: '0 auto' }}>
-            {children}
+            {currentModuleLocked && currentItem ? (
+              <LockedModuleNotice moduleName={currentItem.name} />
+            ) : (
+              children
+            )}
           </div>
         </main>
       </div>

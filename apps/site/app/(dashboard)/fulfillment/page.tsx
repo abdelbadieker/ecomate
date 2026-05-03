@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 import { Truck, Package, CheckCircle, Clock, Plus, X, Upload, Trash2, Image as ImageIcon } from 'lucide-react';
+import { uploadFile } from '@/lib/storage-utils';
 
 type Order = { id: string; customer_name: string; status: string; total: number; city: string; address: string; tracking_code: string; created_at: string };
 type FulfillmentProduct = { id: string; name: string; price: number; stock: number; image_url: string | null; description: string | null; category: string; created_at: string };
@@ -22,6 +23,7 @@ export default function FulfillmentPage() {
   const [tab, setTab] = useState<'pipeline' | 'products'>('pipeline');
   const [userId, setUserId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadAbortRef = useRef<AbortController | null>(null);
 
   const fetchData = useCallback(async () => {
     const [ordersRes, productsRes] = await Promise.all([
@@ -52,47 +54,59 @@ export default function FulfillmentPage() {
 
   const handleAddProduct = async () => {
     setSubmitting(true);
-    let imageUrl: string | null = null;
+    const controller = new AbortController();
+    uploadAbortRef.current = controller;
 
-    if (imageFile) {
-      if (imageFile.size > 50 * 1024 * 1024) {
-        alert('Image is too large. Max size is 50MB.');
-        setSubmitting(false);
+    try {
+      let imageUrl: string | null = null;
+
+      if (imageFile) {
+        const { url, error } = await uploadFile(supabase, imageFile, {
+          bucket: 'product-images',
+          path: 'fulfillment',
+          maxSizeMB: 50,
+          allowedTypes: ['image/'],
+          signal: controller.signal,
+        });
+
+        if (error) {
+          if (error !== 'Upload cancelled') alert('Image upload failed: ' + error);
+          return;
+        }
+
+        imageUrl = url;
+      }
+
+      const { error: insertError } = await supabase.from('products').insert({
+        name: productForm.name,
+        price: parseFloat(productForm.price) || 0,
+        stock: parseInt(productForm.stock) || 0,
+        description: productForm.description || null,
+        category: productForm.category,
+        image_url: imageUrl,
+        is_fulfillment: true,
+        merchant_id: userId,
+      });
+
+      if (insertError) {
+        console.error('Error adding product:', insertError);
+        alert('Failed to add product: ' + insertError.message);
         return;
       }
-      const ext = imageFile.name.split('.').pop();
-      const fileName = `fulfillment-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-      const { error } = await supabase.storage.from('product-images').upload(fileName, imageFile);
-      if (!error) {
-        const { data: urlData } = supabase.storage.from('product-images').getPublicUrl(fileName);
-        imageUrl = urlData.publicUrl;
-      }
-    }
 
-    const { error: insertError } = await supabase.from('products').insert({
-      name: productForm.name,
-      price: parseFloat(productForm.price) || 0,
-      stock: parseInt(productForm.stock) || 0,
-      description: productForm.description || null,
-      category: productForm.category,
-      image_url: imageUrl,
-      is_fulfillment: true,
-      merchant_id: userId,
-    });
-
-    if (insertError) {
-      console.error('Error adding product:', insertError);
-      alert('Failed to add product: ' + insertError.message);
+      setProductForm({ name: '', price: '', stock: '', description: '', category: 'General' });
+      setImageFile(null);
+      setImagePreview(null);
+      setShowAddProduct(false);
+      fetchData();
+    } finally {
+      uploadAbortRef.current = null;
       setSubmitting(false);
-      return;
     }
+  };
 
-    setProductForm({ name: '', price: '', stock: '', description: '', category: 'General' });
-    setImageFile(null);
-    setImagePreview(null);
-    setShowAddProduct(false);
-    setSubmitting(false);
-    fetchData();
+  const cancelUpload = () => {
+    uploadAbortRef.current?.abort();
   };
 
   const handleDeleteProduct = async (id: string) => {
@@ -205,6 +219,11 @@ export default function FulfillmentPage() {
                 <button onClick={handleAddProduct} disabled={submitting || !productForm.name} style={{ ...btnStyle, background: submitting || !productForm.name ? '#1e293b' : 'linear-gradient(135deg, #34d399, #059669)', color: submitting || !productForm.name ? '#475569' : '#fff' }}>
                   {submitting ? 'Adding...' : 'Add Product'}
                 </button>
+                {submitting && (
+                  <button onClick={cancelUpload} style={{ ...btnStyle, background: 'rgba(239,68,68,0.12)', color: '#f87171', border: '1px solid rgba(239,68,68,0.25)' }}>
+                    <X style={{ width: 14, height: 14 }} /> Cancel Upload
+                  </button>
+                )}
                 <button onClick={() => { setShowAddProduct(false); setImageFile(null); setImagePreview(null); }} style={{ ...btnStyle, background: 'rgba(51,65,85,0.3)', color: '#94a3b8' }}>Cancel</button>
               </div>
             </div>

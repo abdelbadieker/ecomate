@@ -5,7 +5,7 @@ import {
   Search, Lock, Unlock, Loader2, ShieldCheck, User,
   LayoutDashboard, ShoppingBag, Package, Users as UsersIcon, MapPin,
   Mail, Sparkles, Paintbrush, Globe, Store, PieChart, CreditCard,
-  HelpCircle, Zap, AlertTriangle,
+  HelpCircle, Zap, AlertTriangle, MessageSquare,
 } from 'lucide-react';
 
 type Merchant = {
@@ -32,6 +32,7 @@ const SECTIONS: { id: string; name: string; icon: typeof Lock; description: stri
   { id: 'estore',      name: 'E-Store',         icon: Store,           description: 'Hosted storefront' },
   { id: 'analytics',   name: 'Analytics',       icon: PieChart,        description: 'Performance metrics & reports' },
   { id: 'billing',     name: 'Billing',         icon: CreditCard,      description: 'Subscription & invoices' },
+  { id: 'messages',    name: 'Messages',        icon: MessageSquare,   description: 'Admin/client messaging center' },
   { id: 'support',     name: 'Support',         icon: HelpCircle,      description: 'Tickets & contact' },
 ];
 
@@ -162,7 +163,7 @@ export default function LockerClient({ initialMerchants }: { initialMerchants: M
           <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Platform-wide</div>
           <div className="text-white font-black text-lg">Access Control Center</div>
           <div className="text-xs text-slate-400 mt-1">
-            Admin locks are the <span className="text-emerald-300 font-bold">only</span> thing that gates dashboard sections. By default everything is unlocked.
+            Client permissions are persisted in the database and mirrored to legacy profile locks during rollout.
           </div>
         </div>
         <button
@@ -328,7 +329,7 @@ export default function LockerClient({ initialMerchants }: { initialMerchants: M
                 <div>
                   <h5 className="text-xs font-black text-white uppercase tracking-widest mb-1">Live enforcement</h5>
                   <p className="text-[11px] text-slate-400 font-medium leading-relaxed">
-                    Locks apply instantly in the merchant dashboard via Supabase realtime. If realtime is disabled, they land on next navigation or tab focus.
+                    Locks apply from the client permissions table. Realtime updates refresh the dashboard, with tab-focus refetch as a backup.
                   </p>
                 </div>
               </div>

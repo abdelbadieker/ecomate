@@ -22,12 +22,12 @@ export async function POST(req: Request) {
     }
 
     // Map parsed CSV fields to database column names.
-    // The CRM client parses 'city' (generic label) but the DB stores it as 'wilaya'.
+    // The live customers table uses city; wilaya is accepted as an import label.
     const finalRows = customers.map((c: Record<string, string>) => ({
       name: c.name?.trim() || null,
       email: c.email?.trim() || null,
       phone: c.phone?.trim() || null,
-      wilaya: (c.wilaya || c.city || c.location)?.trim() || null,   // accept multiple labels
+      city: (c.city || c.wilaya || c.location)?.trim() || null,
       notes: c.notes?.trim() || null,
       total_orders: Math.max(0, parseInt(c.total_orders || '0') || 0),
       total_spent: Math.max(0, parseFloat(c.total_spent || '0') || 0),
@@ -53,10 +53,9 @@ export async function POST(req: Request) {
     // Log the activity (non-blocking — don't fail the import if logging fails)
     await supabaseAdmin.from('activity_logs').insert({
       action: 'crm_bulk_import',
-      actor_role: 'admin',
-      actor_name: 'Admin',
-      target: `merchant:${merchantId}`,
-      metadata: { count: totalInserted },
+      details: `Imported ${totalInserted} customer record(s)`,
+      entity_type: 'merchant',
+      entity_id: merchantId,
     }).then(null, null);
 
     if (errors.length > 0 && totalInserted === 0) {

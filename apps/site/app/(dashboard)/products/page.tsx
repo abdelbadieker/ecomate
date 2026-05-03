@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 import { Plus, Pencil, Trash2, X, Search, Upload, Image as ImageIcon } from 'lucide-react';
+import { uploadFile } from '@/lib/storage-utils';
 
 type Product = { id: string; name: string; price: number; stock: number; image_url: string | null; description: string | null; category: string; is_active: boolean; created_at: string; is_fulfillment: boolean };
 
@@ -18,6 +19,7 @@ export default function ProductsPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadAbortRef = useRef<AbortController | null>(null);
 
   const fetchProducts = async () => {
     const { data } = await supabase.from('products').select('*').order('created_at', { ascending: false });
@@ -38,49 +40,61 @@ export default function ProductsPage() {
     }
   };
 
-  const uploadImage = async (file: File): Promise<string | null> => {
-    if (file.size > 50 * 1024 * 1024) { // Increased to 50MB for large photos
-      alert('Image is too large. Max size is 50MB.');
+  const uploadImage = async (file: File, signal: AbortSignal): Promise<string | null> => {
+    const { url, error } = await uploadFile(supabase, file, {
+      bucket: 'product-images',
+      path: 'products',
+      maxSizeMB: 50,
+      allowedTypes: ['image/'],
+      signal,
+    });
+
+    if (error) {
+      if (error !== 'Upload cancelled') alert(`Upload failed: ${error}`);
       return null;
     }
-    const ext = file.name.split('.').pop();
-    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-    
-    try {
-      const { error } = await supabase.storage.from('product-images').upload(fileName, file);
-      if (error) throw error;
-      const { data: urlData } = supabase.storage.from('product-images').getPublicUrl(fileName);
-      return urlData.publicUrl;
-    } catch (err: unknown) {
-      const error = err as Error;
-      console.error('Upload error:', error);
-      alert(`Upload failed: ${error.message || 'Unknown error'}`);
-      return null;
-    }
+
+    return url;
   };
 
   const handleSubmit = async () => {
     setUploading(true);
-    let imageUrl: string | null = editing?.image_url || null;
+    const controller = new AbortController();
+    uploadAbortRef.current = controller;
 
-    if (imageFile) {
-      const url = await uploadImage(imageFile);
-      if (url) imageUrl = url;
-    }
+    try {
+      let imageUrl: string | null = editing?.image_url || null;
 
-    const payload = { name: form.name, price: parseFloat(form.price), stock: parseInt(form.stock), description: form.description || null, category: form.category, image_url: imageUrl, is_fulfillment: false };
-    if (editing) {
-      await supabase.from('products').update(payload).eq('id', editing.id);
-    } else {
-      await supabase.from('products').insert(payload);
+      if (imageFile) {
+        const url = await uploadImage(imageFile, controller.signal);
+        if (!url) return;
+        imageUrl = url;
+      }
+
+      const payload = { name: form.name, price: parseFloat(form.price), stock: parseInt(form.stock), description: form.description || null, category: form.category, image_url: imageUrl, is_fulfillment: false };
+      const { error } = editing
+        ? await supabase.from('products').update(payload).eq('id', editing.id)
+        : await supabase.from('products').insert(payload);
+
+      if (error) throw error;
+
+      setForm({ name: '', price: '', stock: '', description: '', category: 'General' });
+      setImageFile(null);
+      setImagePreview(null);
+      setShowForm(false);
+      setEditing(null);
+      fetchProducts();
+    } catch (err: unknown) {
+      const error = err as Error;
+      if (error.name !== 'AbortError') alert(`Product save failed: ${error.message}`);
+    } finally {
+      uploadAbortRef.current = null;
+      setUploading(false);
     }
-    setForm({ name: '', price: '', stock: '', description: '', category: 'General' });
-    setImageFile(null);
-    setImagePreview(null);
-    setShowForm(false);
-    setEditing(null);
-    setUploading(false);
-    fetchProducts();
+  };
+
+  const cancelUpload = () => {
+    uploadAbortRef.current?.abort();
   };
 
   const handleDelete = async (id: string) => {
@@ -179,6 +193,11 @@ export default function ProductsPage() {
             <button onClick={handleSubmit} disabled={uploading} style={{ ...s.btn, background: uploading ? '#1e293b' : 'linear-gradient(135deg, #3b82f6, #2563eb)', color: uploading ? '#475569' : '#fff' }}>
               {uploading ? 'Uploading...' : (editing ? 'Update' : 'Create')} Product
             </button>
+            {uploading && (
+              <button onClick={cancelUpload} style={{ ...s.btn, background: 'rgba(239,68,68,0.12)', color: '#f87171', border: '1px solid rgba(239,68,68,0.25)' }}>
+                <X style={{ width: 14, height: 14 }} /> Cancel Upload
+              </button>
+            )}
             <button onClick={() => { setShowForm(false); setEditing(null); setImageFile(null); setImagePreview(null); }} style={{ ...s.btn, background: 'rgba(51,65,85,0.3)', color: '#94a3b8' }}>Cancel</button>
           </div>
         </div>

@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Search, User, Package, Plus, Trash2, ArrowLeft, Truck, X, CheckCircle2, Loader2, Camera, Mail } from 'lucide-react';
 
 type Profile = { id: string; full_name: string; email: string; plan: string };
@@ -18,6 +18,7 @@ export default function FulfillmentEngine() {
   const [newProduct, setNewProduct] = useState({ name: '', price: 0, stock: 0 });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const uploadAbortRef = useRef<AbortController | null>(null);
 
   const fetchMerchants = async () => {
     const res = await fetch('/api/admin/fulfillment?action=merchants');
@@ -83,11 +84,14 @@ export default function FulfillmentEngine() {
       let image_url = '';
 
       if (selectedFile) {
+        const controller = new AbortController();
+        uploadAbortRef.current = controller;
         const formData = new FormData();
         formData.append('file', selectedFile);
         const uploadRes = await fetch('/api/admin/fulfillment/upload', {
           method: 'POST',
           body: formData,
+          signal: controller.signal,
         });
         const uploadJson = await uploadRes.json();
         if (!uploadRes.ok) throw new Error(uploadJson.error || 'Upload failed');
@@ -113,8 +117,9 @@ export default function FulfillmentEngine() {
       setShowAddProduct(false);
       fetchMerchantProducts(selectedMerchant.id);
     } catch (err: any) {
-      alert(err.message || 'Error adding product');
+      alert(err.name === 'AbortError' ? 'Upload cancelled' : err.message || 'Error adding product');
     } finally {
+      uploadAbortRef.current = null;
       setUploading(false);
     }
   };
@@ -435,6 +440,16 @@ export default function FulfillmentEngine() {
                   {uploading ? <Loader2 className="animate-spin" size={20} /> : <CheckCircle2 size={20} />}
                   {uploading ? 'Processing Data Pipeline...' : 'Commit Product to Hub'}
                 </button>
+                {uploading && (
+                  <button
+                    type="button"
+                    onClick={() => uploadAbortRef.current?.abort()}
+                    className="px-5 py-5 bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white border border-red-500/25 font-black rounded-2xl transition-all flex items-center justify-center gap-2 text-xs uppercase tracking-widest"
+                  >
+                    <X size={16} />
+                    Cancel
+                  </button>
+                )}
               </div>
             </form>
           </div>

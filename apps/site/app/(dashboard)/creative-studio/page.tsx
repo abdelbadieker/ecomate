@@ -26,15 +26,14 @@ export default function CreativeStudioPage() {
   const [referencePreview, setReferencePreview] = useState<string | null>(null);
   const [referenceMode, setReferenceMode] = useState<'url' | 'upload'>('url');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const submitAbortRef = useRef<AbortController | null>(null);
 
   const fetchBriefs = useCallback(async () => {
-    const { data: session } = await supabase.auth.getSession();
-    const email = session.session?.user?.email;
-    if (email) {
-      const { data } = await supabase.from('creative_briefs').select('*').eq('user_email', email).order('created_at', { ascending: false });
-      setBriefs(data || []);
-    }
-  }, [supabase]);
+    const res = await fetch('/api/briefs');
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Failed to load creative briefs');
+    setBriefs(json.data || []);
+  }, []);
 
   const fetchPartners = useCallback(async () => {
     const { data } = await supabase.from('partner_links').select('*').order('created_at', { ascending: false });
@@ -45,7 +44,9 @@ export default function CreativeStudioPage() {
     supabase.auth.getSession().then(({ data }) => {
       if (data.session?.user?.email) setUserEmail(data.session.user.email);
     });
-    Promise.all([fetchBriefs(), fetchPartners()]).finally(() => setLoading(false));
+    Promise.all([fetchBriefs(), fetchPartners()])
+      .catch((err) => console.error('[creative-studio] load failed:', err))
+      .finally(() => setLoading(false));
   }, [supabase.auth, fetchBriefs, fetchPartners]);
 
   const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -56,16 +57,17 @@ export default function CreativeStudioPage() {
     }
   };
 
-  const uploadReferenceVideo = async (file: File): Promise<string | null> => {
+  const uploadReferenceVideo = async (file: File, signal: AbortSignal): Promise<string | null> => {
     const { url, error } = await uploadFile(supabase, file, {
       bucket: 'creative-references',
       path: `references/${userEmail || 'unknown'}`,
-      maxSizeMB: 100
+      maxSizeMB: 100,
+      signal,
     });
 
     if (error) {
       console.error('Core Transmission Error:', error);
-      alert(`Critical: ${error}.`);
+      if (error !== 'Upload cancelled') alert(`Critical: ${error}.`);
       return null;
     }
 
@@ -74,41 +76,53 @@ export default function CreativeStudioPage() {
 
   const handleSubmit = async () => {
     setSubmitting(true);
+    const controller = new AbortController();
+    submitAbortRef.current = controller;
+
     try {
       let refUrl = form.reference_url;
 
       if (referenceMode === 'upload' && referenceFile) {
-        const uploadedUrl = await uploadReferenceVideo(referenceFile);
+        const uploadedUrl = await uploadReferenceVideo(referenceFile, controller.signal);
         if (!uploadedUrl) {
           setSubmitting(false);
-          return; // Stop if upload failed
+          return;
         }
         refUrl = uploadedUrl;
       }
 
-      const { error } = await supabase.from('creative_briefs').insert({
-        video_type: form.video_type,
-        duration: form.duration,
-        description: form.description,
-        reference_url: refUrl,
-        reference_description: form.reference_description,
-        user_email: userEmail,
-        status: 'Pending',
+      const res = await fetch('/api/briefs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+        body: JSON.stringify({
+          video_type: form.video_type,
+          duration: form.duration,
+          description: form.description,
+          reference_url: refUrl,
+          reference_description: form.reference_description,
+        }),
       });
+      const json = await res.json();
 
-      if (error) throw error;
+      if (!res.ok) throw new Error(json.error || 'Submission failed');
 
       setShowForm(false);
       setForm({ video_type: 'Short (TikTok/Reels)', duration: '30s', description: '', reference_url: '', reference_description: '' });
       setReferenceFile(null);
       setReferencePreview(null);
-      fetchBriefs();
+      fetchBriefs().catch((err) => console.error('[creative-studio] refresh failed:', err));
     } catch (err: unknown) {
        const error = err as Error;
-       alert(`Submission failed: ${error.message}`);
+       if (error.name !== 'AbortError') alert(`Submission failed: ${error.message}`);
     } finally {
+      submitAbortRef.current = null;
       setSubmitting(false);
     }
+  };
+
+  const cancelSubmission = () => {
+    submitAbortRef.current?.abort();
   };
 
   const trackClick = async (partner: PLink) => {
@@ -233,6 +247,11 @@ export default function CreativeStudioPage() {
                 <button onClick={handleSubmit} disabled={submitting || !form.description.trim()} style={{ ...st.btn, flex: 1, background: submitting || !form.description.trim() ? '#1e293b' : 'linear-gradient(135deg, #a78bfa, #7c3aed)', color: '#fff' }}>
                   <Send style={{ width: 14, height: 14 }} />{submitting ? 'Sending...' : 'Confirm Request'}
                 </button>
+                {submitting && (
+                  <button onClick={cancelSubmission} style={{ ...st.btn, background: 'rgba(239,68,68,0.12)', color: '#f87171', border: '1px solid rgba(239,68,68,0.25)' }}>
+                    <X style={{ width: 14, height: 14 }} /> Cancel
+                  </button>
+                )}
               </div>
             </div>
           )}

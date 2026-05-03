@@ -9,7 +9,10 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 // Lazy singleton - created on first use, not at module load time.
 // This prevents build failures when env vars are not available during static analysis.
-let _client: ReturnType<typeof createClient> | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type UntypedSupabaseClient = ReturnType<typeof createClient<any>>;
+
+let _client: UntypedSupabaseClient | null = null;
 
 function getAdminClient() {
   if (_client) return _client;
@@ -19,7 +22,8 @@ function getAdminClient() {
       'Add these to your .env.local and Vercel environment variables.'
     );
   }
-  _client = createClient(supabaseUrl, supabaseServiceKey, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  _client = createClient<any>(supabaseUrl, supabaseServiceKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
@@ -35,7 +39,7 @@ function getAdminClient() {
 }
 
 // Proxy: every property access goes through the lazy getter
-export const supabaseAdmin = new Proxy({} as ReturnType<typeof createClient>, {
+export const supabaseAdmin = new Proxy({} as UntypedSupabaseClient, {
   get(_target, prop) {
     const client = getAdminClient();
     const value = (client as unknown as Record<string | symbol, unknown>)[prop];

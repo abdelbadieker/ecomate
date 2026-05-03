@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { 
   Video, 
   User, 
@@ -40,6 +40,7 @@ export function CreativeStudioClient({ initialBriefs }: { initialBriefs: Brief[]
   const [editingNotes, setEditingNotes] = useState<string | null>(null);
   const supabase = createClient();
   const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const uploadAbortRef = useRef<AbortController | null>(null);
 
   const handleUpdate = async (id: string, updates: Partial<Brief>) => {
     setProcessingId(id);
@@ -273,19 +274,27 @@ export function CreativeStudioClient({ initialBriefs }: { initialBriefs: Brief[]
                         if (!file) return;
                         
                         setUploadingId(b.id);
-                        const { url, error } = await uploadFile(supabase, file, { 
-                          bucket: 'platform-assets',
-                          path: `deliveries/${b.user_email}` 
-                        });
-                        
-                        if (error) {
-                          alert(error);
-                        } else if (url) {
-                          const inp = document.getElementById(`delivery-${b.id}`) as HTMLInputElement;
-                          if (inp) inp.value = url;
-                          handleUpdate(b.id, { delivery_url: url, status: 'Completed' });
+                        const controller = new AbortController();
+                        uploadAbortRef.current = controller;
+
+                        try {
+                          const { url, error } = await uploadFile(supabase, file, {
+                            bucket: 'platform-assets',
+                            path: `deliveries/${b.user_email}`,
+                            signal: controller.signal,
+                          });
+
+                          if (error) {
+                            if (error !== 'Upload cancelled') alert(error);
+                          } else if (url) {
+                            const inp = document.getElementById(`delivery-${b.id}`) as HTMLInputElement;
+                            if (inp) inp.value = url;
+                            handleUpdate(b.id, { delivery_url: url, status: 'Completed' });
+                          }
+                        } finally {
+                          uploadAbortRef.current = null;
+                          setUploadingId(null);
                         }
-                        setUploadingId(null);
                       }}
                     />
                     <button 
@@ -296,6 +305,16 @@ export function CreativeStudioClient({ initialBriefs }: { initialBriefs: Brief[]
                     >
                       {uploadingId === b.id ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
                     </button>
+                    {uploadingId === b.id && (
+                      <button
+                        type="button"
+                        onClick={() => uploadAbortRef.current?.abort()}
+                        className="shrink-0 w-12 h-12 bg-red-500/10 border border-red-500/25 rounded-2xl flex items-center justify-center hover:bg-red-500 transition-all text-red-400 hover:text-white"
+                        title="Cancel Upload"
+                      >
+                        <X size={16} />
+                      </button>
+                    )}
                   </div>
                   {b.delivery_url && (
                     <div className="absolute right-16 top-1/2 -translate-y-1/2 text-emerald-500">

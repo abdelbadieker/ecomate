@@ -14,6 +14,7 @@ import {
   ArrowLeft,
   File,
   Video,
+  X,
 } from 'lucide-react';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -118,6 +119,7 @@ export default function MessagingPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messageContainerRef = useRef<HTMLDivElement>(null);
+  const uploadAbortRef = useRef<AbortController | null>(null);
 
   // ── Data Fetching ────────────────────────────────────────────────────────
 
@@ -209,16 +211,20 @@ export default function MessagingPage() {
     if (!file || !activeClientId) return;
 
     setUploadingFile(true);
+    const controller = new AbortController();
+    uploadAbortRef.current = controller;
+
     try {
       const supabase = createClient();
       const result = await uploadFile(supabase, file, {
         bucket: 'messages',
         path: 'attachments',
+        signal: controller.signal,
       });
 
       if (result.error) {
         console.error('[messaging] Upload error:', result.error);
-        alert('Upload failed: ' + result.error);
+        if (result.error !== 'Upload cancelled') alert('Upload failed: ' + result.error);
         return;
       }
 
@@ -236,9 +242,14 @@ export default function MessagingPage() {
     } catch (err) {
       console.error('[messaging] File upload error:', err);
     } finally {
+      uploadAbortRef.current = null;
       setUploadingFile(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
+  };
+
+  const cancelUpload = () => {
+    uploadAbortRef.current?.abort();
   };
 
   const openNewConversation = async () => {
@@ -609,6 +620,20 @@ export default function MessagingPage() {
                     )}
                   </button>
                 </div>
+                {uploadingFile && (
+                  <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    <span>Uploading attachment...</span>
+                    <button
+                      type="button"
+                      onClick={cancelUpload}
+                      className="ml-auto inline-flex items-center gap-1 rounded-xl border border-red-500/25 bg-red-500/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-red-400 hover:bg-red-500 hover:text-white transition-colors"
+                    >
+                      <X className="h-3 w-3" />
+                      Cancel
+                    </button>
+                  </div>
+                )}
               </div>
             </>
           ) : (

@@ -5,6 +5,8 @@ import { cookies } from 'next/headers';
 export const dynamic = 'force-dynamic';
 
 const ADMIN_UUID = '00000000-0000-0000-0000-000000000001';
+const MESSAGE_TYPES = new Set(['text', 'file', 'video', 'link']);
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 type MessageRow = {
   id: string;
@@ -19,31 +21,47 @@ type MessageRow = {
   created_at: string;
 };
 
+async function readJson(req: Request) {
+  try {
+    return await req.json();
+  } catch {
+    return null;
+  }
+}
+
+function assertAdminSession() {
+  const session = cookies().get('admin_session')?.value;
+  return session === 'authenticated';
+}
+
+function isMissingMessagesTable(error: { code?: string; message?: string }) {
+  return error.code === 'PGRST205' || /messages/i.test(error.message || '');
+}
+
 export async function POST(req: Request) {
   try {
-    const cookieStore = cookies();
-    const session = cookieStore.get('admin_session')?.value;
-    if (session !== 'authenticated') {
+    if (!assertAdminSession()) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await req.json();
-    const { action } = body;
+    const body = await readJson(req);
+    if (!body || typeof body.action !== 'string') {
+      return NextResponse.json({ error: 'Valid action is required' }, { status: 400 });
+    }
 
-    // ── LIST CONVERSATIONS ──────────────────────────────────────────────
-    if (action === 'list_conversations') {
-      // Fetch all messages involving the admin
+    if (body.action === 'list_conversations') {
       const { data, error } = await supabaseAdmin
         .from('messages')
         .select('id, sender_id, receiver_id, sender_role, content, type, is_read, created_at')
         .or(`sender_id.eq.${ADMIN_UUID},receiver_id.eq.${ADMIN_UUID}`)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        const status = isMissingMessagesTable(error) ? 503 : 500;
+        return NextResponse.json({ error: error.message }, { status });
+      }
 
       const messages = (data || []) as unknown as MessageRow[];
-
-      // Group by the other party's ID
       const convMap = new Map<
         string,
         {
@@ -56,8 +74,7 @@ export async function POST(req: Request) {
       >();
 
       for (const msg of messages) {
-        const clientId =
-          msg.sender_id === ADMIN_UUID ? msg.receiver_id : msg.sender_id;
+        const clientId = msg.sender_id === ADMIN_UUID ? msg.receiver_id : msg.sender_id;
 
         if (!convMap.has(clientId)) {
           convMap.set(clientId, {
@@ -69,17 +86,14 @@ export async function POST(req: Request) {
           });
         }
 
-        // Count unread messages sent BY the client (not by admin)
         if (msg.sender_id !== ADMIN_UUID && !msg.is_read) {
-          const conv = convMap.get(clientId)!;
-          conv.unread_count += 1;
+          const conv = convMap.get(clientId);
+          if (conv) conv.unread_count += 1;
         }
       }
 
-      // Fetch profile info for all conversation partners
       const clientIds = Array.from(convMap.keys());
-
-      let profilesMap: Record<string, { full_name: string | null; email: string | null }> = {};
+      const profilesMap: Record<string, { full_name: string | null; email: string | null }> = {};
 
       if (clientIds.length > 0) {
         const { data: profiles, error: profilesError } = await supabaseAdmin
@@ -94,54 +108,44 @@ export async function POST(req: Request) {
         }
       }
 
-      // Build final conversation list
-      const conversations = Array.from(convMap.values()).map((conv) => ({
-        client_id: conv.client_id,
-        full_name: profilesMap[conv.client_id]?.full_name || null,
-        email: profilesMap[conv.client_id]?.email || null,
-        latest_message: conv.latest_message,
-        latest_type: conv.latest_type,
-        latest_created_at: conv.latest_created_at,
-        unread_count: conv.unread_count,
-      }));
-
-      // Sort by latest message (most recent first)
-      conversations.sort(
-        (a, b) =>
-          new Date(b.latest_created_at).getTime() -
-          new Date(a.latest_created_at).getTime()
-      );
+      const conversations = Array.from(convMap.values())
+        .map((conv) => ({
+          client_id: conv.client_id,
+          full_name: profilesMap[conv.client_id]?.full_name || null,
+          email: profilesMap[conv.client_id]?.email || null,
+          latest_message: conv.latest_message,
+          latest_type: conv.latest_type,
+          latest_created_at: conv.latest_created_at,
+          unread_count: conv.unread_count,
+        }))
+        .sort((a, b) => new Date(b.latest_created_at).getTime() - new Date(a.latest_created_at).getTime());
 
       return NextResponse.json({ data: conversations });
     }
 
-    // ── GET MESSAGES ────────────────────────────────────────────────────
-    if (action === 'get_messages') {
-      const { client_id } = body;
-
-      if (!client_id) {
-        return NextResponse.json(
-          { error: 'client_id is required' },
-          { status: 400 }
-        );
+    if (body.action === 'get_messages') {
+      const clientId = typeof body.client_id === 'string' ? body.client_id : '';
+      if (!UUID_RE.test(clientId)) {
+        return NextResponse.json({ error: 'Valid client_id is required' }, { status: 400 });
       }
 
-      // Fetch all messages between admin and this client
       const { data: msgData, error } = await supabaseAdmin
         .from('messages')
         .select('*')
         .or(
-          `and(sender_id.eq.${ADMIN_UUID},receiver_id.eq.${client_id}),and(sender_id.eq.${client_id},receiver_id.eq.${ADMIN_UUID})`
+          `and(sender_id.eq.${ADMIN_UUID},receiver_id.eq.${clientId}),and(sender_id.eq.${clientId},receiver_id.eq.${ADMIN_UUID})`
         )
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        const status = isMissingMessagesTable(error) ? 503 : 500;
+        return NextResponse.json({ error: error.message }, { status });
+      }
 
-      // Mark unread messages from this client as read
       const { error: updateError } = await supabaseAdmin
         .from('messages')
         .update({ is_read: true } as never)
-        .eq('sender_id', client_id)
+        .eq('sender_id', clientId)
         .eq('receiver_id', ADMIN_UUID)
         .eq('is_read', false);
 
@@ -149,31 +153,36 @@ export async function POST(req: Request) {
         console.error('[messages/get_messages] Error marking as read:', updateError.message);
       }
 
-      return NextResponse.json({ data: msgData });
+      return NextResponse.json({ data: msgData || [] });
     }
 
-    // ── SEND MESSAGE ────────────────────────────────────────────────────
-    if (action === 'send') {
-      const { receiver_id, type, content, file_name, file_size } = body;
+    if (body.action === 'send') {
+      const receiverId = typeof body.receiver_id === 'string' ? body.receiver_id : '';
+      const type = typeof body.type === 'string' ? body.type : 'text';
+      const content = typeof body.content === 'string' ? body.content.trim() : '';
 
-      if (!receiver_id || !type || !content) {
-        return NextResponse.json(
-          { error: 'receiver_id, type, and content are required' },
-          { status: 400 }
-        );
+      if (!UUID_RE.test(receiverId)) {
+        return NextResponse.json({ error: 'Valid receiver_id is required' }, { status: 400 });
+      }
+
+      if (!MESSAGE_TYPES.has(type)) {
+        return NextResponse.json({ error: 'Invalid message type' }, { status: 400 });
+      }
+
+      if (!content) {
+        return NextResponse.json({ error: 'Message content is required' }, { status: 400 });
       }
 
       const newMessage: Record<string, unknown> = {
         sender_id: ADMIN_UUID,
-        receiver_id,
+        receiver_id: receiverId,
         sender_role: 'admin',
         type,
         content,
         is_read: false,
+        file_name: typeof body.file_name === 'string' ? body.file_name : null,
+        file_size: typeof body.file_size === 'number' ? body.file_size : null,
       };
-
-      if (file_name !== undefined) newMessage.file_name = file_name;
-      if (file_size !== undefined) newMessage.file_size = file_size;
 
       const { data, error } = await supabaseAdmin
         .from('messages')
@@ -181,21 +190,22 @@ export async function POST(req: Request) {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        const status = isMissingMessagesTable(error) ? 503 : 500;
+        return NextResponse.json({ error: error.message }, { status });
+      }
 
       return NextResponse.json({ data });
     }
 
-    // ── GET CLIENTS ─────────────────────────────────────────────────────
-    if (action === 'get_clients') {
+    if (body.action === 'get_clients') {
       const { data, error } = await supabaseAdmin
         .from('profiles')
         .select('id, full_name, email')
         .order('full_name', { ascending: true });
 
       if (error) throw error;
-
-      return NextResponse.json({ data });
+      return NextResponse.json({ data: data || [] });
     }
 
     return NextResponse.json({ error: 'Unknown action' }, { status: 400 });

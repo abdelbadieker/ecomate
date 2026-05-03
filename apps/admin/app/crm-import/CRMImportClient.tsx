@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Upload, FileText, CheckCircle2, AlertCircle, Loader2, Link as LinkIcon, FileSpreadsheet, X } from 'lucide-react';
 
 type Merchant = { id: string; full_name: string; email: string };
@@ -42,6 +42,7 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
   const [error, setError] = useState<string | null>(null);
   const [googleSheetsUrl, setGoogleSheetsUrl] = useState('');
   const [importMode, setImportMode] = useState<'file' | 'sheets'>('file');
+  const abortRef = useRef<AbortController | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -134,6 +135,8 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
     const target = importMode === 'file' ? file : googleSheetsUrl;
     if (!target || !selectedMerchant) return;
     
+    const controller = new AbortController();
+    abortRef.current = controller;
     setImporting(true);
     setError(null);
     setResults(null);
@@ -148,7 +151,7 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
           const sheetId = match[1];
           csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`;
         }
-        const response = await fetch(csvUrl);
+        const response = await fetch(csvUrl, { signal: controller.signal });
         if (!response.ok) throw new Error('Could not fetch Google Sheet.');
         const text = await response.text();
         dataRows = parseCSV(text);
@@ -162,7 +165,8 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
       const importRes = await fetch('/api/admin/crm/import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ merchantId: selectedMerchant, customers: dataRows })
+        body: JSON.stringify({ merchantId: selectedMerchant, customers: dataRows }),
+        signal: controller.signal,
       });
 
       if (!importRes.ok) {
@@ -173,10 +177,15 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
       const { count } = await importRes.json();
       setResults({ success: count, failed: 0 });
     } catch (err: any) {
-      setError(err.message || 'Error processing import');
+      setError(err.name === 'AbortError' ? 'Import cancelled' : err.message || 'Error processing import');
     } finally {
+      abortRef.current = null;
       setImporting(false);
     }
+  };
+
+  const cancelImport = () => {
+    abortRef.current?.abort();
   };
 
   return (
@@ -250,6 +259,18 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
                     <input type="file" className="hidden" accept={ACCEPT_STRING} onChange={handleFileChange} />
                     {file ? (
                        <div className="flex flex-col items-center animate-in zoom-in duration-300">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setFile(null);
+                              setError(null);
+                            }}
+                            className="absolute top-4 right-4 w-8 h-8 rounded-full bg-red-500/15 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white flex items-center justify-center transition-colors"
+                            title="Remove file"
+                          >
+                            <X size={15} />
+                          </button>
                           <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-400 mb-4">
                             <CheckCircle2 size={24} />
                           </div>
@@ -293,6 +314,16 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
                   {importing ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
                   {importing ? 'Processing Data Pipeline...' : 'Confirm Bulk Ingestion'}
                 </button>
+                {importing && (
+                  <button
+                    type="button"
+                    onClick={cancelImport}
+                    className="px-5 py-3 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white font-black text-xs uppercase tracking-widest transition-colors flex items-center gap-2"
+                  >
+                    <X size={14} />
+                    Cancel Import
+                  </button>
+                )}
             </div>
           </>
         )}

@@ -5,6 +5,7 @@ import { cookies } from 'next/headers';
 export const dynamic = 'force-dynamic';
 
 const ADMIN_UUID = '00000000-0000-0000-0000-000000000001';
+const MESSAGE_TYPES = new Set(['text', 'file', 'video', 'link']);
 
 function createRouteClient() {
   const cookieStore = cookies();
@@ -27,6 +28,18 @@ function createRouteClient() {
   );
 }
 
+function isMissingMessagesTable(error: { code?: string; message?: string }) {
+  return error.code === 'PGRST205' || /messages/i.test(error.message || '');
+}
+
+async function readJson(request: Request) {
+  try {
+    return await request.json();
+  } catch {
+    return null;
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const supabase = createRouteClient();
@@ -36,11 +49,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json();
-    const { action } = body;
+    const body = await readJson(request);
+    if (!body || typeof body.action !== 'string') {
+      return NextResponse.json({ error: 'Valid action is required' }, { status: 400 });
+    }
 
-    // ── get_messages ──────────────────────────────────────────────
-    if (action === 'get_messages') {
+    if (body.action === 'get_messages') {
       const { data: messages, error } = await supabase
         .from('messages')
         .select('*')
@@ -50,10 +64,10 @@ export async function POST(request: Request) {
         .order('created_at', { ascending: true });
 
       if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        const status = isMissingMessagesTable(error) ? 503 : 500;
+        return NextResponse.json({ error: error.message }, { status });
       }
 
-      // Mark unread messages from admin as read
       await supabase
         .from('messages')
         .update({ is_read: true })
@@ -61,15 +75,19 @@ export async function POST(request: Request) {
         .eq('receiver_id', user.id)
         .eq('is_read', false);
 
-      return NextResponse.json({ data: messages });
+      return NextResponse.json({ data: messages || [] });
     }
 
-    // ── send ──────────────────────────────────────────────────────
-    if (action === 'send') {
-      const { type = 'text', content, file_name, file_size } = body;
+    if (body.action === 'send') {
+      const type = typeof body.type === 'string' ? body.type : 'text';
+      const content = typeof body.content === 'string' ? body.content.trim() : '';
 
-      if (!content && type === 'text') {
-        return NextResponse.json({ error: 'Content is required' }, { status: 400 });
+      if (!MESSAGE_TYPES.has(type)) {
+        return NextResponse.json({ error: 'Invalid message type' }, { status: 400 });
+      }
+
+      if (!content) {
+        return NextResponse.json({ error: 'Message content is required' }, { status: 400 });
       }
 
       const { data: newMessage, error } = await supabase
@@ -80,21 +98,21 @@ export async function POST(request: Request) {
           sender_role: 'client',
           type,
           content,
-          file_name: file_name || null,
-          file_size: file_size || null,
+          file_name: typeof body.file_name === 'string' ? body.file_name : null,
+          file_size: typeof body.file_size === 'number' ? body.file_size : null,
         })
         .select()
         .single();
 
       if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        const status = isMissingMessagesTable(error) ? 503 : 500;
+        return NextResponse.json({ error: error.message }, { status });
       }
 
       return NextResponse.json({ data: newMessage });
     }
 
-    // ── unread_count ──────────────────────────────────────────────
-    if (action === 'unread_count') {
+    if (body.action === 'unread_count') {
       const { count, error } = await supabase
         .from('messages')
         .select('*', { count: 'exact', head: true })
@@ -102,7 +120,8 @@ export async function POST(request: Request) {
         .eq('is_read', false);
 
       if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        const status = isMissingMessagesTable(error) ? 503 : 500;
+        return NextResponse.json({ error: error.message }, { status });
       }
 
       return NextResponse.json({ count: count ?? 0 });

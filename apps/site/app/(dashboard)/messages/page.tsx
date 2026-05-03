@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { uploadFile } from '@/lib/storage-utils';
-import { MessageSquare, Send, Paperclip, File, Loader2, ArrowUp } from 'lucide-react';
+import { MessageSquare, Send, Paperclip, File, Loader2, ArrowUp, X } from 'lucide-react';
 
 type Message = {
   id: string;
@@ -29,6 +29,7 @@ export default function MessagesPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadAbortRef = useRef<AbortController | null>(null);
 
   const scrollToBottom = useCallback(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -42,6 +43,7 @@ export default function MessagesPage() {
         body: JSON.stringify({ action: 'get_messages' }),
       });
       const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Failed to fetch messages');
       if (json.data) {
         setMessages(json.data);
       }
@@ -60,6 +62,7 @@ export default function MessagesPage() {
         body: JSON.stringify({ action: 'unread_count' }),
       });
       const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Failed to fetch unread count');
       setUnreadCount(json.count ?? 0);
     } catch (err) {
       console.error('Failed to fetch unread count:', err);
@@ -102,6 +105,7 @@ export default function MessagesPage() {
         body: JSON.stringify({ action: 'send', type: 'text', content: trimmed }),
       });
       const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Failed to send message');
       if (json.data) {
         setMessages((prev) => [...prev, json.data]);
         setInput('');
@@ -118,10 +122,14 @@ export default function MessagesPage() {
     if (!file) return;
 
     setUploading(true);
+    const controller = new AbortController();
+    uploadAbortRef.current = controller;
+
     try {
       const result = await uploadFile(supabase, file, {
         bucket: 'messages',
         path: 'attachments',
+        signal: controller.signal,
       });
 
       if (result.error) {
@@ -142,16 +150,21 @@ export default function MessagesPage() {
         }),
       });
       const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Failed to send attachment');
       if (json.data) {
         setMessages((prev) => [...prev, json.data]);
       }
     } catch (err) {
       console.error('File upload error:', err);
     } finally {
+      uploadAbortRef.current = null;
       setUploading(false);
-      // Reset file input
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
+  };
+
+  const cancelUpload = () => {
+    uploadAbortRef.current?.abort();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -377,6 +390,14 @@ export default function MessagesPage() {
           <div className="mt-2 flex items-center gap-2 text-xs text-slate-500">
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
             <span>Uploading file...</span>
+            <button
+              type="button"
+              onClick={cancelUpload}
+              className="ml-auto inline-flex items-center gap-1 rounded-lg border border-red-500/25 bg-red-500/10 px-2 py-1 text-[10px] font-semibold text-red-400 hover:bg-red-500 hover:text-white"
+            >
+              <X className="h-3 w-3" />
+              Cancel
+            </button>
           </div>
         )}
       </div>

@@ -1,12 +1,14 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 
+const UPLOAD_ENDPOINT = '/api/uploads';
+
 export interface UploadOptions {
   bucket: string;
   path?: string;
   maxSizeMB?: number;
   allowedTypes?: string[];
   timeoutMs?: number;
-  signal?: AbortSignal; // AbortController support for cancel
+  signal?: AbortSignal;
   onProgress?: (percent: number) => void;
 }
 
@@ -16,12 +18,16 @@ export interface UploadResult {
   fileName: string | null;
 }
 
-/**
- * Unified utility to upload files to Supabase Storage.
- * Supports AbortController for cancellation and progress callbacks.
- */
+function isAbortError(error: unknown) {
+  return (
+    error instanceof DOMException && error.name === 'AbortError'
+  ) || (
+    error instanceof Error && error.name === 'AbortError'
+  );
+}
+
 export async function uploadFile(
-  supabase: SupabaseClient,
+  _supabase: SupabaseClient,
   file: File,
   options: UploadOptions
 ): Promise<UploadResult> {
@@ -34,7 +40,6 @@ export async function uploadFile(
     signal,
   } = options;
 
-  // 1. Validation
   if (!file) return { url: null, error: 'No file provided', fileName: null };
   if (signal?.aborted) return { url: null, error: 'Upload cancelled', fileName: null };
 
@@ -46,57 +51,65 @@ export async function uploadFile(
     return { url: null, error: `Invalid file type. Allowed: ${allowedTypes.join(', ')}`, fileName: null };
   }
 
-  // 2. Prepare Path
-  const ext = file.name.split('.').pop();
-  const sanitizedName = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`;
-  const uploadPath = path ? `${path.replace(/\/$/, '')}/${sanitizedName}` : sanitizedName;
+  const requestController = new AbortController();
+  const cancelRequest = () => requestController.abort();
+  let timedOut = false;
+  const timeoutId = setTimeout(() => {
+    timedOut = true;
+    requestController.abort();
+  }, timeoutMs);
+
+  signal?.addEventListener('abort', cancelRequest, { once: true });
 
   try {
-    // 3. Upload with Timeout + Abort support
-    const uploadPromise = supabase.storage.from(bucket).upload(uploadPath, file, {
-      cacheControl: '3600',
-      upsert: false,
+    options.onProgress?.(0);
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('bucket', bucket);
+    formData.append('path', path);
+
+    const response = await fetch(UPLOAD_ENDPOINT, {
+      method: 'POST',
+      body: formData,
+      signal: requestController.signal,
     });
 
-    const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('Upload timeout: connection too slow or file too large.')), timeoutMs)
-    );
+    const payload = await response.json().catch(() => null) as {
+      url?: string;
+      fileName?: string;
+      error?: string;
+    } | null;
 
-    // Create abort promise if signal provided
-    const abortPromise = signal
-      ? new Promise<never>((_, reject) => {
-          if (signal.aborted) reject(new Error('Upload cancelled'));
-          signal.addEventListener('abort', () => reject(new Error('Upload cancelled')), { once: true });
-        })
-      : null;
+    if (!response.ok) {
+      throw new Error(payload?.error || `Upload failed with status ${response.status}`);
+    }
 
-    const racers: Promise<unknown>[] = [uploadPromise, timeoutPromise];
-    if (abortPromise) racers.push(abortPromise);
-
-    const result = await Promise.race(racers) as { data: unknown; error: unknown };
-
-    if (result.error) throw result.error;
-
-    // 4. Get Public URL
-    const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(uploadPath);
+    options.onProgress?.(100);
 
     return {
-      url: urlData.publicUrl,
+      url: payload?.url || null,
       error: null,
-      fileName: sanitizedName,
+      fileName: payload?.fileName || file.name,
     };
   } catch (err: unknown) {
-    const error = err as { message?: string };
-    if (error.message === 'Upload cancelled') {
-      // Try to clean up the partially-uploaded file
-      try { await supabase.storage.from(bucket).remove([uploadPath]); } catch { /* ignore */ }
-      return { url: null, error: 'Upload cancelled', fileName: null };
+    if (signal?.aborted || isAbortError(err)) {
+      return {
+        url: null,
+        error: timedOut ? 'Upload timeout: connection too slow or file too large.' : 'Upload cancelled',
+        fileName: null,
+      };
     }
+
+    const error = err as { message?: string };
     console.error(`[StorageUtil] Upload to ${bucket} failed:`, error);
     return {
       url: null,
       error: error.message || 'Upload failed',
       fileName: null,
     };
+  } finally {
+    clearTimeout(timeoutId);
+    signal?.removeEventListener('abort', cancelRequest);
   }
 }

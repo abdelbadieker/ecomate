@@ -31,7 +31,6 @@ model Merchant {
   products         Product[]
   notifications    Notification[]
   subscriptions    Subscription[]
-  activityLogs     ActivityLog[]
   fulfillmentItems FulfillmentItem[]
 }
 
@@ -160,13 +159,10 @@ model Review {
 
 model ActivityLog {
   id        String   @id @default(cuid())
-  actorId   String
-  actorRole String
-  actorName String
   action    String
-  target    String?
-  metadata  Json?
-  ipAddress String?
+  details   String?
+  entityType String? @map("entity_type")
+  entityId   String? @map("entity_id")
   createdAt DateTime @default(now())
 }
 
