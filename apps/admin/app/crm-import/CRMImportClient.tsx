@@ -1,8 +1,13 @@
 'use client';
-import { useRef, useState } from 'react';
-import { Upload, FileText, CheckCircle2, AlertCircle, Loader2, Link as LinkIcon, FileSpreadsheet, X } from 'lucide-react';
+import { useRef, useState, useEffect } from 'react';
+import { Upload, FileText, CheckCircle2, AlertCircle, Loader2, Link as LinkIcon, FileSpreadsheet, X, Folder, Trash2, ExternalLink } from 'lucide-react';
+import { uploadFile } from '@/lib/storage-utils';
+import { createBrowserClient } from '@supabase/ssr';
+
+function createClient() { return createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!); }
 
 type Merchant = { id: string; full_name: string; email: string };
+type CrmAsset = { id: string; client_id: string; type: 'file' | 'link'; title: string; file_url: string | null; external_url: string | null; created_at: string };
 
 const ACCEPTED_EXTENSIONS = ['.csv', '.xlsx', '.xls', '.pdf', '.docx'];
 const ACCEPT_STRING = '.csv,.xlsx,.xls,.pdf,.docx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
@@ -36,6 +41,11 @@ function parseCSV(text: string): Record<string, string>[] {
 export default function CRMImportClient({ initialMerchants = [] }: { initialMerchants?: Merchant[] }) {
   const [merchants] = useState<Merchant[]>(initialMerchants);
   const [selectedMerchant, setSelectedMerchant] = useState<string>('');
+  
+  // Tabs
+  const [activeTab, setActiveTab] = useState<'import' | 'assets'>('import');
+
+  // Import State
   const [file, setFile] = useState<File | null>(null);
   const [importing, setImporting] = useState(false);
   const [results, setResults] = useState<{ success: number; failed: number } | null>(null);
@@ -43,6 +53,73 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
   const [googleSheetsUrl, setGoogleSheetsUrl] = useState('');
   const [importMode, setImportMode] = useState<'file' | 'sheets'>('file');
   const abortRef = useRef<AbortController | null>(null);
+
+  // Assets State
+  const supabase = createClient();
+  const [assets, setAssets] = useState<CrmAsset[]>([]);
+  const [assetType, setAssetType] = useState<'file' | 'link'>('file');
+  const [assetTitle, setAssetTitle] = useState('');
+  const [assetFile, setAssetFile] = useState<File | null>(null);
+  const [assetLink, setAssetLink] = useState('');
+  const [assetSaving, setAssetSaving] = useState(false);
+
+  useEffect(() => {
+    if (selectedMerchant && activeTab === 'assets') {
+      loadAssets();
+    }
+  }, [selectedMerchant, activeTab]);
+
+  const loadAssets = async () => {
+    const { data } = await supabase.from('crm_assets').select('*').eq('client_id', selectedMerchant).order('created_at', { ascending: false });
+    setAssets(data || []);
+  };
+
+  const handleAssetSave = async () => {
+    if (!assetTitle || !selectedMerchant) return;
+    if (assetType === 'file' && !assetFile) return;
+    if (assetType === 'link' && !assetLink) return;
+
+    setAssetSaving(true);
+    let fileUrl = null;
+
+    try {
+      if (assetType === 'file' && assetFile) {
+        const res = await uploadFile(supabase, assetFile, {
+          bucket: 'platform-assets',
+          path: `crm/${selectedMerchant}`,
+        });
+        if (res.error || !res.url) throw new Error(res.error || 'Failed to upload file');
+        fileUrl = res.url;
+      }
+
+      await fetch('/api/admin/crm/assets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          client_id: selectedMerchant,
+          type: assetType,
+          title: assetTitle,
+          file_url: fileUrl,
+          external_url: assetType === 'link' ? assetLink : null
+        })
+      });
+
+      setAssetTitle('');
+      setAssetFile(null);
+      setAssetLink('');
+      loadAssets();
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setAssetSaving(false);
+    }
+  };
+
+  const deleteAsset = async (id: string) => {
+    if (!confirm('Delete this asset?')) return;
+    await fetch('/api/admin/crm/assets?id=' + id, { method: 'DELETE' });
+    loadAssets();
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -56,7 +133,6 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
       setError(`Unsupported file type. Accepted: ${ACCEPTED_EXTENSIONS.join(', ')}`);
       setFile(null);
     }
-    // Reset the input value so the same file can be selected again after deletion
     e.target.value = '';
   };
 
@@ -69,7 +145,6 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
     }
 
     if (ext === '.xlsx' || ext === '.xls') {
-       // Load XLSX only on demand to prevent SSR errors
        const XLSX = await import('xlsx');
        const buffer = await file.arrayBuffer();
        const workbook = XLSX.read(buffer, { type: 'array' });
@@ -102,7 +177,6 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
         const mammoth = await import('mammoth');
         const buffer = await file.arrayBuffer();
         const result = await mammoth.extractRawText({ arrayBuffer: buffer });
-        // Simplified text extraction logic as fallback
         return parseCSV(result.value.replace(/\t/g, ','));
       } catch {
         throw new Error('Could not parse DOCX file.');
@@ -161,7 +235,6 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
 
       if (dataRows.length === 0) throw new Error('No data rows found.');
 
-      // Call the server-side API to perform the injection with Super Admin privileges
       const importRes = await fetch('/api/admin/crm/import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -194,170 +267,275 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
         <div>
           <h2 className="text-3xl font-black text-white flex items-center gap-3">
             <Upload className="text-blue-500 w-10 h-10" />
-            CRM Intelligence Hub
+            CRM Hub
           </h2>
-          <p className="text-slate-400 mt-1 font-medium">Inject high-volume merchant data into the platform engine.</p>
+          <p className="text-slate-400 mt-1 font-medium">Manage merchant customers and shared CRM assets.</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Step 1: Merchant Context */}
-        <div className="bg-[#0A1628] border border-slate-800 rounded-3xl p-8 shadow-xl space-y-6">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center font-black text-xs">1</div>
-            <h3 className="font-black text-white uppercase tracking-widest text-xs">Target Organization</h3>
-          </div>
-          <select
-            value={selectedMerchant}
-            onChange={e => setSelectedMerchant(e.target.value)}
-            className="w-full bg-[#07101F] border border-slate-700 rounded-2xl px-5 py-4 text-white outline-none focus:border-blue-500 transition-all appearance-none text-sm font-bold"
-          >
-            <option value="">Choose Merchant...</option>
-            {merchants.map(m => (
-              <option key={m.id} value={m.id}>{m.full_name || m.email}</option>
-            ))}
-          </select>
+      {/* Target Organization */}
+      <div className="bg-[#0A1628] border border-slate-800 rounded-3xl p-8 shadow-xl space-y-6">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center font-black text-xs">1</div>
+          <h3 className="font-black text-white uppercase tracking-widest text-xs">Target Organization</h3>
         </div>
-
-        {/* Step 2: Data Source */}
-        <div className="bg-[#0A1628] border border-slate-800 rounded-3xl p-8 shadow-xl space-y-6">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-black text-xs">2</div>
-            <h3 className="font-black text-white uppercase tracking-widest text-xs">Source Selection</h3>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setImportMode('file')}
-              className={`flex-1 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 border ${importMode === 'file' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-slate-800 text-slate-500 border-transparent hover:text-white'}`}
-            >
-              <FileText size={14} /> File
-            </button>
-            <button
-              onClick={() => setImportMode('sheets')}
-              className={`flex-1 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 border ${importMode === 'sheets' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-slate-800 text-slate-500 border-transparent hover:text-white'}`}
-            >
-              <FileSpreadsheet size={14} /> Sheets
-            </button>
-          </div>
-        </div>
+        <select
+          value={selectedMerchant}
+          onChange={e => setSelectedMerchant(e.target.value)}
+          className="w-full bg-[#07101F] border border-slate-700 rounded-2xl px-5 py-4 text-white outline-none focus:border-blue-500 transition-all appearance-none text-sm font-bold"
+        >
+          <option value="">Choose Merchant...</option>
+          {merchants.map(m => (
+            <option key={m.id} value={m.id}>{m.full_name || m.email}</option>
+          ))}
+        </select>
       </div>
 
-      <div className="bg-[#0A1628] border border-slate-800 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
-        {!selectedMerchant ? (
-           <div className="py-12 flex flex-col items-center justify-center text-center space-y-4 animate-in fade-in duration-500">
-              <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center text-blue-400 mb-2">
-                 <AlertCircle size={32} />
-              </div>
-              <h4 className="text-xl font-black text-white uppercase tracking-tight">Select a Merchant Context</h4>
-              <p className="text-slate-500 text-sm font-medium">Please select a target organization above to initialize the data pipeline.</p>
-           </div>
-        ) : (
-          <>
-            {importMode === 'file' ? (
-              <div className="space-y-6">
-                 <label className={`relative group w-full h-48 border-2 border-dashed rounded-3xl flex flex-col items-center justify-center cursor-pointer transition-all ${file ? 'border-emerald-500/50 bg-emerald-500/5' : 'border-slate-800 hover:border-slate-700 hover:bg-slate-800/20'}`}>
-                    <input type="file" className="hidden" accept={ACCEPT_STRING} onChange={handleFileChange} />
-                    {file ? (
-                       <div className="flex flex-col items-center animate-in zoom-in duration-300">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              setFile(null);
-                              setError(null);
-                            }}
-                            className="absolute top-4 right-4 w-8 h-8 rounded-full bg-red-500/15 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white flex items-center justify-center transition-colors"
-                            title="Remove file"
-                          >
-                            <X size={15} />
-                          </button>
-                          <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-400 mb-4">
-                            <CheckCircle2 size={24} />
-                          </div>
-                          <span className="text-sm font-black text-white px-8 text-center line-clamp-1">{file.name}</span>
-                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">{(file.size / 1024).toFixed(1)} KB Ready</span>
-                       </div>
-                    ) : (
-                      <div className="flex flex-col items-center text-slate-600 group-hover:text-slate-400 transition-colors">
-                        <Upload size={32} className="mb-4" />
-                        <span className="text-xs font-black uppercase tracking-widest">Deploy Local Data File</span>
-                      </div>
-                    )}
-                 </label>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest px-1">Cloud Sheet Integration URL</label>
-                <div className="relative group">
-                  <LinkIcon size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-emerald-500 transition-colors" />
-                  <input
-                    value={googleSheetsUrl}
-                    onChange={e => setGoogleSheetsUrl(e.target.value)}
-                    placeholder="Paste public Google Sheets URL..."
-                    className="w-full bg-[#07101F] border border-slate-700 rounded-2xl pl-14 pr-14 py-5 text-white outline-none focus:border-emerald-500 transition-all text-sm font-bold shadow-inner"
-                  />
-                </div>
-              </div>
-            )}
+      <div className="flex border-b border-slate-800">
+        <button
+          className={`pb-3 px-6 text-sm font-bold transition-colors ${activeTab === 'import' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-slate-500 hover:text-slate-300'}`}
+          onClick={() => setActiveTab('import')}
+        >
+          Customer Import
+        </button>
+        <button
+          className={`pb-3 px-6 text-sm font-bold transition-colors ${activeTab === 'assets' ? 'text-emerald-400 border-b-2 border-emerald-400' : 'text-slate-500 hover:text-slate-300'}`}
+          onClick={() => setActiveTab('assets')}
+        >
+          Asset Manager
+        </button>
+      </div>
 
-            <div className="mt-8 flex flex-col items-center gap-4">
-                {file && (
-                   <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 mb-2">
-                     <CheckCircle2 size={12} className="text-emerald-500" /> Target: {merchants.find(m => m.id === selectedMerchant)?.full_name}
-                   </div>
-                )}
-                <button
-                  onClick={handleImport}
-                  disabled={importing || (importMode === 'file' ? !file : !googleSheetsUrl) || !selectedMerchant}
-                  className={`px-12 py-5 bg-gradient-to-r from-blue-600 to-emerald-600 hover:scale-[1.02] text-white font-black rounded-2xl shadow-2xl transition-all disabled:opacity-30 disabled:grayscale flex items-center gap-3 text-sm uppercase tracking-widest`}
-                >
-                  {importing ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
-                  {importing ? 'Processing Data Pipeline...' : 'Confirm Bulk Ingestion'}
-                </button>
-                {importing && (
-                  <button
-                    type="button"
-                    onClick={cancelImport}
-                    className="px-5 py-3 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white font-black text-xs uppercase tracking-widest transition-colors flex items-center gap-2"
-                  >
-                    <X size={14} />
-                    Cancel Import
-                  </button>
-                )}
+      {activeTab === 'import' && (
+        <div className="space-y-8 animate-in fade-in">
+          {/* Step 2: Data Source */}
+          <div className="bg-[#0A1628] border border-slate-800 rounded-3xl p-8 shadow-xl space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-black text-xs">2</div>
+              <h3 className="font-black text-white uppercase tracking-widest text-xs">Source Selection</h3>
             </div>
-          </>
-        )}
-      </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setImportMode('file')}
+                className={`flex-1 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 border ${importMode === 'file' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-slate-800 text-slate-500 border-transparent hover:text-white'}`}
+              >
+                <FileText size={14} /> File
+              </button>
+              <button
+                onClick={() => setImportMode('sheets')}
+                className={`flex-1 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 border ${importMode === 'sheets' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-slate-800 text-slate-500 border-transparent hover:text-white'}`}
+              >
+                <FileSpreadsheet size={14} /> Sheets
+              </button>
+            </div>
+          </div>
 
-      {error && (
-        <div className="bg-red-500/10 border border-red-500/30 p-5 rounded-2xl flex items-center gap-4 text-red-400 animate-in slide-in-from-top-4 duration-300">
-          <AlertCircle className="shrink-0" />
-          <span className="text-xs font-bold leading-relaxed">{error}</span>
+          <div className="bg-[#0A1628] border border-slate-800 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
+            {!selectedMerchant ? (
+               <div className="py-12 flex flex-col items-center justify-center text-center space-y-4 animate-in fade-in duration-500">
+                  <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center text-blue-400 mb-2">
+                     <AlertCircle size={32} />
+                  </div>
+                  <h4 className="text-xl font-black text-white uppercase tracking-tight">Select a Merchant Context</h4>
+                  <p className="text-slate-500 text-sm font-medium">Please select a target organization above to initialize the data pipeline.</p>
+               </div>
+            ) : (
+              <>
+                {importMode === 'file' ? (
+                  <div className="space-y-6">
+                     <label className={`relative group w-full h-48 border-2 border-dashed rounded-3xl flex flex-col items-center justify-center cursor-pointer transition-all ${file ? 'border-emerald-500/50 bg-emerald-500/5' : 'border-slate-800 hover:border-slate-700 hover:bg-slate-800/20'}`}>
+                        <input type="file" className="hidden" accept={ACCEPT_STRING} onChange={handleFileChange} />
+                        {file ? (
+                           <div className="flex flex-col items-center animate-in zoom-in duration-300">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  setFile(null);
+                                  setError(null);
+                                }}
+                                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-red-500/15 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white flex items-center justify-center transition-colors"
+                                title="Remove file"
+                              >
+                                <X size={15} />
+                              </button>
+                              <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-400 mb-4">
+                                <CheckCircle2 size={24} />
+                              </div>
+                              <span className="text-sm font-black text-white px-8 text-center line-clamp-1">{file.name}</span>
+                              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">{(file.size / 1024).toFixed(1)} KB Ready</span>
+                           </div>
+                        ) : (
+                          <div className="flex flex-col items-center text-slate-600 group-hover:text-slate-400 transition-colors">
+                            <Upload size={32} className="mb-4" />
+                            <span className="text-xs font-black uppercase tracking-widest">Deploy Local Data File</span>
+                          </div>
+                        )}
+                     </label>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest px-1">Cloud Sheet Integration URL</label>
+                    <div className="relative group">
+                      <LinkIcon size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-emerald-500 transition-colors" />
+                      <input
+                        value={googleSheetsUrl}
+                        onChange={e => setGoogleSheetsUrl(e.target.value)}
+                        placeholder="Paste public Google Sheets URL..."
+                        className="w-full bg-[#07101F] border border-slate-700 rounded-2xl pl-14 pr-14 py-5 text-white outline-none focus:border-emerald-500 transition-all text-sm font-bold shadow-inner"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="mt-8 flex flex-col items-center gap-4">
+                    {file && (
+                       <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 mb-2">
+                         <CheckCircle2 size={12} className="text-emerald-500" /> Target: {merchants.find(m => m.id === selectedMerchant)?.full_name}
+                       </div>
+                    )}
+                    <button
+                      onClick={handleImport}
+                      disabled={importing || (importMode === 'file' ? !file : !googleSheetsUrl) || !selectedMerchant}
+                      className={`px-12 py-5 bg-gradient-to-r from-blue-600 to-emerald-600 hover:scale-[1.02] text-white font-black rounded-2xl shadow-2xl transition-all disabled:opacity-30 disabled:grayscale flex items-center gap-3 text-sm uppercase tracking-widest`}
+                    >
+                      {importing ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
+                      {importing ? 'Processing Data Pipeline...' : 'Confirm Bulk Ingestion'}
+                    </button>
+                    {importing && (
+                      <button
+                        type="button"
+                        onClick={cancelImport}
+                        className="px-5 py-3 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white font-black text-xs uppercase tracking-widest transition-colors flex items-center gap-2"
+                      >
+                        <X size={14} />
+                        Cancel Import
+                      </button>
+                    )}
+                </div>
+              </>
+            )}
+          </div>
+
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/30 p-5 rounded-2xl flex items-center gap-4 text-red-400 animate-in slide-in-from-top-4 duration-300">
+              <AlertCircle className="shrink-0" />
+              <span className="text-xs font-bold leading-relaxed">{error}</span>
+            </div>
+          )}
+
+          {results && (
+            <div className="bg-emerald-500/10 border border-emerald-500/30 p-8 rounded-3xl space-y-6 shadow-xl animate-in zoom-in duration-300 text-center">
+              <div className="inline-flex w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full items-center justify-center mb-2">
+                <CheckCircle2 size={32} />
+              </div>
+              <h4 className="text-xl font-black text-white">Ingestion Successful</h4>
+              <div className="flex justify-center gap-8">
+                 <div>
+                   <div className="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-1">Records Injected</div>
+                   <div className="text-3xl font-black text-emerald-400">{results.success}</div>
+                 </div>
+                 <div>
+                   <div className="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-1">Failures</div>
+                   <div className="text-3xl font-black text-slate-700">{results.failed}</div>
+                 </div>
+              </div>
+              <button
+                onClick={() => {setFile(null); setResults(null); setGoogleSheetsUrl('');}}
+                className="text-xs font-black text-emerald-400 hover:text-white uppercase tracking-widest transition-colors"
+              >
+                Start New Import Sequence
+              </button>
+            </div>
+          )}
         </div>
       )}
 
-      {results && (
-        <div className="bg-emerald-500/10 border border-emerald-500/30 p-8 rounded-3xl space-y-6 shadow-xl animate-in zoom-in duration-300 text-center">
-          <div className="inline-flex w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full items-center justify-center mb-2">
-            <CheckCircle2 size={32} />
-          </div>
-          <h4 className="text-xl font-black text-white">Ingestion Successful</h4>
-          <div className="flex justify-center gap-8">
-             <div>
-               <div className="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-1">Records Injected</div>
-               <div className="text-3xl font-black text-emerald-400">{results.success}</div>
-             </div>
-             <div>
-               <div className="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-1">Failures</div>
-               <div className="text-3xl font-black text-slate-700">{results.failed}</div>
-             </div>
-          </div>
-          <button
-            onClick={() => {setFile(null); setResults(null); setGoogleSheetsUrl('');}}
-            className="text-xs font-black text-emerald-400 hover:text-white uppercase tracking-widest transition-colors"
-          >
-            Start New Import Sequence
-          </button>
+      {activeTab === 'assets' && (
+        <div className="space-y-6 animate-in fade-in">
+          {!selectedMerchant ? (
+            <div className="bg-[#0A1628] border border-slate-800 rounded-3xl p-12 text-center">
+              <Folder className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+              <p className="text-slate-400">Select a merchant above to manage their CRM assets.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Add New Asset Form */}
+              <div className="bg-[#0A1628] border border-slate-800 rounded-2xl p-6">
+                <h3 className="text-lg font-bold mb-4 text-white">Add New Asset</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-400 mb-1">Asset Title</label>
+                    <input 
+                      value={assetTitle} 
+                      onChange={e => setAssetTitle(e.target.value)} 
+                      className="w-full bg-[#07101F] border border-slate-700 rounded-xl px-4 py-3 text-sm text-white outline-none" 
+                      placeholder="e.g. Sales Playbook Q3" 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-400 mb-2">Asset Type</label>
+                    <div className="flex gap-2">
+                      <button onClick={() => setAssetType('file')} className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-colors ${assetType === 'file' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-slate-800 text-slate-400 border-transparent'}`}>File Upload</button>
+                      <button onClick={() => setAssetType('link')} className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-colors ${assetType === 'link' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-slate-800 text-slate-400 border-transparent'}`}>External Link</button>
+                    </div>
+                  </div>
+                  
+                  {assetType === 'file' ? (
+                    <div>
+                      <input type="file" onChange={e => setAssetFile(e.target.files?.[0] || null)} className="text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white" />
+                    </div>
+                  ) : (
+                    <div>
+                      <input value={assetLink} onChange={e => setAssetLink(e.target.value)} className="w-full bg-[#07101F] border border-slate-700 rounded-xl px-4 py-3 text-sm text-white outline-none" placeholder="https://..." />
+                    </div>
+                  )}
+
+                  <button 
+                    onClick={handleAssetSave}
+                    disabled={assetSaving || !assetTitle || (assetType === 'file' ? !assetFile : !assetLink)}
+                    className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm transition-colors disabled:opacity-50"
+                  >
+                    {assetSaving ? 'Saving...' : 'Save Asset'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Assets List */}
+              <div className="bg-[#0A1628] border border-slate-800 rounded-2xl p-6">
+                <h3 className="text-lg font-bold mb-4 text-white">Merchant Assets ({assets.length})</h3>
+                <div className="space-y-3 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
+                  {assets.length === 0 ? (
+                    <p className="text-sm text-slate-500 text-center py-10">No assets found for this merchant.</p>
+                  ) : (
+                    assets.map(asset => (
+                      <div key={asset.id} className="flex items-start justify-between bg-[#07101F] border border-slate-800 p-4 rounded-xl group">
+                        <div className="flex gap-3">
+                          <div className="mt-1">
+                            {asset.type === 'file' ? <FileText className="w-5 h-5 text-blue-400" /> : <LinkIcon className="w-5 h-5 text-emerald-400" />}
+                          </div>
+                          <div>
+                            <div className="font-bold text-sm text-white">{asset.title}</div>
+                            <div className="text-xs text-slate-500 capitalize">{asset.type} • {new Date(asset.created_at).toLocaleDateString()}</div>
+                            <div className="mt-2">
+                              {asset.type === 'file' ? (
+                                <a href={asset.file_url!} target="_blank" rel="noreferrer" className="text-[11px] font-bold text-blue-400 flex items-center gap-1 hover:underline"><ExternalLink className="w-3 h-3"/> Download</a>
+                              ) : (
+                                <a href={asset.external_url!} target="_blank" rel="noreferrer" className="text-[11px] font-bold text-emerald-400 flex items-center gap-1 hover:underline"><ExternalLink className="w-3 h-3"/> Open Link</a>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <button onClick={() => deleteAsset(asset.id)} className="text-red-400/50 hover:text-red-400 transition-colors p-2">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

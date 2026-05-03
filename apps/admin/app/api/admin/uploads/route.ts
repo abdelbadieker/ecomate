@@ -9,6 +9,9 @@ const ALLOWED_BUCKETS = new Set([
   'creative-references',
   'platform-assets',
   'messages',
+  'uploads',
+  'creative-briefs',
+  'products'
 ]);
 
 function cleanPath(value: string) {
@@ -40,43 +43,41 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const formData = await req.formData();
-    const file = formData.get('file') as File | null;
-    const bucket = String(formData.get('bucket') || '');
-    const path = cleanPath(String(formData.get('path') || 'uploads'));
+    const body = await req.json();
+    const bucket = String(body.bucket || '');
+    const path = cleanPath(String(body.path || 'uploads'));
+    const originalFileName = String(body.fileName || 'upload.bin');
 
-    if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     if (!ALLOWED_BUCKETS.has(bucket)) {
       return NextResponse.json({ error: 'Upload bucket is not allowed' }, { status: 400 });
-    }
-    if (file.size > 100 * 1024 * 1024) {
-      return NextResponse.json({ error: 'File size exceeds 100MB limit' }, { status: 400 });
     }
 
     await ensurePublicBucket(bucket);
 
-    const fileName = safeFileName(file.name);
+    const fileName = safeFileName(originalFileName);
     const filePath = cleanPath(`${path}/${fileName}`);
-    const buffer = Buffer.from(await file.arrayBuffer());
 
-    const { error: uploadError } = await supabaseAdmin.storage
+    const { data, error } = await supabaseAdmin.storage
       .from(bucket)
-      .upload(filePath, buffer, {
-        contentType: file.type || 'application/octet-stream',
-        upsert: false,
-      });
+      .createSignedUploadUrl(filePath);
 
-    if (uploadError) {
-      return NextResponse.json({ error: uploadError.message }, { status: 500 });
+    if (error || !data) {
+      return NextResponse.json({ error: error?.message || 'Failed to generate signed URL' }, { status: 500 });
     }
 
     const { data: { publicUrl } } = supabaseAdmin.storage
       .from(bucket)
       .getPublicUrl(filePath);
 
-    return NextResponse.json({ url: publicUrl, fileName, path: filePath });
+    return NextResponse.json({ 
+      signedUrl: data.signedUrl, 
+      token: data.token,
+      path: filePath, 
+      url: publicUrl,
+      fileName 
+    });
   } catch (err: unknown) {
-    const message = (err as Error).message || 'Upload failed';
+    const message = (err as Error).message || 'Failed to create upload URL';
     console.error('[/api/admin/uploads]', message);
     return NextResponse.json({ error: message }, { status: 500 });
   }

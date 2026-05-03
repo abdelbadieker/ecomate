@@ -27,7 +27,7 @@ function isAbortError(error: unknown) {
 }
 
 export async function uploadFile(
-  _supabase: SupabaseClient,
+  supabase: SupabaseClient,
   file: File,
   options: UploadOptions
 ): Promise<UploadResult> {
@@ -64,33 +64,47 @@ export async function uploadFile(
   try {
     options.onProgress?.(0);
 
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('bucket', bucket);
-    formData.append('path', path);
-
+    // 1. Get signed URL from our API
     const response = await fetch(UPLOAD_ENDPOINT, {
       method: 'POST',
-      body: formData,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        bucket,
+        path,
+        fileName: file.name,
+      }),
       signal: requestController.signal,
     });
 
-    const payload = await response.json().catch(() => null) as {
-      url?: string;
-      fileName?: string;
-      error?: string;
-    } | null;
+    const payload = await response.json().catch(() => null);
 
-    if (!response.ok) {
-      throw new Error(payload?.error || `Upload failed with status ${response.status}`);
+    if (!response.ok || !payload?.signedUrl) {
+      throw new Error(payload?.error || `Failed to get upload URL (status ${response.status})`);
+    }
+
+    options.onProgress?.(20);
+
+    // 2. Upload file directly to Supabase Storage using the signed URL
+    const uploadResponse = await fetch(payload.signedUrl, {
+      method: 'PUT',
+      body: file,
+      headers: {
+        'Content-Type': file.type || 'application/octet-stream',
+      },
+      signal: requestController.signal,
+    });
+
+    if (!uploadResponse.ok) {
+      const errorText = await uploadResponse.text().catch(() => '');
+      throw new Error(`Upload to storage failed (${uploadResponse.status}): ${errorText}`);
     }
 
     options.onProgress?.(100);
 
     return {
-      url: payload?.url || null,
+      url: payload.url || null,
       error: null,
-      fileName: payload?.fileName || file.name,
+      fileName: payload.fileName || file.name,
     };
   } catch (err: unknown) {
     if (signal?.aborted || isAbortError(err)) {
