@@ -26,25 +26,25 @@ function detectCol(headers: string[], variations: string[]): number {
   });
 }
 
-function processRows(rows: any[][], headers: string[]): { valid: any[], invalidCount: number } {
-  const nameIdx = detectCol(headers, ['name', 'nom', 'client', 'customer', 'n']);
+function processRows(rows: any[][], headers: string[]): { valid: any[], invalidCount: number, detectedHeaders: any } {
+  const nameIdx = detectCol(headers, ['name', 'nom', 'client', 'customer', 'full name', 'username', 'n', 'c']);
   const emailIdx = detectCol(headers, ['email', 'mail', 'e-mail']);
-  const phoneIdx = detectCol(headers, ['phone', 'tel', 'mobile', 'telephone', 'portable']);
-  const cityIdx = detectCol(headers, ['city', 'wilaya', 'ville', 'location', 'place', 'address', 'adresse']);
-  const noteIdx = detectCol(headers, ['note', 'obs', 'remarque', 'desc', 'comment']);
-  const ordersIdx = detectCol(headers, ['order', 'commande', 'total orders']);
-  const spentIdx = detectCol(headers, ['spent', 'total spent', 'da', 'price', 'total']);
+  const phoneIdx = detectCol(headers, ['phone', 'tel', 'mobile', 'telephone', 'portable', 'fixe', 'num']);
+  const cityIdx = detectCol(headers, ['city', 'wilaya', 'ville', 'location', 'place', 'address', 'adresse', 'adr']);
+  const noteIdx = detectCol(headers, ['note', 'obs', 'remarque', 'desc', 'comment', 'detail']);
+  const ordersIdx = detectCol(headers, ['order', 'commande', 'total orders', 'qty', 'quantite']);
+  const spentIdx = detectCol(headers, ['spent', 'total spent', 'da', 'price', 'total', 'montant', 'prix']);
 
   const valid: any[] = [];
   let invalidCount = 0;
 
   rows.forEach(row => {
-    // Skip empty rows
-    if (!row || row.length === 0 || row.every(cell => !cell)) return;
+    // Skip empty rows or rows with only empty cells
+    if (!row || row.length === 0 || row.every(cell => !cell || String(cell).trim() === '')) return;
 
     const name = nameIdx !== -1 ? String(row[nameIdx] || '').trim() : '';
     
-    if (!name) {
+    if (!name || name.toLowerCase() === 'name' || name.toLowerCase() === 'nom') {
       invalidCount++;
       return;
     }
@@ -55,12 +55,21 @@ function processRows(rows: any[][], headers: string[]): { valid: any[], invalidC
       phone: phoneIdx !== -1 ? String(row[phoneIdx] || '').trim() : null,
       city: cityIdx !== -1 ? String(row[cityIdx] || '').trim() : null,
       notes: noteIdx !== -1 ? String(row[noteIdx] || '').trim() : null,
-      total_orders: ordersIdx !== -1 ? parseInt(String(row[ordersIdx])) || 0 : 0,
-      total_spent: spentIdx !== -1 ? parseFloat(String(row[spentIdx])) || 0 : 0,
+      total_orders: ordersIdx !== -1 ? parseInt(String(row[ordersIdx]).replace(/[^0-9]/g, '')) || 0 : 0,
+      total_spent: spentIdx !== -1 ? parseFloat(String(row[spentIdx]).replace(/[^0-9.]/g, '')) || 0 : 0,
     });
   });
 
-  return { valid, invalidCount };
+  return { 
+    valid, 
+    invalidCount, 
+    detectedHeaders: { 
+      name: nameIdx !== -1, 
+      email: emailIdx !== -1, 
+      phone: phoneIdx !== -1,
+      city: cityIdx !== -1 
+    } 
+  };
 }
 
 export default function CRMImportClient({ initialMerchants = [] }: { initialMerchants?: Merchant[] }) {
@@ -202,6 +211,7 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
           const res = processRows(csvRows.slice(1), csvRows[0]);
           dataRows = res.valid;
           invalidCount = res.invalidCount;
+          if (!res.detectedHeaders.name) throw new Error('Could not find a "Customer Name" column in your CSV. Please check your headers.');
         } else {
           const XLSX = await import('xlsx');
           const buffer = await importFile!.arrayBuffer();
@@ -212,6 +222,7 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
           const res = processRows(jsonData.slice(1), jsonData[0] as string[]);
           dataRows = res.valid;
           invalidCount = res.invalidCount;
+          if (!res.detectedHeaders.name) throw new Error('Could not find a "Customer Name" column in your Excel file. Please check your headers.');
         }
       } else {
         // Google Sheets
@@ -226,6 +237,7 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
         const res = processRows(csvRows.slice(1), csvRows[0]);
         dataRows = res.valid;
         invalidCount = res.invalidCount;
+        if (!res.detectedHeaders.name) throw new Error('Could not find a "Customer Name" column in your Google Sheet.');
       }
 
       if (dataRows.length === 0) {

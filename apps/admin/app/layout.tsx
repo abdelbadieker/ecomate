@@ -21,7 +21,8 @@ import {
   DollarSign,
   Bot,
   Video,
-  LayoutList
+  LayoutList,
+  Folder
 } from 'lucide-react';
 
 const navItems = [

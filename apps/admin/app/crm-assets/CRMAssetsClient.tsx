@@ -64,6 +64,7 @@ export default function CRMAssetsClient({ initialMerchants = [] }: { initialMerc
   const [uploadingFile, setUploadingFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const uploadAbortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (selectedMerchant) {
@@ -72,6 +73,15 @@ export default function CRMAssetsClient({ initialMerchants = [] }: { initialMerc
       setAssets([]);
     }
   }, [selectedMerchant]);
+
+  const cancelUpload = () => {
+    if (uploadAbortRef.current) {
+      uploadAbortRef.current.abort();
+      uploadAbortRef.current = null;
+      setIsProcessing(false);
+      setUploadProgress(0);
+    }
+  };
 
   const fetchAssets = async () => {
     setLoading(true);
@@ -92,6 +102,10 @@ export default function CRMAssetsClient({ initialMerchants = [] }: { initialMerc
     if (!selectedMerchant || !formTitle) return;
 
     setIsProcessing(true);
+    setUploadProgress(0);
+    const controller = new AbortController();
+    uploadAbortRef.current = controller;
+
     try {
       let fileData = { url: null as string | null, name: null as string | null, type: null as string | null };
 
@@ -100,8 +114,12 @@ export default function CRMAssetsClient({ initialMerchants = [] }: { initialMerc
           bucket: 'platform-assets',
           path: `crm/${selectedMerchant}`,
           onProgress: (p) => setUploadProgress(p),
+          signal: controller.signal
         });
-        if (res.error) throw new Error(res.error);
+        if (res.error) {
+          if (res.error === 'Upload cancelled') return;
+          throw new Error(res.error);
+        }
         fileData = { url: res.url, name: uploadingFile.name, type: uploadingFile.type };
       }
 
@@ -117,6 +135,7 @@ export default function CRMAssetsClient({ initialMerchants = [] }: { initialMerc
           file_name: fileData.name,
           mime_type: fileData.type,
         }),
+        signal: controller.signal
       });
 
       if (!res.ok) throw new Error('Failed to save asset');
@@ -124,8 +143,10 @@ export default function CRMAssetsClient({ initialMerchants = [] }: { initialMerc
       await fetchAssets();
       closeModals();
     } catch (err: any) {
+      if (err.name === 'AbortError') return;
       alert(err.message);
     } finally {
+      uploadAbortRef.current = null;
       setIsProcessing(false);
     }
   };
@@ -135,6 +156,10 @@ export default function CRMAssetsClient({ initialMerchants = [] }: { initialMerc
     if (!currentAsset || !formTitle) return;
 
     setIsProcessing(true);
+    setUploadProgress(0);
+    const controller = new AbortController();
+    uploadAbortRef.current = controller;
+
     try {
       let fileData = { 
         url: currentAsset.file_url, 
@@ -147,8 +172,12 @@ export default function CRMAssetsClient({ initialMerchants = [] }: { initialMerc
           bucket: 'platform-assets',
           path: `crm/${selectedMerchant}`,
           onProgress: (p) => setUploadProgress(p),
+          signal: controller.signal
         });
-        if (res.error) throw new Error(res.error);
+        if (res.error) {
+          if (res.error === 'Upload cancelled') return;
+          throw new Error(res.error);
+        }
         fileData = { url: res.url, name: uploadingFile.name, type: uploadingFile.type };
       }
 
@@ -164,6 +193,7 @@ export default function CRMAssetsClient({ initialMerchants = [] }: { initialMerc
           file_name: fileData.name,
           mime_type: fileData.type,
         }),
+        signal: controller.signal
       });
 
       if (!res.ok) throw new Error('Failed to update asset');
@@ -171,8 +201,10 @@ export default function CRMAssetsClient({ initialMerchants = [] }: { initialMerc
       await fetchAssets();
       closeModals();
     } catch (err: any) {
+      if (err.name === 'AbortError') return;
       alert(err.message);
     } finally {
+      uploadAbortRef.current = null;
       setIsProcessing(false);
     }
   };
@@ -494,10 +526,20 @@ export default function CRMAssetsClient({ initialMerchants = [] }: { initialMerc
                 className="w-full py-5 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-2xl shadow-xl shadow-blue-600/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-3 text-sm uppercase tracking-widest active:scale-[0.98]"
               >
                 {isProcessing ? (
-                  <>
-                    <Loader2 size={20} className="animate-spin" />
-                    Synchronizing...
-                  </>
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="flex items-center gap-3">
+                      <Loader2 size={20} className="animate-spin" />
+                      Synchronizing...
+                    </div>
+                    <button
+                      type="button"
+                      onClick={cancelUpload}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-red-600/10 hover:bg-red-600 text-red-400 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                    >
+                      <X size={12} />
+                      Cancel Upload
+                    </button>
+                  </div>
                 ) : (
                   <>
                     {showAddModal ? <CheckCircle2 size={20} /> : <Edit size={20} />}

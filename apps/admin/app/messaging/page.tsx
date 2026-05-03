@@ -550,9 +550,9 @@ export default function MessagingPage() {
                             </a>
                           )}
 
-                          {/* Timestamp + read status */}
+                          {/* Timestamp + read status + Delete */}
                           <div
-                            className={`flex items-center gap-1.5 mt-2 ${
+                            className={`flex items-center gap-3 mt-2 ${
                               isAdmin ? 'justify-end' : 'justify-start'
                             }`}
                           >
@@ -563,13 +563,8 @@ export default function MessagingPage() {
                             >
                               {formatTimestamp(msg.created_at)}
                             </span>
+                            
                             <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => handleDeleteMessage(msg.id)}
-                                className={`text-[10px] text-red-400 hover:text-red-300 transition-colors opacity-0 group-hover:opacity-100 ${isAdmin ? '' : 'absolute -right-12 top-1/2 -translate-y-1/2'}`}
-                              >
-                                Delete
-                              </button>
                               {isAdmin && (
                                 <span
                                   className={`text-[10px] ${
@@ -579,6 +574,14 @@ export default function MessagingPage() {
                                   {msg.is_read ? 'Read' : 'Sent'}
                                 </span>
                               )}
+                              
+                              <button
+                                onClick={() => handleDeleteMessage(msg.id)}
+                                className="text-[10px] text-red-400 hover:text-red-300 transition-colors opacity-0 group-hover:opacity-100 flex items-center gap-1 font-bold"
+                              >
+                                <X className="w-3 h-3" />
+                                Delete
+                              </button>
                             </div>
                           </div>
                         </div>
