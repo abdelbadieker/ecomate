@@ -6,6 +6,8 @@ export interface UploadOptions {
   maxSizeMB?: number;
   allowedTypes?: string[];
   timeoutMs?: number;
+  signal?: AbortSignal; // AbortController support for cancel
+  onProgress?: (percent: number) => void;
 }
 
 export interface UploadResult {
@@ -16,7 +18,7 @@ export interface UploadResult {
 
 /**
  * Unified utility to upload files to Supabase Storage.
- * Handles filename sanitization, timeouts, and public URL retrieval.
+ * Supports AbortController for cancellation and progress callbacks.
  */
 export async function uploadFile(
   supabase: SupabaseClient,
@@ -28,12 +30,14 @@ export async function uploadFile(
     path = '',
     maxSizeMB = 100,
     allowedTypes = [],
-    timeoutMs = 120000, // 2 minutes default
+    timeoutMs = 120000,
+    signal,
   } = options;
 
   // 1. Validation
   if (!file) return { url: null, error: 'No file provided', fileName: null };
-  
+  if (signal?.aborted) return { url: null, error: 'Upload cancelled', fileName: null };
+
   if (file.size > maxSizeMB * 1024 * 1024) {
     return { url: null, error: `File size exceeds ${maxSizeMB}MB limit`, fileName: null };
   }
@@ -48,35 +52,51 @@ export async function uploadFile(
   const uploadPath = path ? `${path.replace(/\/$/, '')}/${sanitizedName}` : sanitizedName;
 
   try {
-    // 3. Upload with Timeout
+    // 3. Upload with Timeout + Abort support
     const uploadPromise = supabase.storage.from(bucket).upload(uploadPath, file, {
       cacheControl: '3600',
-      upsert: false
+      upsert: false,
     });
 
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Transmission timeout: Connection too slow or file too large.')), timeoutMs)
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Upload timeout: connection too slow or file too large.')), timeoutMs)
     );
 
-    const result = await Promise.race([uploadPromise, timeoutPromise]) as { data: unknown; error: unknown };
+    // Create abort promise if signal provided
+    const abortPromise = signal
+      ? new Promise<never>((_, reject) => {
+          if (signal.aborted) reject(new Error('Upload cancelled'));
+          signal.addEventListener('abort', () => reject(new Error('Upload cancelled')), { once: true });
+        })
+      : null;
+
+    const racers: Promise<unknown>[] = [uploadPromise, timeoutPromise];
+    if (abortPromise) racers.push(abortPromise);
+
+    const result = await Promise.race(racers) as { data: unknown; error: unknown };
 
     if (result.error) throw result.error;
 
     // 4. Get Public URL
     const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(uploadPath);
-    
+
     return {
       url: urlData.publicUrl,
       error: null,
-      fileName: sanitizedName
+      fileName: sanitizedName,
     };
   } catch (err: unknown) {
     const error = err as { message?: string };
+    if (error.message === 'Upload cancelled') {
+      // Try to clean up the partially-uploaded file
+      try { await supabase.storage.from(bucket).remove([uploadPath]); } catch { /* ignore */ }
+      return { url: null, error: 'Upload cancelled', fileName: null };
+    }
     console.error(`[StorageUtil] Upload to ${bucket} failed:`, error);
     return {
       url: null,
-      error: error.message || 'The data link was interrupted during transmission',
-      fileName: null
+      error: error.message || 'Upload failed',
+      fileName: null,
     };
   }
 }

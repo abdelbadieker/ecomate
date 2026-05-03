@@ -8,7 +8,7 @@ import {
   LayoutDashboard, ShoppingBag, Package, Users, MapPin,
   Mail, Sparkles, Paintbrush, Globe, Store,
   PieChart, CreditCard, HelpCircle, Search, Bell, LogOut,
-  ChevronRight, ChevronDown, Menu, X, User
+  ChevronRight, ChevronDown, Menu, X, User, MessageSquare
 } from 'lucide-react';
 // SectionLock import removed — every section is always unlocked.
 
@@ -25,6 +25,7 @@ const navItems = [
   { name: 'E-Store', href: '/estore', icon: Store, feature: 'estore' },
   { name: 'Analytics', href: '/analytics', icon: PieChart, feature: 'analytics' },
   { name: 'Billing', href: '/billing', icon: CreditCard, feature: 'billing' },
+  { name: 'Messages', href: '/messages', icon: MessageSquare, feature: 'messages' },
   { name: 'Support', href: '/support', icon: HelpCircle, feature: 'support' },
 ];
 

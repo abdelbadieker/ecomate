@@ -58,7 +58,8 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/estore') ||
     pathname.startsWith('/analytics') ||
     pathname.startsWith('/billing') ||
-    pathname.startsWith('/support');
+    pathname.startsWith('/support') ||
+    pathname.startsWith('/messages');
 
   if (isDashboardRoute) {
     const { data: { session } } = await supabase.auth.getSession();

@@ -16,7 +16,9 @@ import {
   History,
   Star,
   LifeBuoy,
-  CreditCard
+  CreditCard,
+  MessageSquare,
+  DollarSign
 } from 'lucide-react';
 
 const navItems = [
@@ -26,6 +28,8 @@ const navItems = [
   { name: 'Creative Studio', href: '/creative-studio', icon: <Palette size={20} /> },
   { name: 'Partner Links', href: '/partner-links', icon: <Share2 size={20} /> },
   { name: 'Support Tickets', href: '/tickets', icon: <LifeBuoy size={20} /> },
+  { name: 'Messaging', href: '/messaging', icon: <MessageSquare size={20} /> },
+  { name: 'Pricing Plans', href: '/pricing', icon: <DollarSign size={20} /> },
   { name: 'CRM Hub', href: '/crm-import', icon: <Database size={20} /> },
   { name: 'Reviews', href: '/reviews', icon: <Star size={20} /> },
   { name: 'Module Locker', href: '/module-locker', icon: <Settings size={20} /> },
