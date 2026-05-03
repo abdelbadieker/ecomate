@@ -20,7 +20,8 @@ import {
   MessageSquare,
   DollarSign,
   Bot,
-  Video
+  Video,
+  LayoutList
 } from 'lucide-react';
 
 const navItems = [
@@ -28,6 +29,7 @@ const navItems = [
   { name: 'Merchants & Users', href: '/merchants', icon: <Users size={20} /> },
   { name: 'Subscriptions', href: '/subscriptions', icon: <CreditCard size={20} /> },
   { name: 'Creative Studio', href: '/creative-studio', icon: <Palette size={20} /> },
+  { name: 'Services', href: '/services', icon: <LayoutList size={20} /> },
   { name: 'Partner Links', href: '/partner-links', icon: <Share2 size={20} /> },
   { name: 'Support Tickets', href: '/tickets', icon: <LifeBuoy size={20} /> },
   { name: 'Messaging', href: '/messaging', icon: <MessageSquare size={20} /> },

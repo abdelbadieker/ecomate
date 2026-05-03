@@ -6,6 +6,7 @@ import { AuthNav } from '@/components/AuthNav';
 import { ReviewsSection } from '@/components/ReviewsSection';
 import { ChatbotDemoSection } from '@/components/ChatbotDemoSection';
 import { ContactSection } from '@/components/ContactSection';
+import { ServicesSection } from '@/components/ServicesSection';
 
 export default function LandingPage() {
   return (
@@ -119,85 +120,7 @@ export default function LandingPage() {
 
       <ChatbotDemoSection />
 
-      {/* FEATURES BENTO (REVAMPED) */}
-      <section id="features" className="py-32 px-5 relative bg-[#0a1628] rounded-b-[40px]">
-        <div className="max-w-7xl mx-auto text-center mb-16">
-          <p className="text-[#2563EB] font-bold tracking-widest uppercase text-xs mb-4 flex items-center justify-center gap-2">
-            <span className="w-4 h-[2px] bg-[#2563EB]"></span>
-            Everything You Need
-          </p>
-          <h2 className="text-4xl md:text-5xl font-extrabold text-white mb-6 tracking-tight font-poppins">
-            All tools. <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-blue-200">One platform.</span><br/>
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-500 to-emerald-300">Zero fragmentation.</span>
-          </h2>
-          <p className="text-slate-400 text-lg max-w-2xl mx-auto leading-relaxed">
-            Stop juggling a dozen different tools. EcoMate brings every capability your Algerian business needs into one seamless, affordable system.
-          </p>
-        </div>
-
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Card 1 */}
-          <div className="md:col-span-2 relative group bg-[#0f1c33] border border-slate-800 rounded-3xl p-8 hover:border-blue-500/30 transition-all duration-300 overflow-hidden shadow-xl">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <div className="w-14 h-14 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-center justify-center mb-6">
-              <Bot className="w-7 h-7 text-blue-400" />
-            </div>
-            <h3 className="text-xl font-bold text-white mb-3 font-poppins">AI Sales Chatbot</h3>
-            <p className="text-slate-400 leading-relaxed max-w-md">Deployed across all your social platforms. Responds 24/7 in Arabic, French and English — handles product questions, takes orders, and confirms deliveries fully automatically.</p>
-            <div className="mt-8 flex gap-3 flex-wrap relative z-10">
-              <span className="px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold rounded-full">✓ Natural Language</span>
-              <span className="px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold rounded-full">✓ Multi-Language</span>
-            </div>
-          </div>
-
-          {/* Card 2 */}
-          <div className="relative group bg-[#0f1c33] border border-slate-800 rounded-3xl p-8 hover:border-blue-500/30 transition-all duration-300 overflow-hidden shadow-xl">
-            <div className="w-14 h-14 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-center mb-6">
-              <BarChart3 className="w-7 h-7 text-emerald-400" />
-            </div>
-            <h3 className="text-xl font-bold text-white mb-3 font-poppins">Real-time Analytics</h3>
-            <p className="text-slate-400 leading-relaxed">Revenue, top products, order volume, and conversion rates — visualized clearly.</p>
-          </div>
-
-          {/* Card 3 */}
-          <div className="relative group bg-[#0f1c33] border border-slate-800 rounded-3xl p-8 hover:border-blue-500/30 transition-all duration-300 overflow-hidden shadow-xl">
-            <div className="w-14 h-14 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-center mb-6">
-              <Package className="w-7 h-7 text-emerald-400" />
-            </div>
-            <h3 className="text-xl font-bold text-white mb-3 font-poppins">Order Management</h3>
-            <p className="text-slate-400 leading-relaxed">Cash-on-delivery tracking, payment status, and delivery sync all in one panel.</p>
-          </div>
-
-          {/* Card 4 */}
-          <div className="relative group bg-[#0f1c33] border border-slate-800 rounded-3xl p-8 hover:border-blue-500/30 transition-all duration-300 overflow-hidden shadow-xl">
-            <div className="w-14 h-14 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-center justify-center mb-6">
-              <ShoppingBag className="w-7 h-7 text-blue-400" />
-            </div>
-            <h3 className="text-xl font-bold text-white mb-3 font-poppins">Product Catalog</h3>
-            <p className="text-slate-400 leading-relaxed">Add products once—they sync automatically across chatbot and dashboard.</p>
-          </div>
-
-          {/* Card 5 */}
-          <div className="relative group bg-[#0f1c33] border border-slate-800 rounded-3xl p-8 hover:border-blue-500/30 transition-all duration-300 overflow-hidden shadow-xl">
-             <div className="w-14 h-14 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-center justify-center mb-6">
-              <Users className="w-7 h-7 text-blue-400" />
-            </div>
-            <h3 className="text-xl font-bold text-white mb-3 font-poppins">Customer CRM</h3>
-            <p className="text-slate-400 leading-relaxed">Every customer interaction and purchase history tracked automatically.</p>
-          </div>
-
-          {/* Card 6 */}
-          <div className="md:col-span-3 relative group bg-[#0f1c33] border border-slate-800 rounded-3xl p-8 hover:border-blue-500/30 transition-all duration-300 overflow-hidden shadow-xl flex flex-col md:flex-row items-center gap-8">
-             <div className="w-16 h-16 shrink-0 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-center justify-center">
-              <Truck className="w-8 h-8 text-blue-400" />
-            </div>
-            <div>
-              <h3 className="text-xl font-bold text-white mb-3 font-poppins">Delivery Partner Integration</h3>
-              <p className="text-slate-400 leading-relaxed max-w-3xl">Integrated with all major Algerian delivery companies. Tracking codes sync automatically, customers get live status updates via AI — zero manual work required across all 58 wilayas.</p>
-            </div>
-          </div>
-        </div>
-      </section>
+      <ServicesSection />
 
       {/* REVIEWS — Real DB-backed reviews */}
       <ReviewsSection />
