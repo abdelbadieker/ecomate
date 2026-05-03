@@ -194,8 +194,9 @@ export default function DemoVideosPage() {
         <div>
           <h4 className="text-sm font-black text-white uppercase tracking-widest">Media Management Policy</h4>
           <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-            All uploaded videos are served via high-speed global CDNs. To ensure optimal performance for Algerian merchants, 
-            keep video files under 50MB and use MP4/H.264 compression.
+            All uploaded videos are served via high-speed global CDNs. 
+            We now support high-fidelity assets up to 2GB for premium demonstrations. 
+            Use MP4/H.264 compression for the best balance of quality and speed.
           </p>
         </div>
       </div>

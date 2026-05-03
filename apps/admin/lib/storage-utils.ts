@@ -34,9 +34,9 @@ export async function uploadFile(
   const {
     bucket,
     path = '',
-    maxSizeMB = 100,
+    maxSizeMB = 2048,
     allowedTypes = [],
-    timeoutMs = 120000,
+    timeoutMs = 1800000,
     signal,
   } = options;
 

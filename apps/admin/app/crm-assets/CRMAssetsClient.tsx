@@ -55,12 +55,14 @@ export default function CRMAssetsClient({ initialMerchants = [] }: { initialMerc
   // Modals
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showBulkModal, setShowBulkModal] = useState(false);
   const [currentAsset, setCurrentAsset] = useState<Asset | null>(null);
 
   // Form State
   const [formType, setFormType] = useState<'file' | 'link'>('link');
   const [formTitle, setFormTitle] = useState('');
   const [formExternalUrl, setFormExternalUrl] = useState('');
+  const [bulkLinks, setBulkLinks] = useState('');
   const [uploadingFile, setUploadingFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -151,6 +153,46 @@ export default function CRMAssetsClient({ initialMerchants = [] }: { initialMerc
     }
   };
 
+  const handleBulkImport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedMerchant || !bulkLinks) return;
+    
+    setIsProcessing(true);
+    try {
+      const lines = bulkLinks.split('\n').filter(l => l.trim());
+      const parsedLinks = lines.map(line => {
+        const parts = line.split('|');
+        if (parts.length >= 2) {
+          return { title: parts[0].trim(), url: parts[1].trim() };
+        }
+        return { title: line.trim(), url: line.trim() };
+      }).filter(l => l.url.startsWith('http'));
+
+      if (parsedLinks.length === 0) throw new Error('No valid links found. Use format: Name | URL');
+
+      const promises = parsedLinks.map(link => 
+        fetch('/api/admin/crm/assets', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            client_id: selectedMerchant,
+            type: 'link',
+            title: link.title,
+            external_url: link.url
+          })
+        })
+      );
+
+      await Promise.all(promises);
+      await fetchAssets();
+      closeModals();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const handleEditAsset = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentAsset || !formTitle) return;
@@ -229,14 +271,10 @@ export default function CRMAssetsClient({ initialMerchants = [] }: { initialMerc
   };
 
   const closeModals = () => {
-    setShowAddModal(false);
-    setShowEditModal(false);
-    setCurrentAsset(null);
-    setFormTitle('');
-    setFormExternalUrl('');
-    setUploadingFile(null);
     setUploadProgress(0);
     setFormType('link');
+    setBulkLinks('');
+    setShowBulkModal(false);
   };
 
   const filteredAssets = assets.filter(a => 
@@ -269,13 +307,22 @@ export default function CRMAssetsClient({ initialMerchants = [] }: { initialMerc
         </div>
         
         {selectedMerchant && (
-          <button 
-            onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-blue-600/20 transition-all active:scale-95"
-          >
-            <Plus size={18} />
-            New Asset
-          </button>
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setShowBulkModal(true)}
+              className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white px-6 py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all border border-slate-800"
+            >
+              <LinkIcon size={18} />
+              Bulk Links
+            </button>
+            <button 
+              onClick={() => setShowAddModal(true)}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-blue-600/20 transition-all active:scale-95"
+            >
+              <Plus size={18} />
+              New Asset
+            </button>
+          </div>
         )}
       </div>
 
@@ -546,6 +593,46 @@ export default function CRMAssetsClient({ initialMerchants = [] }: { initialMerc
                     {showAddModal ? 'Deploy Asset' : 'Save Changes'}
                   </>
                 )}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* Bulk Modal */}
+      {showBulkModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 backdrop-blur-md bg-black/60 animate-in fade-in duration-300">
+          <div className="bg-[#0A1628] border border-slate-800 w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="p-8 border-b border-slate-800 flex items-center justify-between">
+              <div>
+                <h3 className="text-2xl font-black text-white uppercase tracking-tight">Bulk Link Import</h3>
+                <p className="text-xs text-slate-500 font-medium mt-1">Import multiple links at once.</p>
+              </div>
+              <button onClick={closeModals} className="p-2 text-slate-500 hover:text-white transition-colors">
+                <X size={24} />
+              </button>
+            </div>
+
+            <form onSubmit={handleBulkImport} className="p-8 space-y-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Links (Format: Title | URL)</label>
+                <textarea 
+                  required
+                  rows={8}
+                  value={bulkLinks}
+                  onChange={e => setBulkLinks(e.target.value)}
+                  placeholder="Example: Dashboard | https://...&#10;Analytics | https://..."
+                  className="w-full bg-[#07101F] border border-slate-700 rounded-2xl px-5 py-4 text-white outline-none focus:border-blue-500 transition-all text-sm font-bold resize-none"
+                />
+                <p className="text-[9px] text-slate-600 font-bold px-1 italic">One link per line. Use the pipe symbol (|) to separate naming.</p>
+              </div>
+
+              <button 
+                type="submit"
+                disabled={isProcessing || !bulkLinks}
+                className="w-full py-5 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-2xl shadow-xl shadow-blue-600/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-3 text-sm uppercase tracking-widest active:scale-[0.98]"
+              >
+                {isProcessing ? <Loader2 size={20} className="animate-spin" /> : <LinkIcon size={20} />}
+                {isProcessing ? 'Importing Pipeline...' : 'Process Bulk Import'}
               </button>
             </form>
           </div>

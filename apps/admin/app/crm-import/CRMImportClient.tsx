@@ -7,7 +7,7 @@ import { createBrowserClient } from '@supabase/ssr';
 function createClient() { return createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!); }
 
 type Merchant = { id: string; full_name: string; email: string };
-type CrmFile = { id: string; client_id: string; file_name: string; file_url: string; file_type: string; file_size: number; created_at: string };
+type CrmAsset = { id: string; client_id: string; type: 'file' | 'link'; title: string; file_url: string | null; external_url: string | null; file_name: string | null; mime_type: string | null; file_size?: number; created_at: string };
 
 const IMPORT_EXTENSIONS = ['.csv', '.xlsx', '.xls'];
 const FILE_EXTENSIONS = ['.pdf', '.docx', '.doc', '.xlsx', '.xls', '.csv', '.jpg', '.jpeg', '.png', '.zip'];
@@ -88,10 +88,9 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
   const [googleSheetsUrl, setGoogleSheetsUrl] = useState('');
   const abortRef = useRef<AbortController | null>(null);
 
-  // Files State
+  // Assets State
   const supabase = createClient();
-  const [files, setFiles] = useState<CrmFile[]>([]);
-  const [uploadingFile, setUploadingFile] = useState<File | null>(null);
+  const [assets, setAssets] = useState<CrmAsset[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [fileLoadError, setFileLoadError] = useState<string | null>(null);
   const uploadAbortRef = useRef<AbortController | null>(null);
@@ -105,13 +104,13 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
   const loadFiles = async () => {
     try {
       setFileLoadError(null);
-      const res = await fetch(`/api/admin/crm/files?client_id=${selectedMerchant}`);
+      const res = await fetch(`/api/admin/crm/assets?client_id=${selectedMerchant}`);
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to load files');
-      setFiles(Array.isArray(data) ? data : []);
+      if (!res.ok) throw new Error(data.error || 'Failed to load assets');
+      setAssets(Array.isArray(data) ? data : []);
     } catch (err: any) {
       setFileLoadError(err.message);
-      setFiles([]);
+      setAssets([]);
     }
   };
 
@@ -138,14 +137,16 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
 
       if (uploadRes.error || !uploadRes.url) throw new Error(uploadRes.error || 'Upload failed');
 
-      const saveRes = await fetch('/api/admin/crm/files', {
+      const saveRes = await fetch('/api/admin/crm/assets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           client_id: selectedMerchant,
-          file_name: f.name,
+          type: 'file',
+          title: f.name,
           file_url: uploadRes.url,
-          file_type: f.type || ext.replace('.', ''),
+          file_name: f.name,
+          mime_type: f.type || ext.replace('.', ''),
           file_size: f.size,
         }),
       });
@@ -163,9 +164,9 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
   };
 
   const deleteFile = async (id: string) => {
-    if (!confirm('Delete this file? This cannot be undone.')) return;
+    if (!confirm('Delete this asset? This cannot be undone.')) return;
     try {
-      const res = await fetch(`/api/admin/crm/files?id=${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/admin/crm/assets?id=${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Delete failed');
       loadFiles();
     } catch (err: any) {
@@ -322,7 +323,7 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
           className={`pb-3 px-8 text-sm font-black uppercase tracking-widest transition-all ${activeTab === 'files' ? 'text-emerald-400 border-b-2 border-emerald-400' : 'text-slate-500 hover:text-slate-300'}`}
           onClick={() => setActiveTab('files')}
         >
-          File Management
+          Asset Management
         </button>
       </div>
 
@@ -439,14 +440,16 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
                 <div className="bg-[#0A1628] border border-slate-800 rounded-3xl p-8 shadow-xl">
                   <div className="flex items-center justify-between mb-6">
                     <div>
-                      <h3 className="text-lg font-black text-white uppercase tracking-tight">Secure Document Storage</h3>
-                      <p className="text-xs text-slate-500 font-medium mt-1">Upload PDF, DOCX, Images, and more directly for this client.</p>
+                      <h3 className="text-lg font-black text-white uppercase tracking-tight">Client Asset Vault</h3>
+                      <p className="text-xs text-slate-500 font-medium mt-1">Manage documents and external links for this client.</p>
                     </div>
-                    <label className={`px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all cursor-pointer flex items-center gap-2 ${isUploading ? 'bg-slate-800 text-slate-500' : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/20'}`}>
-                      <Upload size={14} />
-                      {isUploading ? 'Processing...' : 'Upload File'}
-                      <input type="file" className="hidden" onChange={handleFileUpload} disabled={isUploading} />
-                    </label>
+                    <div className="flex gap-3">
+                      <label className={`px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all cursor-pointer flex items-center gap-2 ${isUploading ? 'bg-slate-800 text-slate-500' : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/20'}`}>
+                        <Upload size={14} />
+                        {isUploading ? 'Processing...' : 'Upload File'}
+                        <input type="file" className="hidden" onChange={handleFileUpload} disabled={isUploading} />
+                      </label>
+                    </div>
                   </div>
 
                   {isUploading && (
@@ -459,30 +462,40 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
                     </div>
                   )}
 
-                  {/* Files List */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
-                    {files.length === 0 && !isUploading ? (
+                    {assets.length === 0 && !isUploading ? (
                       <div className="col-span-full py-16 flex flex-col items-center justify-center text-slate-700 bg-slate-900/30 rounded-3xl border border-dashed border-slate-800">
                         <Folder size={48} className="mb-4 opacity-50" />
-                        <span className="text-[10px] font-black uppercase tracking-widest">No documents found</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest">No assets found</span>
                       </div>
                     ) : (
-                      files.map(f => (
-                        <div key={f.id} className="group relative bg-[#07101F] border border-slate-800 p-5 rounded-2xl hover:border-slate-600 transition-all">
+                      assets.map(a => (
+                        <div key={a.id} className="group relative bg-[#07101F] border border-slate-800 p-5 rounded-2xl hover:border-slate-600 transition-all">
                           <div className="flex gap-4">
                             <div className="w-12 h-12 bg-slate-900 rounded-xl flex items-center justify-center border border-slate-800">
-                              {getFileIcon(f.file_type)}
+                              {a.type === 'link' ? <LinkIcon className="text-blue-400" /> : getFileIcon(a.mime_type || '')}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h4 className="text-sm font-black text-white truncate pr-6">{f.file_name}</h4>
-                              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter mt-1">
-                                {(f.file_size / 1024).toFixed(1)} KB • {new Date(f.created_at).toLocaleDateString()}
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded border ${a.type === 'link' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'}`}>
+                                  {a.type}
+                                </span>
+                              </div>
+                              <h4 className="text-sm font-black text-white truncate pr-6">{a.title}</h4>
+                              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter mt-1 truncate">
+                                {a.type === 'link' ? a.external_url : `${((a.file_size || 0) / 1024).toFixed(1)} KB • ${new Date(a.created_at).toLocaleDateString()}`}
                               </p>
                               <div className="mt-3 flex gap-3">
-                                <a href={f.file_url} target="_blank" rel="noreferrer" className="text-[10px] font-black text-emerald-400 flex items-center gap-1.5 hover:text-white transition-colors">
-                                  <FileDown size={12} /> DOWNLOAD
-                                </a>
-                                <button onClick={() => deleteFile(f.id)} className="text-[10px] font-black text-slate-600 hover:text-red-400 flex items-center gap-1.5 transition-colors">
+                                {a.type === 'link' ? (
+                                  <a href={a.external_url || ''} target="_blank" rel="noreferrer" className="text-[10px] font-black text-blue-400 flex items-center gap-1.5 hover:text-white transition-colors">
+                                    <ExternalLink size={12} /> OPEN LINK
+                                  </a>
+                                ) : (
+                                  <a href={a.file_url || ''} target="_blank" rel="noreferrer" className="text-[10px] font-black text-emerald-400 flex items-center gap-1.5 hover:text-white transition-colors">
+                                    <FileDown size={12} /> DOWNLOAD
+                                  </a>
+                                )}
+                                <button onClick={() => deleteFile(a.id)} className="text-[10px] font-black text-slate-600 hover:text-red-400 flex items-center gap-1.5 transition-colors">
                                   <Trash2 size={12} /> DELETE
                                 </button>
                               </div>

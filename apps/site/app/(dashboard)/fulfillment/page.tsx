@@ -22,6 +22,7 @@ export default function FulfillmentPage() {
   const [submitting, setSubmitting] = useState(false);
   const [tab, setTab] = useState<'pipeline' | 'products'>('pipeline');
   const [userId, setUserId] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadAbortRef = useRef<AbortController | null>(null);
 
@@ -38,9 +39,18 @@ export default function FulfillmentPage() {
   useEffect(() => { 
     fetchData(); 
     supabase.auth.getUser().then(({ data }) => {
-      if (data.user) setUserId(data.user.id);
+      if (data.user) {
+        setUserId(data.user.id);
+        supabase.from('profiles')
+          .select('is_admin')
+          .eq('id', data.user.id)
+          .single()
+          .then(({ data: profile }) => {
+            setIsAdmin(!!profile?.is_admin);
+          });
+      }
     });
-  }, [fetchData, supabase.auth]);
+  }, [fetchData, supabase]);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -53,6 +63,10 @@ export default function FulfillmentPage() {
   };
 
   const handleAddProduct = async () => {
+    if (!isAdmin) {
+      alert('Unauthorized: Only admins can manage fulfillment products.');
+      return;
+    }
     setSubmitting(true);
     const controller = new AbortController();
     uploadAbortRef.current = controller;
@@ -110,6 +124,10 @@ export default function FulfillmentPage() {
   };
 
   const handleDeleteProduct = async (id: string) => {
+    if (!isAdmin) {
+      alert('Unauthorized: Only admins can delete fulfillment products.');
+      return;
+    }
     if (confirm('Remove this product from fulfillment?')) {
       await supabase.from('products').delete().eq('id', id);
       fetchData();
@@ -129,7 +147,7 @@ export default function FulfillmentPage() {
           <h1 style={{ fontSize: 28, fontWeight: 800, color: '#f1f5f9' }}>Fulfillment</h1>
           <p style={{ fontSize: 14, color: '#64748b', marginTop: 4 }}>Manage your shipping pipeline & fulfillment products</p>
         </div>
-        {tab === 'products' && (
+        {tab === 'products' && isAdmin && (
           <button onClick={() => setShowAddProduct(true)} style={{ ...btnStyle, background: 'linear-gradient(135deg, #34d399, #059669)', color: '#fff' }}>
             <Plus style={{ width: 16, height: 16 }} /> Add Fulfillment Product
           </button>
@@ -145,6 +163,7 @@ export default function FulfillmentPage() {
           <Package style={{ width: 14, height: 14 }} /> Products ({fulfillmentProducts.length})
         </button>
       </div>
+
 
       {/* Pipeline Tab */}
       {tab === 'pipeline' && (

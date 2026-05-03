@@ -18,10 +18,16 @@ export default function ProductsPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadAbortRef = useRef<AbortController | null>(null);
 
   const fetchProducts = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', user.id).single();
+      setIsAdmin(!!profile?.is_admin);
+    }
     const { data } = await supabase.from('products').select('*').order('created_at', { ascending: false });
     setProducts(data || []);
     setLoading(false);
@@ -240,8 +246,14 @@ export default function ProductsPage() {
                 <td style={{ padding: '14px 18px', textAlign: 'right' }}><span style={{ color: p.stock < 10 ? '#f87171' : '#e2e8f0', fontWeight: 600 }}>{p.stock}</span></td>
                 <td style={{ padding: '14px 18px', textAlign: 'center' }}>
                   <div style={{ display: 'flex', justifyContent: 'center', gap: 8 }}>
-                    <button onClick={() => startEdit(p)} style={{ background: 'rgba(59,130,246,0.1)', border: 'none', borderRadius: 8, padding: 6, color: '#60a5fa', cursor: 'pointer' }}><Pencil style={{ width: 14, height: 14 }} /></button>
-                    <button onClick={() => handleDelete(p.id)} style={{ background: 'rgba(239,68,68,0.1)', border: 'none', borderRadius: 8, padding: 6, color: '#f87171', cursor: 'pointer' }}><Trash2 style={{ width: 14, height: 14 }} /></button>
+                    {(!p.is_fulfillment || isAdmin) ? (
+                      <>
+                        <button onClick={() => startEdit(p)} style={{ background: 'rgba(59,130,246,0.1)', border: 'none', borderRadius: 8, padding: 6, color: '#60a5fa', cursor: 'pointer' }}><Pencil style={{ width: 14, height: 14 }} /></button>
+                        <button onClick={() => handleDelete(p.id)} style={{ background: 'rgba(239,68,68,0.1)', border: 'none', borderRadius: 8, padding: 6, color: '#f87171', cursor: 'pointer' }}><Trash2 style={{ width: 14, height: 14 }} /></button>
+                      </>
+                    ) : (
+                      <span style={{ fontSize: 10, color: '#475569', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Protected</span>
+                    )}
                   </div>
                 </td>
               </tr>
