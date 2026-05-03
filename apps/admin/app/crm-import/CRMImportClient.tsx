@@ -9,8 +9,8 @@ function createClient() { return createBrowserClient(process.env.NEXT_PUBLIC_SUP
 type Merchant = { id: string; full_name: string; email: string };
 type CrmAsset = { id: string; client_id: string; type: 'file' | 'link'; title: string; file_url: string | null; external_url: string | null; created_at: string };
 
-const ACCEPTED_EXTENSIONS = ['.csv', '.xlsx', '.xls', '.pdf', '.docx'];
-const ACCEPT_STRING = '.csv,.xlsx,.xls,.pdf,.docx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+const ACCEPTED_EXTENSIONS = ['.csv', '.xlsx', '.xls'];
+const ACCEPT_STRING = '.csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel';
 
 function getFileExtension(filename: string): string {
   return ('.' + filename.split('.').pop()?.toLowerCase()) || '';
@@ -189,37 +189,11 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
        });
     }
 
-    if (ext === '.docx') {
-      try {
-        const mammoth = await import('mammoth');
-        const buffer = await file.arrayBuffer();
-        const result = await mammoth.extractRawText({ arrayBuffer: buffer });
-        return parseCSV(result.value.replace(/\t/g, ','));
-      } catch {
-        throw new Error('Could not parse DOCX file.');
-      }
+    if (ext === '.docx' || ext === '.pdf') {
+      throw new Error('PDF and DOCX are not supported for customer import. Please upload a CSV or Excel file.');
     }
 
-    if (ext === '.pdf') {
-      try {
-        const pdfjs = await import('pdfjs-dist');
-        pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
-        const buffer = await file.arrayBuffer();
-        const pdf = await pdfjs.getDocument({ data: buffer }).promise;
-        let fullText = '';
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          const content = await page.getTextContent();
-          const strings = content.items.map((item: any) => item.str);
-          fullText += strings.join(' ') + '\n';
-        }
-        return parseCSV(fullText.replace(/\s+/g, ','));
-      } catch (err: any) {
-        throw new Error('PDF parsing failed.');
-      }
-    }
-
-    throw new Error('Unsupported format');
+    throw new Error('Unsupported format. Please upload a CSV or Excel file.');
   };
 
   const handleImport = async () => {
@@ -252,10 +226,16 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
 
       if (dataRows.length === 0) throw new Error('No data rows found.');
 
+      // Filter to valid rows having a name
+      const validRows = dataRows.filter(r => r.name && r.name.trim() !== '');
+      if (validRows.length === 0) {
+        throw new Error('All records are missing a valid customer name. Customer name is required.');
+      }
+
       const importRes = await fetch('/api/admin/crm/import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ merchantId: selectedMerchant, customers: dataRows }),
+        body: JSON.stringify({ merchantId: selectedMerchant, customers: validRows }),
         signal: controller.signal,
       });
 

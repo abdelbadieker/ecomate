@@ -21,9 +21,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'No customer records provided' }, { status: 400 });
     }
 
+    // Filter out rows missing a name
+    const validCustomers = customers.filter(c => {
+      const name = c.name?.trim();
+      return name && name.length > 0;
+    });
+
+    if (validCustomers.length === 0) {
+      return NextResponse.json({ error: 'Customer name is required in the import data.' }, { status: 400 });
+    }
+
     // Map parsed CSV fields to database column names.
     // The live customers table uses city; wilaya is accepted as an import label.
-    const finalRows = customers.map((c: Record<string, string>) => ({
+    const finalRows = validCustomers.map((c: Record<string, string>) => ({
       name: c.name?.trim() || null,
       email: c.email?.trim() || null,
       phone: c.phone?.trim() || null,
