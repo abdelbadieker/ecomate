@@ -38,14 +38,25 @@ export async function ServicesSection() {
 
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
         {services.map((service, index) => {
-          // Dynamically get the lucide icon or treat as emoji
-          const hasValidIcon = service.icon && !!(LucideIcons as any)[service.icon];
-          const isEmoji = service.icon && !hasValidIcon;
-          const Icon = hasValidIcon ? (LucideIcons as any)[service.icon] : LucideIcons.CheckCircle2;
-          
           // Make the first item span 2 columns to mimic the original Bento design if there are enough items
           const isFeatured = index === 0 && services.length > 3;
           const isFullWidth = index === services.length - 1 && services.length % 2 === 0;
+
+          const renderIcon = () => {
+            if (service.icon_type === 'image' && service.icon_value) {
+              return <img src={service.icon_value} alt={service.title} className="w-full h-full object-cover" />;
+            }
+            if (service.icon_type === 'emoji') {
+              return <span className="text-3xl leading-none flex items-center justify-center">{service.icon_value}</span>;
+            }
+            if (service.icon_type === 'icon') {
+              const Icon = service.icon_value && (LucideIcons as any)[service.icon_value] 
+                ? (LucideIcons as any)[service.icon_value] 
+                : LucideIcons.CheckCircle2;
+              return <Icon className={`w-7 h-7 ${index % 2 === 0 ? 'text-blue-400' : 'text-emerald-400'} ${isFullWidth ? 'w-8 h-8' : ''}`} />;
+            }
+            return null;
+          };
 
           return (
             <div 
@@ -54,19 +65,9 @@ export async function ServicesSection() {
             >
               <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
               
-              {service.image_url ? (
-                 <div className={`w-14 h-14 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-center justify-center mb-6 overflow-hidden ${isFullWidth ? 'w-16 h-16 shrink-0' : ''}`}>
-                   <img src={service.image_url} alt={service.title} className="w-full h-full object-cover" />
-                 </div>
-              ) : (
-                <div className={`w-14 h-14 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-center justify-center mb-6 ${isFullWidth ? 'w-16 h-16 shrink-0' : ''}`}>
-                  {isEmoji ? (
-                    <span className="text-3xl">{service.icon}</span>
-                  ) : (
-                    <Icon className={`w-7 h-7 ${index % 2 === 0 ? 'text-blue-400' : 'text-emerald-400'} ${isFullWidth ? 'w-8 h-8' : ''}`} />
-                  )}
-                </div>
-              )}
+              <div className={`w-14 h-14 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-center justify-center mb-6 overflow-hidden relative z-10 ${isFullWidth ? 'w-16 h-16 shrink-0' : ''}`}>
+                {renderIcon()}
+              </div>
               
               <div className={isFullWidth ? 'flex-1' : ''}>
                 <h3 className="text-xl font-bold text-white mb-3 font-poppins relative z-10">{service.title}</h3>

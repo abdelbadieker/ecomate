@@ -18,17 +18,24 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     const updateData: any = {};
     if (body.title !== undefined) updateData.title = body.title;
     if (body.description !== undefined) updateData.description = body.description;
-    if (body.icon !== undefined) updateData.icon = body.icon;
-    if (body.image_url !== undefined) updateData.image_url = body.image_url;
+    if (body.icon_type !== undefined) updateData.icon_type = body.icon_type;
+    if (body.icon_value !== undefined) updateData.icon_value = body.icon_value;
     if (body.order_index !== undefined) updateData.order_index = body.order_index;
     if (body.is_active !== undefined) updateData.is_active = body.is_active;
+    
+    updateData.updated_at = new Date().toISOString();
 
     const { error } = await supabaseAdmin
       .from('services')
       .update(updateData)
       .eq('id', id);
 
-    if (error) throw error;
+    if (error) {
+      if (error.code === '23505') {
+        throw new Error('A service with this title already exists.');
+      }
+      throw error;
+    }
     
     await supabaseAdmin.from('activity_logs').insert({
       action: `Updated service: ${body.title || id}`,

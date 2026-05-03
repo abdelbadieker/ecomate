@@ -33,13 +33,18 @@ export async function POST(req: NextRequest) {
       .insert({
         title: body.title,
         description: body.description,
-        icon: body.icon,
-        image_url: body.image_url,
+        icon_type: body.icon_type,
+        icon_value: body.icon_value,
         order_index: body.order_index,
         is_active: body.is_active !== undefined ? body.is_active : true
       });
 
-    if (error) throw error;
+    if (error) {
+      if (error.code === '23505') {
+        throw new Error('A service with this title already exists.');
+      }
+      throw error;
+    }
     
     // Log the activity
     await supabaseAdmin.from('activity_logs').insert({
