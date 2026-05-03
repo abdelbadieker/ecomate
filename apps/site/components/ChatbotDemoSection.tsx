@@ -7,8 +7,6 @@ import { Sparkles, Shield, Zap, MessageSquare, Bot } from 'lucide-react';
 interface ChatbotDemo {
   id: string;
   video_url: string;
-  title: string;
-  description: string;
 }
 
 export function ChatbotDemoSection() {
@@ -17,8 +15,9 @@ export function ChatbotDemoSection() {
 
   useEffect(() => {
     supabase
-      .from('chatbot_demo')
+      .from('demo_videos')
       .select('*')
+      .eq('section_name', 'homepage_showcase')
       .order('created_at', { ascending: false })
       .limit(1)
       .then(({ data }) => {

@@ -62,6 +62,7 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
   const [assetFile, setAssetFile] = useState<File | null>(null);
   const [assetLink, setAssetLink] = useState('');
   const [assetSaving, setAssetSaving] = useState(false);
+  const assetUploadAbortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (selectedMerchant && activeTab === 'assets') {
@@ -84,9 +85,12 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
 
     try {
       if (assetType === 'file' && assetFile) {
+        const controller = new AbortController();
+        assetUploadAbortRef.current = controller;
         const res = await uploadFile(supabase, assetFile, {
           bucket: 'platform-assets',
           path: `crm/${selectedMerchant}`,
+          signal: controller.signal,
         });
         if (res.error || !res.url) throw new Error(res.error || 'Failed to upload file');
         fileUrl = res.url;
@@ -109,10 +113,17 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
       setAssetLink('');
       loadAssets();
     } catch (e: any) {
-      alert(e.message);
+      if (e.name !== 'AbortError' && e.message !== 'Upload cancelled') {
+        alert(e.message);
+      }
     } finally {
+      assetUploadAbortRef.current = null;
       setAssetSaving(false);
     }
+  };
+
+  const cancelAssetUpload = () => {
+    assetUploadAbortRef.current?.abort();
   };
 
   const deleteAsset = async (id: string) => {
@@ -491,13 +502,24 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
                     </div>
                   )}
 
-                  <button 
-                    onClick={handleAssetSave}
-                    disabled={assetSaving || !assetTitle || (assetType === 'file' ? !assetFile : !assetLink)}
-                    className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm transition-colors disabled:opacity-50"
-                  >
-                    {assetSaving ? 'Saving...' : 'Save Asset'}
-                  </button>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={handleAssetSave}
+                      disabled={assetSaving || !assetTitle || (assetType === 'file' ? !assetFile : !assetLink)}
+                      className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {assetSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+                      {assetSaving ? 'Saving...' : 'Save Asset'}
+                    </button>
+                    {assetSaving && assetType === 'file' && (
+                      <button
+                        onClick={cancelAssetUpload}
+                        className="px-4 py-3 bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white font-bold rounded-xl text-sm transition-colors border border-red-500/30"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
 

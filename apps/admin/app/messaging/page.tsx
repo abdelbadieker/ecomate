@@ -199,6 +199,18 @@ export default function MessagingPage() {
     }
   };
 
+  const handleDeleteMessage = async (msgId: string) => {
+    if (!confirm('Are you sure you want to delete this message?')) return;
+    try {
+      const res = await fetch(`/api/admin/messages?id=${msgId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete message');
+      setMessages((prev) => prev.filter((m) => m.id !== msgId));
+    } catch (err) {
+      console.error('[messaging] Error deleting message:', err);
+      alert('Failed to delete message');
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -461,7 +473,7 @@ export default function MessagingPage() {
                         className={`flex ${isAdmin ? 'justify-end' : 'justify-start'}`}
                       >
                         <div
-                          className={`max-w-[75%] rounded-2xl px-4 py-3 ${
+                          className={`max-w-[75%] rounded-2xl px-4 py-3 group relative ${
                             isAdmin
                               ? 'bg-blue-600 text-white'
                               : 'bg-slate-800 text-slate-200'
@@ -552,13 +564,21 @@ export default function MessagingPage() {
                               {formatTimestamp(msg.created_at)}
                             </span>
                             {isAdmin && (
-                              <span
-                                className={`text-[10px] ${
-                                  msg.is_read ? 'text-emerald-300' : 'text-blue-200/40'
-                                }`}
-                              >
-                                {msg.is_read ? '  Read' : '  Sent'}
-                              </span>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => handleDeleteMessage(msg.id)}
+                                  className="text-[10px] text-red-400 hover:text-red-300 transition-colors opacity-0 group-hover:opacity-100"
+                                >
+                                  Delete
+                                </button>
+                                <span
+                                  className={`text-[10px] ${
+                                    msg.is_read ? 'text-emerald-300' : 'text-blue-200/40'
+                                  }`}
+                                >
+                                  {msg.is_read ? 'Read' : 'Sent'}
+                                </span>
+                              </div>
                             )}
                           </div>
                         </div>

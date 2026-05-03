@@ -27,11 +27,15 @@ export async function PUT(req: NextRequest) {
     const session = cookies().get('admin_session')?.value;
     if (session !== 'authenticated') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { id, status } = await req.json();
+    const { id, status, notes } = await req.json();
+
+    const updateData: any = {};
+    if (status !== undefined) updateData.status = status;
+    if (notes !== undefined) updateData.notes = notes;
 
     const { error } = await supabaseAdmin
       .from('chatbot_requests')
-      .update({ status })
+      .update(updateData)
       .eq('id', id);
 
     if (error) throw error;

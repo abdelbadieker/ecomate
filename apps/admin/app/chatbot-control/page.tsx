@@ -17,20 +17,7 @@ export default function ChatbotControl() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ trigger_phrase: '', response: '', category: 'General' });
-  const [demo, setDemo] = useState<Demo | null>(null);
-  const [demoForm, setDemoForm] = useState({ video_url: '', title: 'AI Chatbot Demo', description: '' });
-  const [showDemoForm, setShowDemoForm] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-
   const fetch_ = async () => { const { data } = await supabase.from('chatbot_responses').select('*').order('created_at', { ascending: false }); setResponses(data || []); setLoading(false); };
-  
-  const fetchDemo = async () => {
-    const { data } = await supabase.from('chatbot_demo').select('*').order('created_at', { ascending: false }).limit(1);
-    const d = data?.[0] || null;
-    setDemo(d);
-    if (d) setDemoForm({ video_url: d.video_url, title: d.title, description: d.description });
-  };
   
   const fetchRequests = async () => {
     // Admin uses API route to bypass RLS for fetching requests if needed, but since we are admin, wait, RLS on chatbot_requests:
@@ -44,48 +31,20 @@ export default function ChatbotControl() {
   };
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { fetch_(); fetchDemo(); fetchRequests(); }, []);
+  useEffect(() => { fetch_(); fetchRequests(); }, []);
 
-  const handleUploadVideo = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [noteInput, setNoteInput] = useState('');
 
-    try {
-      setUploading(true);
-      setUploadProgress(0);
-      
-      const res = await uploadFile(supabase, file, {
-        bucket: 'platform-assets',
-        path: 'chatbot-demos',
-        allowedTypes: ['video/'],
-        onProgress: (p) => setUploadProgress(p)
-      });
-
-      if (res.error || !res.url) throw new Error(res.error || 'Upload failed');
-
-      setDemoForm({ ...demoForm, video_url: res.url });
-      alert('Video uploaded successfully!');
-    } catch (error: any) {
-      alert('Error uploading video: ' + error.message);
-    } finally {
-      setUploading(false);
-      setUploadProgress(0);
-    }
-  };
-
-  const handleSaveDemo = async () => {
-    if (!demoForm.video_url.trim()) return;
-    
-    // Use API route since admin lacks RLS bypass on client
-    await fetch('/api/admin/chatbot/demo', {
-      method: 'POST',
+  const handleSaveNote = async (id: string) => {
+    await fetch('/api/admin/chatbot/requests', {
+      method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: demo?.id, ...demoForm })
+      body: JSON.stringify({ id, notes: noteInput })
     });
-    
-    await supabase.from('activity_logs').insert({ action: 'Updated chatbot demo video', entity_type: 'chatbot' });
-    setShowDemoForm(false);
-    fetchDemo();
+    setEditingNoteId(null);
+    setNoteInput('');
+    fetchRequests();
   };
 
   const updateRequestStatus = async (id: string, status: string) => {
@@ -133,81 +92,7 @@ export default function ChatbotControl() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Demo Video Management */}
-        <div className="bg-[#0A1628] border border-slate-800 rounded-xl p-6 h-fit">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold flex items-center gap-2"><Video className="w-5 h-5 text-blue-400"/> Client Demo Video</h3>
-            <button onClick={() => setShowDemoForm(!showDemoForm)} className="text-xs px-4 py-2 bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white rounded-lg font-medium transition-colors">{demo ? 'Edit Video' : 'Set Video'}</button>
-          </div>
-          {demo ? (
-            <div className="text-sm">
-              <p className="text-slate-300 mb-1"><span className="text-slate-500 font-medium">Title:</span> {demo.title}</p>
-              <p className="text-slate-300 mb-1 flex items-center gap-2"><span className="text-slate-500 font-medium">URL:</span> <a href={demo.video_url} target="_blank" rel="noreferrer" className="text-blue-400 underline truncate max-w-[200px]">{demo.video_url}</a></p>
-              {demo.description && <p className="text-slate-400 text-xs mt-3 bg-[#07101F] p-3 rounded-lg border border-slate-800">{demo.description}</p>}
-            </div>
-          ) : (
-            <div className="py-6 text-center border-2 border-dashed border-slate-800 rounded-xl">
-              <p className="text-slate-500 text-sm">No demo video set yet.</p>
-              <button onClick={() => setShowDemoForm(true)} className="mt-3 text-xs font-semibold text-blue-400">Upload Now</button>
-            </div>
-          )}
-          {showDemoForm && (
-            <div className="mt-6 pt-6 border-t border-slate-800 space-y-4 animate-in fade-in">
-              <div>
-                <label className="block text-xs text-slate-400 mb-1 font-medium">Video URL / Source</label>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <input 
-                      value={demoForm.video_url} 
-                      onChange={e => setDemoForm({ ...demoForm, video_url: e.target.value })} 
-                      placeholder="https://..." 
-                      className="w-full bg-[#07101F] border border-slate-700 rounded-lg px-4 py-2.5 text-white outline-none text-sm pr-10" 
-                    />
-                    {demoForm.video_url && (
-                      <button 
-                        onClick={() => setDemoForm({ ...demoForm, video_url: '' })}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                  <label className={`relative cursor-pointer bg-slate-800 hover:bg-slate-700 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center justify-center min-w-[120px] ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
-                    {uploading ? `Uploading ${uploadProgress}%` : 'Upload File'}
-                    <input 
-                      type="file" 
-                      className="hidden" 
-                      accept="video/*" 
-                      disabled={uploading}
-                      onChange={handleUploadVideo}
-                    />
-                  </label>
-                </div>
-                {uploading && (
-                  <div className="w-full h-1 bg-slate-800 rounded-full mt-2 overflow-hidden">
-                    <div className="h-full bg-blue-500 transition-all duration-300" style={{ width: `${uploadProgress}%` }} />
-                  </div>
-                )}
-                <p className="text-[10px] text-slate-500 mt-1">Provide a URL or upload a video file directly.</p>
-              </div>
-              <div>
-                <label className="block text-xs text-slate-400 mb-1 font-medium">Title</label>
-                <input value={demoForm.title} onChange={e => setDemoForm({ ...demoForm, title: e.target.value })} className="w-full bg-[#07101F] border border-slate-700 rounded-lg px-4 py-2.5 text-white outline-none text-sm" />
-              </div>
-              <div>
-                <label className="block text-xs text-slate-400 mb-1 font-medium">Description</label>
-                <textarea value={demoForm.description} onChange={e => setDemoForm({ ...demoForm, description: e.target.value })} className="w-full bg-[#07101F] border border-slate-700 rounded-lg px-4 py-2.5 text-white outline-none text-sm min-h-[60px] resize-y" />
-              </div>
-              <button 
-                onClick={handleSaveDemo} 
-                disabled={uploading}
-                className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-sm transition-all shadow-[0_0_20px_rgba(37,99,235,0.2)] disabled:opacity-50"
-              >
-                Save Demo & Publish
-              </button>
-            </div>
-          )}
-        </div>
+
 
         {/* Client Setup Requests */}
         <div className="bg-[#0A1628] border border-slate-800 rounded-xl p-6 h-fit">
@@ -224,6 +109,7 @@ export default function ChatbotControl() {
                     <div>
                       <div className="font-semibold text-sm text-white flex items-center gap-2"><User className="w-3.5 h-3.5 text-slate-400"/> {req.profiles?.full_name || 'Unknown Client'}</div>
                       <div className="text-xs text-slate-500 mt-0.5">{req.profiles?.email}</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">{new Date(req.created_at).toLocaleDateString()}</div>
                     </div>
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                       req.status === 'pending' ? 'bg-amber-400/10 text-amber-400' :
@@ -234,6 +120,26 @@ export default function ChatbotControl() {
                     </span>
                   </div>
                   {req.notes && <p className="text-xs text-slate-400 bg-slate-800/30 p-2 rounded mb-3">"{req.notes}"</p>}
+                  
+                  {editingNoteId === req.id ? (
+                    <div className="mb-3 space-y-2">
+                      <input 
+                        value={noteInput} 
+                        onChange={(e) => setNoteInput(e.target.value)} 
+                        placeholder="Add note..." 
+                        className="w-full bg-[#07101F] border border-slate-700 rounded px-3 py-1.5 text-xs text-white outline-none" 
+                      />
+                      <div className="flex gap-2">
+                        <button onClick={() => handleSaveNote(req.id)} className="text-[10px] bg-blue-600 text-white px-3 py-1 rounded">Save</button>
+                        <button onClick={() => setEditingNoteId(null)} className="text-[10px] bg-slate-700 text-slate-300 px-3 py-1 rounded">Cancel</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button onClick={() => { setEditingNoteId(req.id); setNoteInput(req.notes || ''); }} className="text-[10px] text-blue-400 hover:underline mb-3">
+                      {req.notes ? 'Edit Note' : '+ Add Note'}
+                    </button>
+                  )}
+
                   <div className="flex gap-2">
                     {req.status !== 'scheduled' && (
                       <button onClick={() => updateRequestStatus(req.id, 'scheduled')} className="flex-1 py-1.5 text-xs font-semibold bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white rounded transition-colors flex items-center justify-center gap-1"><Clock className="w-3 h-3"/> Schedule</button>

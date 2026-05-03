@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Play, Sparkles, Video, MessageSquarePlus, Clock, CheckCircle2 } from 'lucide-react';
 
-type Demo = { id: string; video_url: string; title: string; description: string };
+type Demo = { id: string; video_url: string };
 type RequestStatus = { id: string; status: 'pending' | 'scheduled' | 'completed'; notes: string | null };
 
 export default function AIChatbotPage() {
@@ -19,7 +19,7 @@ export default function AIChatbotPage() {
     const { data: { user } } = await supabase.auth.getUser();
     
     const [demoRes, reqRes] = await Promise.all([
-      supabase.from('chatbot_demo').select('*').order('created_at', { ascending: false }).limit(1),
+      supabase.from('demo_videos').select('*').eq('section_name', 'ai_chatbot').order('created_at', { ascending: false }).limit(1),
       user ? supabase.from('chatbot_requests').select('*').eq('client_id', user.id).order('created_at', { ascending: false }).limit(1) : { data: null }
     ]);
     
@@ -150,11 +150,8 @@ export default function AIChatbotPage() {
         <div style={s.card}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
             <Play style={{ width: 20, height: 20, color: '#60a5fa' }} />
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: '#f1f5f9' }}>{demo.title}</h2>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: '#f1f5f9' }}>AI Chatbot Setup Demo</h2>
           </div>
-          {demo.description && (
-            <p style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.6, marginBottom: 16 }}>{demo.description}</p>
-          )}
           <div style={{ borderRadius: 12, overflow: 'hidden', background: '#000', position: 'relative' }}>
             <video
               src={demo.video_url}
