@@ -71,8 +71,14 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
   }, [selectedMerchant, activeTab]);
 
   const loadAssets = async () => {
-    const { data } = await supabase.from('crm_assets').select('*').eq('client_id', selectedMerchant).order('created_at', { ascending: false });
-    setAssets(data || []);
+    try {
+      const res = await fetch(`/api/admin/crm/assets?client_id=${selectedMerchant}`);
+      const data = await res.json();
+      setAssets(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Failed to load assets', err);
+      setAssets([]);
+    }
   };
 
   const handleAssetSave = async () => {
