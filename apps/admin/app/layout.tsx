@@ -38,6 +38,7 @@ const navItems = [
   { name: 'Demo Videos', href: '/demo-videos', icon: <Video size={20} /> },
   { name: 'Pricing Plans', href: '/pricing', icon: <DollarSign size={20} /> },
   { name: 'CRM Hub', href: '/crm-import', icon: <Database size={20} /> },
+  { name: 'Asset Manager', href: '/crm-assets', icon: <Folder size={20} /> },
   { name: 'Reviews', href: '/reviews', icon: <Star size={20} /> },
   { name: 'Module Locker', href: '/module-locker', icon: <Settings size={20} /> },
   { name: 'Fulfillment', href: '/fulfillment-engine', icon: <PackageCheck size={20} /> },
