@@ -21,17 +21,17 @@ export async function ServicesSection() {
   // The first service can be highlighted (col-span-2) if desired, but let's just make it a clean grid
   // We'll mimic the Bento box style
   return (
-    <section id="features" className="py-32 px-5 relative bg-[#0a1628] rounded-b-[40px]">
+    <section id="features" className="py-32 px-5 relative bg-[var(--bg-section)] rounded-b-[40px]">
       <div className="max-w-7xl mx-auto text-center mb-16">
-        <p className="text-[#2563EB] font-bold tracking-widest uppercase text-xs mb-4 flex items-center justify-center gap-2">
-          <span className="w-4 h-[2px] bg-[#2563EB]"></span>
+        <p className="text-[var(--s)] font-bold tracking-widest uppercase text-xs mb-4 flex items-center justify-center gap-2">
+          <span className="w-4 h-[2px] bg-[var(--s)]"></span>
           Everything You Need
         </p>
         <h2 className="text-4xl md:text-5xl font-extrabold text-white mb-6 tracking-tight font-poppins">
           All tools. <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-blue-200">One platform.</span><br/>
           <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-500 to-emerald-300">Zero fragmentation.</span>
         </h2>
-        <p className="text-slate-400 text-lg max-w-2xl mx-auto leading-relaxed">
+        <p className="text-[var(--text-sub)] text-lg max-w-2xl mx-auto leading-relaxed">
           Stop juggling a dozen different tools. EcoMate brings every capability your Algerian business needs into one seamless, affordable system.
         </p>
       </div>
@@ -53,7 +53,7 @@ export async function ServicesSection() {
               const Icon = service.icon_value && (LucideIcons as any)[service.icon_value] 
                 ? (LucideIcons as any)[service.icon_value] 
                 : LucideIcons.CheckCircle2;
-              return <Icon className={`w-7 h-7 ${index % 2 === 0 ? 'text-blue-400' : 'text-emerald-400'} ${isFullWidth ? 'w-8 h-8' : ''}`} />;
+              return <Icon className={`w-7 h-7 ${index % 2 === 0 ? 'text-[var(--s)]' : 'text-[var(--g)]'} ${isFullWidth ? 'w-8 h-8' : ''}`} />;
             }
             return null;
           };
@@ -61,22 +61,22 @@ export async function ServicesSection() {
           return (
             <div 
               key={service.id} 
-              className={`relative group bg-[#0f1c33] border border-slate-800 rounded-3xl p-8 hover:border-blue-500/30 transition-all duration-300 overflow-hidden shadow-xl ${isFeatured ? 'md:col-span-2' : ''} ${isFullWidth ? 'md:col-span-3 flex flex-col md:flex-row items-center gap-8' : ''}`}
+              className={`relative group bg-[var(--bg-card)] border border-[var(--border-c)] rounded-3xl p-8 hover:border-[var(--s)]/30 transition-all duration-300 overflow-hidden shadow-xl ${isFeatured ? 'md:col-span-2' : ''} ${isFullWidth ? 'md:col-span-3 flex flex-col md:flex-row items-center gap-8' : ''}`}
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-[var(--s)]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
               
-              <div className={`w-14 h-14 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-center justify-center mb-6 overflow-hidden relative z-10 ${isFullWidth ? 'w-16 h-16 shrink-0' : ''}`}>
+              <div className={`w-14 h-14 bg-[var(--s)]/10 border border-[var(--s)]/20 rounded-2xl flex items-center justify-center mb-6 overflow-hidden relative z-10 ${isFullWidth ? 'w-16 h-16 shrink-0' : ''}`}>
                 {renderIcon()}
               </div>
               
               <div className={isFullWidth ? 'flex-1' : ''}>
                 <h3 className="text-xl font-bold text-white mb-3 font-poppins relative z-10">{service.title}</h3>
-                <p className="text-slate-400 leading-relaxed relative z-10">{service.description}</p>
+                <p className="text-[var(--text-sub)] leading-relaxed relative z-10">{service.description}</p>
                 
                 {isFeatured && (
                   <div className="mt-8 flex gap-3 flex-wrap relative z-10">
-                    <span className="px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold rounded-full">✓ Natural Language</span>
-                    <span className="px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold rounded-full">✓ Multi-Language</span>
+                    <span className="px-3 py-1.5 bg-[var(--g)]/10 border border-[var(--g)]/20 text-[var(--g)] text-xs font-bold rounded-full">✓ Natural Language</span>
+                    <span className="px-3 py-1.5 bg-[var(--s)]/10 border border-[var(--s)]/20 text-[var(--s)] text-xs font-bold rounded-full">✓ Multi-Language</span>
                   </div>
                 )}
               </div>
