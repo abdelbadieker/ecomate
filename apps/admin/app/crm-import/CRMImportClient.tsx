@@ -8,6 +8,7 @@ function createClient() { return createBrowserClient(process.env.NEXT_PUBLIC_SUP
 
 type Merchant = { id: string; full_name: string; email: string };
 type CrmAsset = { id: string; client_id: string; type: 'file' | 'link'; title: string; file_url: string | null; external_url: string | null; file_name: string | null; mime_type: string | null; file_size?: number; created_at: string };
+type CrmImport = { id: string; client_id: string; file_name: string; file_url: string; file_type: string; total_records: number; created_at: string; client: { full_name: string; email: string } };
 
 const IMPORT_EXTENSIONS = ['.csv', '.xlsx', '.xls'];
 const FILE_EXTENSIONS = ['.pdf', '.docx', '.doc', '.xlsx', '.xls', '.csv', '.jpg', '.jpeg', '.png', '.zip'];
@@ -77,7 +78,7 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
   const [selectedMerchant, setSelectedMerchant] = useState<string>('');
   
   // Tabs
-  const [activeTab, setActiveTab] = useState<'import' | 'files'>('import');
+  const [activeTab, setActiveTab] = useState<'import' | 'files' | 'manager'>('import');
 
   // Import State
   const [importFile, setImportFile] = useState<File | null>(null);
@@ -91,14 +92,14 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
   // Assets State
   const supabase = createClient();
   const [assets, setAssets] = useState<CrmAsset[]>([]);
+  const [imports, setImports] = useState<CrmImport[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [fileLoadError, setFileLoadError] = useState<string | null>(null);
   const uploadAbortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    if (selectedMerchant && activeTab === 'files') {
-      loadFiles();
-    }
+    if (activeTab === 'files' && selectedMerchant) loadFiles();
+    if (activeTab === 'manager') loadImports();
   }, [selectedMerchant, activeTab]);
 
   const loadFiles = async () => {
@@ -111,6 +112,20 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
     } catch (err: any) {
       setFileLoadError(err.message);
       setAssets([]);
+    }
+  };
+
+  const loadImports = async () => {
+    try {
+      setFileLoadError(null);
+      const url = selectedMerchant ? `/api/admin/crm/imports?client_id=${selectedMerchant}` : '/api/admin/crm/imports';
+      const res = await fetch(url);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to load imports');
+      setImports(Array.isArray(data) ? data : []);
+    } catch (err: any) {
+      setFileLoadError(err.message);
+      setImports([]);
     }
   };
 
@@ -174,6 +189,17 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
     }
   };
 
+  const deleteImport = async (id: string) => {
+    if (!confirm('Delete this import record and its source file? This cannot be undone.')) return;
+    try {
+      const res = await fetch(`/api/admin/crm/imports?id=${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Delete failed');
+      loadImports();
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
   const handleImportFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
@@ -202,9 +228,12 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
     try {
       let dataRows: any[] = [];
       let invalidCount = 0;
+      let finalFileUrl = '';
+      let finalFileName = '';
 
       if (importMode === 'file') {
-        const ext = getFileExtension(importFile!.name);
+        finalFileName = importFile!.name;
+        const ext = getFileExtension(finalFileName);
         if (ext === '.csv') {
           const text = await importFile!.text();
           const csvRows = text.split('\n').filter(l => l.trim()).map(line => line.split(',').map(v => v.trim()));
@@ -225,8 +254,17 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
           invalidCount = res.invalidCount;
           if (!res.detectedHeaders.name) throw new Error('Could not find a "Customer Name" column in your Excel file. Please check your headers.');
         }
+
+        // Upload source file for admin management
+        const uploadRes = await uploadFile(supabase, importFile!, {
+          bucket: 'platform-assets',
+          path: `crm-imports/${selectedMerchant}`,
+          signal: controller.signal,
+        });
+        if (uploadRes.url) finalFileUrl = uploadRes.url;
       } else {
         // Google Sheets
+        finalFileName = 'Google Sheet Import';
         let csvUrl = googleSheetsUrl;
         const match = googleSheetsUrl.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
         if (match) csvUrl = `https://docs.google.com/spreadsheets/d/${match[1]}/export?format=csv`;
@@ -239,6 +277,7 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
         dataRows = res.valid;
         invalidCount = res.invalidCount;
         if (!res.detectedHeaders.name) throw new Error('Could not find a "Customer Name" column in your Google Sheet.');
+        finalFileUrl = googleSheetsUrl; // Link to the sheet instead of a file
       }
 
       if (dataRows.length === 0) {
@@ -254,6 +293,19 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
 
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Import failed');
+
+      // Save import record
+      await fetch('/api/admin/crm/imports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          client_id: selectedMerchant,
+          file_name: finalFileName,
+          file_url: finalFileUrl || 'internal-data',
+          file_type: importMode === 'file' ? getFileExtension(finalFileName).replace('.', '') : 'google-sheets',
+          total_records: dataRows.length,
+        }),
+      });
 
       setImportResults({
         total: dataRows.length + invalidCount,
@@ -304,7 +356,7 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
           onChange={e => setSelectedMerchant(e.target.value)}
           className="w-full bg-[#07101F] border border-slate-700 rounded-2xl px-5 py-4 text-white outline-none focus:border-blue-500 transition-all text-sm font-bold shadow-inner"
         >
-          <option value="">Choose Merchant...</option>
+          <option value="">{activeTab === 'manager' ? 'All Merchants (Filter)...' : 'Choose Merchant...'}</option>
           {merchants.map(m => (
             <option key={m.id} value={m.id}>{m.full_name || m.email}</option>
           ))}
@@ -324,6 +376,12 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
           onClick={() => setActiveTab('files')}
         >
           Asset Management
+        </button>
+        <button
+          className={`pb-3 px-8 text-sm font-black uppercase tracking-widest transition-all ${activeTab === 'manager' ? 'text-purple-400 border-b-2 border-purple-400' : 'text-slate-500 hover:text-slate-300'}`}
+          onClick={() => setActiveTab('manager')}
+        >
+          Import Manager
         </button>
       </div>
 
@@ -510,6 +568,84 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
                 {fileLoadError && (
                   <p className="text-center text-red-400 text-xs font-bold italic">{fileLoadError}</p>
                 )}
+              </div>
+            )}
+            {activeTab === 'manager' && (
+              <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+                <div className="bg-[#0A1628] border border-slate-800 rounded-3xl p-8 shadow-xl">
+                  <div className="flex items-center justify-between mb-8">
+                    <div>
+                      <h3 className="text-lg font-black text-white uppercase tracking-tight">Import Management Layer</h3>
+                      <p className="text-xs text-slate-500 font-medium mt-1">Traceability and management of all historical customer imports.</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    {imports.length === 0 ? (
+                      <div className="py-20 flex flex-col items-center justify-center text-slate-700 bg-slate-900/30 rounded-3xl border border-dashed border-slate-800">
+                        <FileText size={48} className="mb-4 opacity-50" />
+                        <span className="text-[10px] font-black uppercase tracking-widest">No imports found</span>
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                          <thead>
+                            <tr className="text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-800">
+                              <th className="px-6 py-4">File / Source</th>
+                              <th className="px-6 py-4">Client</th>
+                              <th className="px-6 py-4">Records</th>
+                              <th className="px-6 py-4">Date</th>
+                              <th className="px-6 py-4 text-right">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {imports.map(imp => (
+                              <tr key={imp.id} className="border-b border-slate-800/50 hover:bg-slate-900/30 transition-colors">
+                                <td className="px-6 py-5">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center">
+                                      {getFileIcon(imp.file_type)}
+                                    </div>
+                                    <div>
+                                      <div className="text-sm font-black text-white">{imp.file_name}</div>
+                                      <div className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter">{imp.file_type}</div>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="px-6 py-5">
+                                  <div className="text-xs font-bold text-slate-300">{imp.client?.full_name || 'System'}</div>
+                                  <div className="text-[10px] text-slate-500">{imp.client?.email}</div>
+                                </td>
+                                <td className="px-6 py-5">
+                                  <span className="bg-blue-500/10 text-blue-400 text-[10px] font-black px-2 py-1 rounded">
+                                    {imp.total_records} RECORDS
+                                  </span>
+                                </td>
+                                <td className="px-6 py-5">
+                                  <div className="text-[10px] font-bold text-slate-400 uppercase">
+                                    {new Date(imp.created_at).toLocaleDateString()}
+                                  </div>
+                                </td>
+                                <td className="px-6 py-5 text-right">
+                                  <div className="flex justify-end gap-3">
+                                    {imp.file_url && imp.file_url !== 'internal-data' && (
+                                      <a href={imp.file_url} target="_blank" rel="noreferrer" className="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 hover:text-emerald-400 hover:border-emerald-500/50 transition-all">
+                                        <FileDown size={14} />
+                                      </a>
+                                    )}
+                                    <button onClick={() => deleteImport(imp.id)} className="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 hover:text-red-400 hover:border-red-500/50 transition-all">
+                                      <Trash2 size={14} />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
           </>
