@@ -19,3 +19,5 @@ pnpm-debug.log*
 # local scratch / one-off scripts (may contain secrets at runtime)
 scratch/
 supabase/.temp
+
+.vercel

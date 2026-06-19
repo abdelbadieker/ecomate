@@ -28,8 +28,9 @@ export default function LandingPage() {
       {/* PREMIUM SAAS HERO */}
       <section className="relative min-h-[90vh] flex items-center pt-32 pb-20 overflow-hidden bg-[var(--bg-body)]">
         {/* Deep Background Glows */}
-        <div className="absolute top-1/2 left-0 -translate-y-1/2 w-[600px] h-[600px] bg-[var(--s)]/10 blur-[120px] rounded-full pointer-events-none z-0"></div>
-        <div className="absolute top-1/2 right-10 -translate-y-1/2 w-[800px] h-[800px] bg-[var(--cyan)]/10 blur-[150px] rounded-full pointer-events-none z-0"></div>
+        {/* PERF: replaced 120-150px blur filters (very expensive to paint) with free radial gradients */}
+        <div className="absolute top-1/2 left-0 -translate-y-1/2 w-[600px] h-[600px] rounded-full pointer-events-none z-0" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.16), transparent 70%)' }}></div>
+        <div className="absolute top-1/2 right-10 -translate-y-1/2 w-[800px] h-[800px] rounded-full pointer-events-none z-0" style={{ background: 'radial-gradient(circle, rgba(6,182,212,0.14), transparent 70%)' }}></div>
 
         <div className="max-w-7xl mx-auto px-5 w-full grid grid-cols-1 lg:grid-cols-2 gap-16 items-center relative z-10">
           
@@ -72,7 +73,7 @@ export default function LandingPage() {
           {/* RIGHT COLUMN: Floating Glassmorphism Cards */}
           <div className="relative h-[600px] hidden lg:block perspective-[1200px] z-20">
             {/* Background Decorative Frame */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-[var(--s)]/10 to-transparent rounded-[40px] border border-white/5 backdrop-blur-3xl transform rotate-3 scale-95 opacity-60 pointer-events-none"></div>
+            <div className="absolute inset-0 bg-gradient-to-tr from-[var(--s)]/10 to-transparent rounded-[40px] border border-white/5 transform rotate-3 scale-95 opacity-60 pointer-events-none"></div>
             
             {/* Floating Card 1: AI Chat Widget */}
             <div className="absolute top-10 right-10 w-[320px] bg-[var(--bg-body)]/60 backdrop-blur-xl border border-[var(--border-c)] rounded-2xl p-5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-float hover:-translate-y-2 hover:shadow-[0_30px_60px_rgba(0,0,0,0.6)] transition-all duration-500 z-30">
@@ -242,47 +243,66 @@ export default function LandingPage() {
       <section id="pricing">
         <div className="ctr">
           <p className="stag">Clear Pricing</p>
-          <h2 className="st">Simple, transparent pricing.</h2>
-          <p className="sd">Join EcoMate today. Upgrade when you are ready to scale.</p>
+          <h2 className="st">Pricing that grows <span>with you.</span></h2>
+          <p className="sd">Land with automation, add marketing packs, then scale into full fulfillment. Annual billing saves you 2 months.</p>
         </div>
         <div className="pgrid">
           <div className="pc">
             <div className="pn">Starter</div>
-            <div className="pp">2,500<sup>DA</sup></div>
+            <div className="pp">2,900<sup>DA</sup></div>
             <span className="ppr">/month</span>
             <ul className="pfl">
-              <li>1 Store</li>
-              <li>Basic AI Chatbot</li>
-              <li>Order Management</li>
-              <li>Email Support</li>
+              <li>AI sales agent on 1 channel (FB, IG or WhatsApp)</li>
+              <li>Instant COD order confirmation</li>
+              <li>Unified inbox + basic CRM</li>
+              <li>~1,500 AI conversations / month</li>
+              <li>Email support</li>
             </ul>
             <Link href="/register"><button className="pb">Get Started</button></Link>
           </div>
           <div className="pc pop">
             <div className="pbdg">Most Popular</div>
             <div className="pn">Growth</div>
-            <div className="pp">5,900<sup>DA</sup></div>
+            <div className="pp">4,900<sup>DA</sup></div>
             <span className="ppr">/month</span>
             <ul className="pfl">
-              <li>Up to 3 Stores</li>
-              <li>Advanced AI Chatbot (Multi-language)</li>
-              <li>CRM & Analytics</li>
-              <li>Delivery Integration</li>
-              <li>Priority Support</li>
+              <li>Everything in Starter, on 2 channels</li>
+              <li>Full CRM + customer tagging</li>
+              <li>Delivery sync across all 58 wilayas</li>
+              <li>Analytics dashboard</li>
+              <li>~4,000 AI conversations / month</li>
+              <li>Priority support</li>
             </ul>
             <Link href="/register"><button className="pb">Get Started</button></Link>
           </div>
           <div className="pc">
-            <div className="pn">Enterprise</div>
-            <div className="pp">14,900<sup>DA</sup></div>
+            <div className="pn">Scale</div>
+            <div className="pp">7,900<sup>DA</sup></div>
             <span className="ppr">/month</span>
             <ul className="pfl">
-              <li>Unlimited Stores</li>
-              <li>Custom AI Training</li>
-              <li>Dedicated Account Manager</li>
-              <li>API Access</li>
+              <li>All channels (FB + IG + WhatsApp + more)</li>
+              <li>Marketing engine: broadcasts & retargeting</li>
+              <li>Multi-agent human handoff</li>
+              <li>Priority AI volume + support</li>
+              <li>Unlimited* AI conversations</li>
             </ul>
-            <Link href="/register"><button className="pb">Contact Sales</button></Link>
+            <Link href="/register"><button className="pb">Get Started</button></Link>
+          </div>
+        </div>
+
+        {/* Two more ways to grow — Marketing packs + performance Fulfillment */}
+        <div className="max-w-5xl mx-auto mt-10 grid grid-cols-1 md:grid-cols-2 gap-6 px-5">
+          <div className="bg-[var(--bg-card)] border border-[var(--border-c)] rounded-3xl p-8 hover:border-[var(--s)]/30 transition-colors">
+            <span className="text-[11px] font-bold uppercase tracking-widest text-[var(--s)]">Marketing · per pack</span>
+            <h3 className="text-2xl font-bold text-white mt-3 mb-2 font-poppins">Content Packs</h3>
+            <p className="text-[var(--text-sub)] leading-relaxed mb-5">Pro product videos — scripting + filming — in bundles of 4, 8 or 12, with optional Meta ads management.</p>
+            <div className="text-xl font-black text-white">from 18,000 <span className="text-sm text-[var(--text-muted)] font-medium">DA / pack</span></div>
+          </div>
+          <div className="bg-[var(--bg-card)] border border-[var(--border-c)] rounded-3xl p-8 hover:border-[var(--g)]/30 transition-colors">
+            <span className="text-[11px] font-bold uppercase tracking-widest text-[var(--g)]">Fulfillment · performance</span>
+            <h3 className="text-2xl font-bold text-white mt-3 mb-2 font-poppins">Done-For-You Fulfillment</h3>
+            <p className="text-[var(--text-sub)] leading-relaxed mb-5">We run order confirmation, delivery coordination &amp; returns. You only pay on delivered orders — we earn when you earn.</p>
+            <div className="text-xl font-black text-white">8% – 15% <span className="text-sm text-[var(--text-muted)] font-medium">of delivered revenue</span></div>
           </div>
         </div>
       </section>

@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Inter, Poppins } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
-import { CustomCursor } from "@/components/CustomCursor";
 
 const inter = Inter({ subsets: ["latin"], variable: '--font-inter' });
 const poppins = Poppins({ 
@@ -30,7 +29,6 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} ${poppins.variable} font-sans`}>
         <Providers>
-          <CustomCursor />
           <div className="noise"></div>
           {children}
         </Providers>

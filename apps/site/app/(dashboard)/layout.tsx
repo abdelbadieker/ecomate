@@ -271,8 +271,7 @@ export default function MerchantLayout({ children }: { children: ReactNode }) {
       <aside style={{
         width: 260,
         flexShrink: 0,
-        background: 'rgba(10,22,40,0.85)',
-        backdropFilter: 'blur(20px)',
+        background: '#0b1a30',
         borderRight: '1px solid rgba(51,65,85,0.4)',
         display: 'flex',
         flexDirection: 'column',
@@ -436,7 +435,7 @@ export default function MerchantLayout({ children }: { children: ReactNode }) {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         
         {/* Topbar */}
-        <header style={{ height: 72, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 28px', background: 'rgba(10,22,40,0.5)', backdropFilter: 'blur(16px)', borderBottom: '1px solid rgba(51,65,85,0.35)', position: 'sticky', top: 0, zIndex: 30 }}>
+        <header style={{ height: 72, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 28px', background: '#0a1628', borderBottom: '1px solid rgba(51,65,85,0.35)', position: 'sticky', top: 0, zIndex: 30 }}>
           {/* Mobile menu toggle */}
           <button 
             onClick={() => setMobileOpen(!mobileOpen)}
@@ -474,8 +473,7 @@ export default function MerchantLayout({ children }: { children: ReactNode }) {
                   top: 'calc(100% + 10px)',
                   right: 0,
                   width: 340,
-                  background: 'rgba(10,22,40,0.95)',
-                  backdropFilter: 'blur(20px)',
+                  background: '#0b1a30',
                   border: '1px solid rgba(51,65,85,0.5)',
                   borderRadius: 16,
                   boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
