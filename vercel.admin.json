@@ -1,0 +1,7 @@
+{
+  "name": "ecomate-admin",
+  "buildCommand": "npx turbo build --filter=admin",
+  "outputDirectory": "apps/admin/.next",
+  "installCommand": "npm install",
+  "framework": "nextjs"
+}

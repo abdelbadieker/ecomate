@@ -169,7 +169,9 @@ export default function CRMImportClient({ initialMerchants = [] }: { initialMerc
       if (!saveRes.ok) throw new Error('Failed to save file metadata');
 
       loadFiles();
-      setUploadingFile(null);
+      // FIX: removed call to undefined setUploadingFile(null) which threw a
+      // ReferenceError on every successful upload (caught and shown as a false
+      // "upload failed" alert). The isUploading flag is reset in finally below.
     } catch (err: any) {
       if (err.name !== 'AbortError') alert(err.message);
     } finally {

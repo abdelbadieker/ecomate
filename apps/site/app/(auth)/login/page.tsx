@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { getAuthCallbackUrl } from '@/lib/site-url';
 
 export default function MerchantLogin() {
   const router = useRouter();
@@ -48,7 +49,7 @@ export default function MerchantLogin() {
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`
+        redirectTo: getAuthCallbackUrl()
       }
     });
     if (oauthError) {

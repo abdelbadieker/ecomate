@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
+import { getAuthCallbackUrl } from '@/lib/site-url';
 
 export default function MerchantRegister() {
   const router = useRouter();
@@ -31,6 +32,7 @@ export default function MerchantRegister() {
       email, 
       password,
       options: {
+        emailRedirectTo: getAuthCallbackUrl(),
         data: {
           full_name: storeName, // Using store name as full name for profile sync
         }
@@ -50,7 +52,7 @@ export default function MerchantRegister() {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`
+        redirectTo: getAuthCallbackUrl()
       }
     });
   };

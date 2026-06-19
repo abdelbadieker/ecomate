@@ -15,3 +15,7 @@ yarn-error.log*
 pnpm-debug.log*
 
 .vercel
+
+# local scratch / one-off scripts (may contain secrets at runtime)
+scratch/
+supabase/.temp
