@@ -206,6 +206,8 @@ CREATE TABLE IF NOT EXISTS public.services (
 CREATE TABLE IF NOT EXISTS public.partnerships (
   id            UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   name          TEXT NOT NULL,
+  is_emoji      BOOLEAN NOT NULL DEFAULT true,   -- marquee uses {name, is_emoji, content}
+  content       TEXT,                            -- emoji char OR logo image URL
   logo_url      TEXT,
   website_url   TEXT,
   category      TEXT,
@@ -221,8 +223,9 @@ CREATE TABLE IF NOT EXISTS public.partnerships (
 CREATE TABLE IF NOT EXISTS public.partner_links (
   id            UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   service       TEXT,
-  name          TEXT NOT NULL,
-  url           TEXT NOT NULL,
+  partner_name  TEXT,             -- admin "Partner Ecosystem" stores partner_name
+  name          TEXT,
+  url           TEXT,
   type          TEXT,
   description   TEXT,
   is_active     BOOLEAN NOT NULL DEFAULT true,
