@@ -141,10 +141,13 @@ CREATE TABLE IF NOT EXISTS public.creative_briefs (
   id                    UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_email            TEXT NOT NULL,
   video_type            TEXT,
+  duration              TEXT,
+  description           TEXT,            -- the merchant's brief text
   reference_description TEXT,
   reference_url         TEXT,
   delivery_url          TEXT,
-  status                TEXT NOT NULL DEFAULT 'pending',
+  admin_notes           TEXT,            -- shown back to the merchant
+  status                TEXT NOT NULL DEFAULT 'Pending',
   created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

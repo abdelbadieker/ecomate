@@ -3,10 +3,12 @@ import { CreditCard, Check, Zap, Crown, Loader2, Mail, Phone, MessageSquare } fr
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
+// Mirrors the public pricing deck (Automation tiers). Keep in sync with
+// pricing_plans + the landing page pricing section.
 const plans = [
-  { name: 'Starter', price: 'DA 2,900', period: '/month', features: ['Up to 100 orders/mo', 'Basic CRM', 'Email support', '1 user'], icon: Zap, color: '#94a3b8' },
-  { name: 'Growth', price: 'DA 7,900', period: '/month', features: ['Unlimited orders', 'Full CRM + Analytics', 'AI Chatbot', 'Priority support', '5 users'], icon: CreditCard, color: '#60a5fa' },
-  { name: 'Enterprise', price: 'DA 19,900', period: '/month', features: ['Everything in Growth', 'Custom integrations', 'Dedicated account manager', 'White-label options', 'Unlimited users'], icon: Crown, color: '#fbbf24' },
+  { name: 'Starter', price: 'DA 2,900', period: '/month', features: ['AI sales agent on 1 channel', 'Instant COD order confirmation', 'Unified inbox + basic CRM', '~1,500 AI conversations / mo'], icon: Zap, color: '#94a3b8' },
+  { name: 'Growth', price: 'DA 4,900', period: '/month', features: ['Everything in Starter, on 2 channels', 'Full CRM + customer tagging', 'Delivery sync across 58 wilayas', 'Analytics + ~4,000 AI chats / mo'], icon: CreditCard, color: '#60a5fa' },
+  { name: 'Scale', price: 'DA 7,900', period: '/month', features: ['All channels (FB + IG + WhatsApp +)', 'Marketing engine + broadcasts', 'Multi-agent human handoff', 'Unlimited* AI chats + priority support'], icon: Crown, color: '#fbbf24' },
 ];
 
 // Fallback WhatsApp business number

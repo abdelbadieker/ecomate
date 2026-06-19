@@ -210,11 +210,11 @@ export function CreativeStudioClient({ initialBriefs }: { initialBriefs: Brief[]
           <div className="lg:w-1/2 space-y-6">
              <div className="flex gap-2">
                 <span className="px-3 py-1.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-xl text-[10px] font-black uppercase tracking-wider">{b.video_type}</span>
-                <span className="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-xl text-[10px] font-black uppercase tracking-wider">{b.duration}</span>
+                {b.duration && <span className="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-xl text-[10px] font-black uppercase tracking-wider">{b.duration}</span>}
              </div>
              <div>
                 <p className="text-white text-sm leading-relaxed bg-slate-900/50 p-6 rounded-3xl border border-slate-800/50 italic shadow-inner">
-                  "{b.description}"
+                  "{b.description || b.reference_description || 'No description provided.'}"
                 </p>
              </div>
              {b.reference_url && (
