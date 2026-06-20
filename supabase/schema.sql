@@ -572,6 +572,40 @@ DROP POLICY IF EXISTS "chatbot_requests_insert_own" ON public.chatbot_requests;
 CREATE POLICY "chatbot_requests_select_own" ON public.chatbot_requests FOR SELECT USING (auth.uid() = client_id);
 CREATE POLICY "chatbot_requests_insert_own" ON public.chatbot_requests FOR INSERT WITH CHECK (auth.uid() = client_id);
 
+-- ============================================================================
+-- Marketing Content Packs + performance Fulfillment tiers (revenue lines 2 & 3)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS public.content_packs (
+  id            UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name          TEXT NOT NULL,
+  video_count   INTEGER NOT NULL DEFAULT 0,
+  content_price NUMERIC NOT NULL DEFAULT 0,
+  ads_price     NUMERIC,
+  currency      TEXT NOT NULL DEFAULT 'DZD',
+  period        TEXT NOT NULL DEFAULT 'month',
+  description   TEXT,
+  features      JSONB NOT NULL DEFAULT '[]'::jsonb,
+  is_popular    BOOLEAN NOT NULL DEFAULT false,
+  is_active     BOOLEAN NOT NULL DEFAULT true,
+  sort_order    INTEGER NOT NULL DEFAULT 0,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS public.fulfillment_tiers (
+  id           UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name         TEXT NOT NULL,
+  rate_percent NUMERIC NOT NULL DEFAULT 0,
+  description  TEXT,
+  features     JSONB NOT NULL DEFAULT '[]'::jsonb,
+  is_popular   BOOLEAN NOT NULL DEFAULT false,
+  is_active    BOOLEAN NOT NULL DEFAULT true,
+  sort_order   INTEGER NOT NULL DEFAULT 0,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+ALTER TABLE public.content_packs     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.fulfillment_tiers ENABLE ROW LEVEL SECURITY;
+
 -- Public content tables: anon + authenticated SELECT (writes via service-role)
 DO $$
 DECLARE t TEXT;
@@ -579,7 +613,8 @@ BEGIN
   FOREACH t IN ARRAY ARRAY[
     'services','partnerships','partner_links','platform_contacts',
     'billing_settings','billing_redirect_settings','demo_videos',
-    'pricing_plans','chatbot_responses','chatbot_demo'
+    'pricing_plans','chatbot_responses','chatbot_demo',
+    'content_packs','fulfillment_tiers'
   ] LOOP
     EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', t || '_public_read', t);
     EXECUTE format('CREATE POLICY %I ON public.%I FOR SELECT TO anon, authenticated USING (true)', t || '_public_read', t);
@@ -635,12 +670,12 @@ END $$;
 -- ============================================================================
 INSERT INTO public.pricing_plans (name, price, currency, period, description, features, is_popular, is_active, sort_order)
 VALUES
-  ('Starter', 2900, 'DA', 'month', 'Perfect for small businesses just getting started',
-   '["AI Chatbot (Basic)", "Order Management", "Up to 100 Products", "Basic CRM", "Email Support", "1 User"]'::jsonb, false, true, 1),
-  ('Growth', 7900, 'DA', 'month', 'Scale your business with advanced tools',
-   '["AI Chatbot (Advanced)", "Full Order Management", "Unlimited Products", "Advanced CRM", "Priority Support", "5 Users", "Analytics Dashboard", "Creative Studio"]'::jsonb, true, true, 2),
-  ('Enterprise', 19900, 'DA', 'month', 'Full platform access for large operations',
-   '["Everything in Growth", "Dedicated Account Manager", "Custom Integrations", "Unlimited Users", "API Access", "White-label Options", "24/7 Phone Support", "Custom Reports"]'::jsonb, false, true, 3)
+  ('Starter', 2900, 'DZD', 'month', 'For solo merchants getting started on one channel.',
+   '["AI sales agent on 1 channel (Facebook, Instagram or WhatsApp)", "Instant COD order confirmation", "Unified inbox + basic CRM", "Up to ~1,500 AI conversations / month", "Email support"]'::jsonb, false, true, 1),
+  ('Growth', 4900, 'DZD', 'month', 'For growing stores selling across two channels.',
+   '["Everything in Starter, on 2 channels", "Full CRM + customer tagging", "Delivery sync across all 58 wilayas", "Analytics dashboard", "Up to ~4,000 AI conversations / month", "Priority support"]'::jsonb, true, true, 2),
+  ('Scale', 7900, 'DZD', 'month', 'For established brands running every channel at full power.',
+   '["All channels (Facebook + Instagram + WhatsApp + more)", "Marketing engine: broadcasts & retargeting", "Multi-agent human handoff", "Priority AI volume + priority support", "Unlimited* AI conversations"]'::jsonb, false, true, 3)
 ON CONFLICT (name) DO UPDATE
   SET price = EXCLUDED.price, currency = EXCLUDED.currency, period = EXCLUDED.period,
       description = EXCLUDED.description, features = EXCLUDED.features,

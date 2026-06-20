@@ -7,6 +7,7 @@ import { ReviewsSection } from '@/components/ReviewsSection';
 import { ChatbotDemoSection } from '@/components/ChatbotDemoSection';
 import { ContactSection } from '@/components/ContactSection';
 import { ServicesSection } from '@/components/ServicesSection';
+import { PricingSection } from '@/components/PricingSection';
 
 export default function LandingPage() {
   return (
@@ -239,73 +240,8 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* PRICING */}
-      <section id="pricing">
-        <div className="ctr">
-          <p className="stag">Clear Pricing</p>
-          <h2 className="st">Pricing that grows <span>with you.</span></h2>
-          <p className="sd">Land with automation, add marketing packs, then scale into full fulfillment. Annual billing saves you 2 months.</p>
-        </div>
-        <div className="pgrid">
-          <div className="pc">
-            <div className="pn">Starter</div>
-            <div className="pp">2,900<sup>DA</sup></div>
-            <span className="ppr">/month</span>
-            <ul className="pfl">
-              <li>AI sales agent on 1 channel (FB, IG or WhatsApp)</li>
-              <li>Instant COD order confirmation</li>
-              <li>Unified inbox + basic CRM</li>
-              <li>~1,500 AI conversations / month</li>
-              <li>Email support</li>
-            </ul>
-            <Link href="/register"><button className="pb">Get Started</button></Link>
-          </div>
-          <div className="pc pop">
-            <div className="pbdg">Most Popular</div>
-            <div className="pn">Growth</div>
-            <div className="pp">4,900<sup>DA</sup></div>
-            <span className="ppr">/month</span>
-            <ul className="pfl">
-              <li>Everything in Starter, on 2 channels</li>
-              <li>Full CRM + customer tagging</li>
-              <li>Delivery sync across all 58 wilayas</li>
-              <li>Analytics dashboard</li>
-              <li>~4,000 AI conversations / month</li>
-              <li>Priority support</li>
-            </ul>
-            <Link href="/register"><button className="pb">Get Started</button></Link>
-          </div>
-          <div className="pc">
-            <div className="pn">Scale</div>
-            <div className="pp">7,900<sup>DA</sup></div>
-            <span className="ppr">/month</span>
-            <ul className="pfl">
-              <li>All channels (FB + IG + WhatsApp + more)</li>
-              <li>Marketing engine: broadcasts & retargeting</li>
-              <li>Multi-agent human handoff</li>
-              <li>Priority AI volume + support</li>
-              <li>Unlimited* AI conversations</li>
-            </ul>
-            <Link href="/register"><button className="pb">Get Started</button></Link>
-          </div>
-        </div>
-
-        {/* Two more ways to grow — Marketing packs + performance Fulfillment */}
-        <div className="max-w-5xl mx-auto mt-10 grid grid-cols-1 md:grid-cols-2 gap-6 px-5">
-          <div className="bg-[var(--bg-card)] border border-[var(--border-c)] rounded-3xl p-8 hover:border-[var(--s)]/30 transition-colors">
-            <span className="text-[11px] font-bold uppercase tracking-widest text-[var(--s)]">Marketing · per pack</span>
-            <h3 className="text-2xl font-bold text-white mt-3 mb-2 font-poppins">Content Packs</h3>
-            <p className="text-[var(--text-sub)] leading-relaxed mb-5">Pro product videos — scripting + filming — in bundles of 4, 8 or 12, with optional Meta ads management.</p>
-            <div className="text-xl font-black text-white">from 18,000 <span className="text-sm text-[var(--text-muted)] font-medium">DA / pack</span></div>
-          </div>
-          <div className="bg-[var(--bg-card)] border border-[var(--border-c)] rounded-3xl p-8 hover:border-[var(--g)]/30 transition-colors">
-            <span className="text-[11px] font-bold uppercase tracking-widest text-[var(--g)]">Fulfillment · performance</span>
-            <h3 className="text-2xl font-bold text-white mt-3 mb-2 font-poppins">Done-For-You Fulfillment</h3>
-            <p className="text-[var(--text-sub)] leading-relaxed mb-5">We run order confirmation, delivery coordination &amp; returns. You only pay on delivered orders — we earn when you earn.</p>
-            <div className="text-xl font-black text-white">8% – 15% <span className="text-sm text-[var(--text-muted)] font-medium">of delivered revenue</span></div>
-          </div>
-        </div>
-      </section>
+      {/* PRICING — DB-driven 3 revenue lines (Automation / Content Packs / Fulfillment), all managed from the admin dashboard */}
+      <PricingSection />
 
       <ContactSection />
 
