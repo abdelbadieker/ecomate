@@ -19,6 +19,7 @@ import {
   Settings2
 } from 'lucide-react';
 import { uploadFile } from '@/lib/storage-utils';
+import { adminDb } from '@/lib/admin-db';
 
 function createClient() { return createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!); }
 
@@ -83,7 +84,7 @@ export default function ChatbotControl() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...form, is_active: true })
     });
-    await supabase.from('activity_logs').insert({ action: `Added chatbot response: "${form.trigger_phrase}"`, entity_type: 'chatbot' });
+    adminDb.log(`Added chatbot response: "${form.trigger_phrase}"`, { entity_type: 'chatbot' });
     setForm({ trigger_phrase: '', response: '', category: 'General' }); 
     setShowForm(false); 
     fetchData();

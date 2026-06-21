@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Poppins } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
+import { cookies } from "next/headers";
 
 const inter = Inter({ subsets: ["latin"], variable: '--font-inter' });
 const poppins = Poppins({ 
@@ -25,8 +26,9 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const lang = cookies().get('lang')?.value === 'ar' ? 'ar' : 'en';
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={lang} dir={lang === 'ar' ? 'rtl' : 'ltr'} suppressHydrationWarning>
       <body className={`${inter.variable} ${poppins.variable} font-sans`}>
         <Providers>
           <div className="noise"></div>

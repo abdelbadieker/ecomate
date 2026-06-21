@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
+import { adminDb } from '@/lib/admin-db';
 
 function createClient() { return createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!); }
 
@@ -20,21 +21,25 @@ export default function LandingCMS() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const payload = { name: form.name, price: parseFloat(form.price), stock: parseInt(form.stock), description: form.description || null, category: form.category };
-    if (editing) {
-      await supabase.from('products').update(payload).eq('id', editing.id);
-      await supabase.from('activity_logs').insert({ action: `Updated product: ${form.name}`, entity_type: 'product', entity_id: editing.id });
-    } else {
-      await supabase.from('products').insert(payload);
-      await supabase.from('activity_logs').insert({ action: `Created product: ${form.name}`, entity_type: 'product' });
-    }
-    setForm({ name: '', price: '', stock: '', description: '', category: 'General' }); setShowForm(false); setEditing(null); fetch_();
+    try {
+      if (editing) {
+        await adminDb.update('products', payload, { id: editing.id });
+        adminDb.log(`Updated product: ${form.name}`, { entity_type: 'product', entity_id: editing.id });
+      } else {
+        await adminDb.insert('products', payload);
+        adminDb.log(`Created product: ${form.name}`, { entity_type: 'product' });
+      }
+      setForm({ name: '', price: '', stock: '', description: '', category: 'General' }); setShowForm(false); setEditing(null); fetch_();
+    } catch (err) { alert('Error saving product: ' + (err as Error).message); }
   };
 
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`Delete "${name}"?`)) return;
-    await supabase.from('products').delete().eq('id', id);
-    await supabase.from('activity_logs').insert({ action: `Deleted product: ${name}`, entity_type: 'product', entity_id: id });
-    fetch_();
+    try {
+      await adminDb.delete('products', { id });
+      adminDb.log(`Deleted product: ${name}`, { entity_type: 'product', entity_id: id });
+      fetch_();
+    } catch (err) { alert('Error: ' + (err as Error).message); }
   };
 
   const startEdit = (p: Product) => { setEditing(p); setForm({ name: p.name, price: String(p.price), stock: String(p.stock), description: p.description || '', category: p.category }); setShowForm(true); };

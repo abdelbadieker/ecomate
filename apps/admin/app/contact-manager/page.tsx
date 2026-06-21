@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
+import { adminDb } from '@/lib/admin-db';
 
 function createClient() { return createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!); }
 
@@ -18,16 +19,20 @@ export default function ContactManager() {
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    await supabase.from('customers').insert(form);
-    await supabase.from('activity_logs').insert({ action: `Added customer: ${form.name}`, entity_type: 'customer' });
-    setForm({ name: '', email: '', phone: '', city: '', notes: '' }); setShowForm(false); fetch_();
+    try {
+      await adminDb.insert('customers', form);
+      adminDb.log(`Added customer: ${form.name}`, { entity_type: 'customer' });
+      setForm({ name: '', email: '', phone: '', city: '', notes: '' }); setShowForm(false); fetch_();
+    } catch (err) { alert('Error saving customer: ' + (err as Error).message); }
   };
 
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`Delete ${name}?`)) return;
-    await supabase.from('customers').delete().eq('id', id);
-    await supabase.from('activity_logs').insert({ action: `Deleted customer: ${name}`, entity_type: 'customer', entity_id: id });
-    fetch_();
+    try {
+      await adminDb.delete('customers', { id });
+      adminDb.log(`Deleted customer: ${name}`, { entity_type: 'customer', entity_id: id });
+      fetch_();
+    } catch (err) { alert('Error: ' + (err as Error).message); }
   };
 
   if (loading) return <div className="flex justify-center p-20"><div className="w-8 h-8 border-[3px] border-slate-700 border-t-emerald-400 rounded-full animate-spin" /></div>;

@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import { ShoppingBag, Plus, Trash2, CheckCircle, Clock, Truck, XCircle, Loader } from 'lucide-react';
+import { adminDb } from '@/lib/admin-db';
 
 function createClient() { return createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!); }
 
@@ -25,22 +26,24 @@ export default function AdminOrdersPage() {
   const handleAddOrder = async () => {
     if (!newOrder.customer_name) return;
     const tracking = 'ECM' + Math.random().toString(36).substring(2, 7).toUpperCase();
-    await supabase.from('orders').insert({ ...newOrder, tracking_code: tracking });
-    await supabase.from('activity_logs').insert({ action: `Created order for ${newOrder.customer_name}`, entity_type: 'order' });
-    setNewOrder({ customer_name: '', total: 0, status: 'Processing', tracking_code: '' });
-    setShowAddForm(false);
-    fetchOrders();
+    try {
+      await adminDb.insert('orders', { ...newOrder, tracking_code: tracking });
+      adminDb.log(`Created order for ${newOrder.customer_name}`, { entity_type: 'order' });
+      setNewOrder({ customer_name: '', total: 0, status: 'Processing', tracking_code: '' });
+      setShowAddForm(false);
+      fetchOrders();
+    } catch (err) { alert('Error creating order: ' + (err as Error).message); }
   };
 
   const handleDeleteOrder = async (id: string) => {
     if (!confirm('Delete this order?')) return;
-    await supabase.from('orders').delete().eq('id', id);
-    fetchOrders();
+    try { await adminDb.delete('orders', { id }); fetchOrders(); }
+    catch (err) { alert((err as Error).message); }
   };
 
   const updateStatus = async (id: string, newStatus: string) => {
-    await supabase.from('orders').update({ status: newStatus }).eq('id', id);
-    fetchOrders();
+    try { await adminDb.update('orders', { status: newStatus }, { id }); fetchOrders(); }
+    catch (err) { alert((err as Error).message); }
   };
 
   const statusIcons: Record<string, any> = {

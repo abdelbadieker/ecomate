@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import { Package, Plus, Trash2, Tag, Layers, Loader, DollarSign } from 'lucide-react';
+import { adminDb } from '@/lib/admin-db';
 
 function createClient() { return createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!); }
 
@@ -24,17 +25,19 @@ export default function AdminProductsPage() {
 
   const handleAddProduct = async () => {
     if (!newProduct.name) return;
-    await supabase.from('products').insert(newProduct);
-    await supabase.from('activity_logs').insert({ action: `Added product: ${newProduct.name}`, entity_type: 'product' });
-    setNewProduct({ name: '', price: 0, stock: 0, category: 'General' });
-    setShowAddForm(false);
-    fetchProducts();
+    try {
+      await adminDb.insert('products', newProduct);
+      adminDb.log(`Added product: ${newProduct.name}`, { entity_type: 'product' });
+      setNewProduct({ name: '', price: 0, stock: 0, category: 'General' });
+      setShowAddForm(false);
+      fetchProducts();
+    } catch (err) { alert('Error adding product: ' + (err as Error).message); }
   };
 
   const handleDeleteProduct = async (id: string) => {
     if (!confirm('Delete this product?')) return;
-    await supabase.from('products').delete().eq('id', id);
-    fetchProducts();
+    try { await adminDb.delete('products', { id }); fetchProducts(); }
+    catch (err) { alert((err as Error).message); }
   };
 
   if (loading) return <div className="flex justify-center p-20"><Loader className="w-8 h-8 animate-spin text-emerald-400" /></div>;

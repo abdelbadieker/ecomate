@@ -1,6 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import * as LucideIcons from 'lucide-react';
 import Image from 'next/image';
+import { cookies } from 'next/headers';
+import { dictionaries } from '@/lib/i18n';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -8,6 +10,7 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export async function ServicesSection() {
+  const tt = dictionaries[cookies().get('lang')?.value === 'ar' ? 'ar' : 'en'].services;
   const { data: services } = await supabase
     .from('services')
     .select('*')
@@ -25,14 +28,14 @@ export async function ServicesSection() {
       <div className="max-w-7xl mx-auto text-center mb-16">
         <p className="text-[var(--s)] font-bold tracking-widest uppercase text-xs mb-4 flex items-center justify-center gap-2">
           <span className="w-4 h-[2px] bg-[var(--s)]"></span>
-          Everything You Need
+          {tt.tag}
         </p>
         <h2 className="text-4xl md:text-5xl font-extrabold text-white mb-6 tracking-tight font-poppins">
-          All tools. <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-blue-200">One platform.</span><br/>
-          <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-500 to-emerald-300">Zero fragmentation.</span>
+          {tt.title1} <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-blue-200">{tt.titleHi}</span><br/>
+          <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-500 to-emerald-300">{tt.title2}</span>
         </h2>
         <p className="text-[var(--text-sub)] text-lg max-w-2xl mx-auto leading-relaxed">
-          Stop juggling a dozen different tools. EcoMate brings every capability your Algerian business needs into one seamless, affordable system.
+          {tt.sub}
         </p>
       </div>
 
